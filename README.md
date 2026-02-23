@@ -177,11 +177,11 @@ npm run format
 
 ## Tác giả
 
-- **Tên**: [Tên của bạn - ví dụ: Nguyễn Văn Phương]
-- **Mã sinh viên**: [MSSV]
-- **Trường**: [Tên trường đại học]
-- **Giảng viên hướng dẫn**: [Tên giảng viên]
-- **Thời gian thực hiện**: Tháng 8/2025 – Tháng 5/2026
+- **Tên**: Bùi Phương Nam
+- **Mã sinh viên**: 522H0002
+- **Trường**: Đại học Tôn Đức Thắng
+- **Giảng viên hướng dẫn**: Mai Văn Mạnh
+- **Thời gian thực hiện**: Tháng 1/2026 – Tháng 5/2026
 - **Email**: [email của bạn]
 
 ## Giấy phép
@@ -190,5 +190,5 @@ Dự án được phát hành dưới giấy phép [MIT License](LICENSE).
 
 ---
 
-Cảm ơn bạn đã xem! Nếu bạn muốn đóng góp hoặc báo lỗi, hãy mở issue hoặc pull request nhé.
+Cảm ơn bạn đã xem! Đồ án đang tiếp tục được phát triển và sẽ hoàn thành trong tương lai.
 
