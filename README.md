@@ -1,7 +1,9 @@
-# Learning Management System (LMS) - Backend
+# Learning Management System (LMS)
 
 [![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Vue 3](https://img.shields.io/badge/Vue.js-35495E?style=for-the-badge&logo=vue.js&logoColor=4FC08D)](https://vuejs.org/)
+[![Vite](https://img.shields.io/badge/Vite-B73BFE?style=for-the-badge&logo=vite&logoColor=FFD62E)](https://vitejs.dev/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -17,33 +19,65 @@ Xây dựng backend hoàn chỉnh cho hệ thống LMS với các chức năng c
   - Ghi danh và theo dõi tiến độ học tập
   - Quản lý bài giảng và tài liệu học tập
   - Tạo bài kiểm tra, chấm điểm và xử lý phúc khảo
-- Nghiên cứu và triển khai kiến trúc **monolithic truyền thống** (layer-based) để so sánh với các kiến trúc khác (modular monolith, microservices) trong tương lai.
+- Triển khai **backend monolithic truyền thống** để so sánh với các kiến trúc khác trong tương lai
+- Frontend hiện đại, responsive, sử dụng Vue 3 Composition API + Pinia + Vue Router
 - Đảm bảo tính bảo mật (JWT authentication, RBAC), tính toàn vẹn dữ liệu (foreign key constraints) và dễ bảo trì.
 
 ## Công nghệ sử dụng
 
-- **Framework**: NestJS (TypeScript)
-- **Database**: PostgreSQL + Prisma (ORM)
-- **Authentication & Security**: JWT + Passport + bcrypt
-- **Validation**: class-validator & class-transformer
-- **API Documentation**: Swagger (OpenAPI)
-- **Kiến trúc**: Traditional Monolithic (layer-based architecture)
-  - Controllers, Services, Entities, DTOs được tổ chức theo layer
-- **Triển khai bằng**: Docker
+### Backend
+- Framework: NestJS (TypeScript)
+- Database: PostgreSQL + TypeORM
+- Auth: JWT + Passport + bcrypt
+- Validation: class-validator & class-transformer
+- API Docs: Swagger
+- Cấu trúc: Traditional Monolithic (layer-based)
+
+### Frontend
+- Framework: Vue 3 (Composition API)
+- Build tool: Vite
+- State management: Pinia
+- Routing: Vue Router
+- HTTP client: Axios
+- UI Library: (tùy chọn) Element Plus / Vuetify / Tailwind CSS + Shadcn-vue
+- TypeScript: full support
+
+**Tất cả được đóng gói và triển khai bằng**: Docker
 
 ## Cấu trúc thư mục (Traditional Monolithic)
 
 ```
-src/
-├── common/               # guards, decorators, filters, enums, interceptors
-├── config/               # env configuration
-├── controllers/          # tất cả controllers (auth, users, courses, lessons, quizzes...)
-├── dtos/                 # tất cả DTOs (input/output validation)
-├── entities/             # tất cả entities (User, Course, Enrollment, Lesson...)
-├── services/             # tất cả services (business logic)
-├── repositories/         # (tùy chọn) custom repositories
-├── app.module.ts
-└── main.ts
+lms-fullstack/
+├── backend/                  # NestJS backend
+│   ├── src/
+│   │   ├── common/
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── dtos/
+│   │   ├── entities/
+│   │   ├── services/
+│   │   ├── app.module.ts
+│   │   └── main.ts
+│   ├── .env
+│   ├── package.json
+│   └── tsconfig.json
+├── frontend/                 # Vue 3 + Vite frontend
+│   ├── src/
+│   │   ├── assets/
+│   │   ├── components/
+│   │   ├── views/
+│   │   ├── stores/           # Pinia stores
+│   │   ├── router/
+│   │   ├── services/         # api services (axios)
+│   │   ├── App.vue
+│   │   └── main.ts
+│   ├── public/
+│   ├── index.html
+│   ├── vite.config.ts
+│   ├── package.json
+│   └── tsconfig.json
+├── docker-compose.yml        # (tùy chọn) PostgreSQL + backend + frontend
+└── README.md
 ```
 
 
