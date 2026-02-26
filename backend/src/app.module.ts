@@ -5,15 +5,15 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 
-// Entities - tất cả chung
-import { User } from './models/user.entity';
-// import { Course } from './entities/course.entity';
-// import { Category } from './entities/category.entity';
-// import { Enrollment } from './entities/enrollment.entity';
-// import { Lesson } from './entities/lesson.entity';
-// import { Material } from './entities/material.entity';
-// import { Quiz } from './entities/quiz.entity';
-// import { Submission } from './entities/submission.entity';
+// models - tất cả chung
+import { Student } from './models/student.entity';
+import { Course } from './models/courses.entity';
+import { Category } from './models/categories.entity';
+import { Enrollment } from './models/enrollment.entity';
+import { Lesson } from './models/lesson.entity';
+import { Material } from './models/material.entity';
+import { Quiz } from './models/quizzes.entity';
+import { Submission } from './models/submission.entity';
 
 // // Controllers - tất cả chung
 // import { AuthController } from './controllers/auth.controller';
@@ -40,14 +40,14 @@ import { User } from './models/user.entity';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres' as  const,
-        host: configService.get('DB_HOST'),
-        port: +configService.get('DB_PORT'),
-        username: configService.get('DB_USER'),
-        password: configService.get('DB_PASS'),
-        database: configService.get('DB_NAME'),
-        entities: [User],
+        host: process.env.DB_HOST,
+        port: configService.get<number>('DB_PORT'),
+        username: process.env.DB_USERNAME,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME,
+        models: [Student, Course, Category, Enrollment, Lesson, Material, Quiz, Submission],
         synchronize: true, // dev only
-        logging: ['query', 'error']
+        logging: ['error']
       }),
       inject: [ConfigService],
     }),
