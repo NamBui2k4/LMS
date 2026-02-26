@@ -340,7 +340,20 @@ CREATE TABLE submissions (
         FOREIGN KEY (graded_by) REFERENCES lecturers(instructor_id) ON DELETE SET NULL
 );
 
+-- BẢNG: quiz_questions
+-- Câu hỏi trong bài kiểm tra
+CREATE TABLE quiz_questions (
+    id              BIGSERIAL       PRIMARY KEY,
+    quiz_id         BIGINT          NOT NULL,
+    question_text   TEXT            NOT NULL,
+    options         JSONB,          -- [{label, text, is_correct}] — chỉ trắc nghiệm
+    correct_answer  TEXT,
+    score_weight    NUMERIC(5,2)    NOT NULL DEFAULT 1.00,
+    order_index     INT             NOT NULL DEFAULT 0,
 
+    CONSTRAINT fk_question_quiz
+        FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
+);
 
 COMMENT ON TABLE submissions IS 'Bài nộp — thực thể yếu. Xóa khi học viên hoặc bài kiểm tra bị xóa';
 COMMENT ON COLUMN submissions.graded_by IS 'Giảng viên chấm điểm. NULL = hệ thống tự chấm (trắc nghiệm)';
