@@ -355,6 +355,29 @@ CREATE TABLE quiz_questions (
         FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
 );
 
+CREATE TABLE submissions (
+    id                  BIGSERIAL           PRIMARY KEY,
+    quiz_id             BIGINT              NOT NULL,
+    student_id          BIGINT              NOT NULL,
+    answer_data         JSONB,              -- Câu trả lời của học viên
+    score               NUMERIC(6,2),
+    status              submission_status   NOT NULL DEFAULT 'submitted',
+    submitted_at        TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
+    graded_at           TIMESTAMPTZ,
+    graded_by           BIGINT,             -- FK → lecturers
+    regrade_requested   BOOLEAN             NOT NULL DEFAULT FALSE,
+    regrade_note        TEXT,
+
+    CONSTRAINT fk_submission_quiz
+        FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_submission_student
+        FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+
+    CONSTRAINT fk_submission_grader
+        FOREIGN KEY (graded_by) REFERENCES lecturers(instructor_id) ON DELETE SET NULL
+);
+
 COMMENT ON TABLE submissions IS 'Bài nộp — thực thể yếu. Xóa khi học viên hoặc bài kiểm tra bị xóa';
 COMMENT ON COLUMN submissions.graded_by IS 'Giảng viên chấm điểm. NULL = hệ thống tự chấm (trắc nghiệm)';
 COMMENT ON COLUMN submissions.regrade_requested IS 'TRUE nếu học viên yêu cầu phúc khảo';
