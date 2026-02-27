@@ -7,6 +7,7 @@ import { PassportModule } from '@nestjs/passport';
 
 // Entities - tất cả chung
 import { User } from './models/user.entity';
+import { Student } from './models/student.entity';
 // import { Course } from './entities/course.entity';
 // import { Category } from './entities/category.entity';
 // import { Enrollment } from './entities/enrollment.entity';
@@ -14,6 +15,9 @@ import { User } from './models/user.entity';
 // import { Material } from './entities/material.entity';
 // import { Quiz } from './entities/quiz.entity';
 // import { Submission } from './entities/submission.entity';
+
+// Repositories
+import { StudentRepository } from './repository/StudentRepository'; // ✅ thêm mới
 
 // // Controllers - tất cả chung
 // import { AuthController } from './controllers/auth.controller';
@@ -39,19 +43,19 @@ import { User } from './models/user.entity';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        type: 'postgres' as  const,
-        host: configService.get('DB_HOST'),
-        port: +configService.get('DB_PORT'),
-        username: configService.get('DB_USER'),
-        password: configService.get('DB_PASS'),
-        database: configService.get('DB_NAME'),
-        entities: [User],
+        type: 'postgres' as const,
+        host: configService.get<string>('DB_HOST'),
+        port: +configService.get<string>('DB_PORT', '5432'),
+        username: configService.get<string>('DB_USER'),
+        password: configService.get<string>('DB_PASS'),
+        database: configService.get<string>('DB_NAME'),
+        entities: [User, Student /* Course, Category, Enrollment, Lesson, Material, Quiz, Submission */],
         synchronize: true, // dev only
         logging: ['query', 'error']
       }),
       inject: [ConfigService],
     }),
-    // TypeOrmModule.forFeature([User, Course, Category, Enrollment, Lesson, Material, Quiz, Submission]),
+     TypeOrmModule.forFeature([User, Student /* Course, Category, Enrollment, Lesson, Material, Quiz, Submission */]),
     // PassportModule,
     // JwtModule.registerAsync({
     //   imports: [ConfigModule],
@@ -69,7 +73,8 @@ import { User } from './models/user.entity';
   //   LessonsController,
   //   QuizzesController,
   // ],
-  // providers: [
+   providers: [
+      StudentRepository,
   //   AuthService,
   //   UsersService,
   //   CoursesService,
@@ -78,6 +83,6 @@ import { User } from './models/user.entity';
   //   JwtStrategy,
   //   RolesGuard,
   //   // ... các provider khác
-  // ],
+   ],
 })
 export class AppModule {}
