@@ -74,7 +74,7 @@ export class UserRepository {
   // Tìm user theo Email (dùng cho Service kiểm tra trùng lặp khi tạo, hoặc lúc đăng nhập)
   async findByEmail(email: string): Promise<User | null> {
     
-    const user = await this.ormRepository.findOne({ where: { email },
+    return  await this.ormRepository.findOne({ where: { email },
         select: {
           id: true,
           email: true,
@@ -84,10 +84,7 @@ export class UserRepository {
           role: true
         }, 
     });
-    // if(!user){
-    //     throw new NotFoundException(`Không tìm thấy người dùng với email: ${email}`);
-    // }
-    return user;
+   
   }
 
  
