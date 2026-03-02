@@ -1,68 +1,94 @@
-// src/controllers/user.controller.ts (hoặc tương tự)
+import { 
+  Controller, 
+  Post, 
+  Body, 
+  Patch, 
+  Param, 
+  HttpCode, 
+  HttpStatus, 
+  UseGuards,
+  Get, 
+  Query
+} from '@nestjs/common';
+import { UserService } from 'src/services/user.service';
+import { CreateUserDto, AssignRoleDto, UserResponseDto } from 'src/dto/user.dto';
+import { JwtAuthGuard } from 'src/auth/guard/jwt-auth.guard';
+import { RolesGuard } from 'src/auth/guard/roles.guard';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { UserRole } from 'src/common/enums/role.enum';
 
-import { Controller, Get, Post, Patch, Render, Body, Param, Query, Redirect, Res } from '@nestjs/common';
-import { Response } from 'express';
-import { UserService } from '../services/user.service';
-import { CreateUserDto } from '../dto/input/user/user.create.dto';
-import { AssignRoleDto } from '../dto/input/user/role.assign.dto';
-import { Roles } from '../common/decorator/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { Role } from 'src/common/enums/role.enum';
-
-@Controller('admin/users')
+// @UseGuards(JwtAuthGuard, RolesGuard): Yêu cầu phải đăng nhập và qua vòng kiểm tra Role
+// @Roles(UserRole.ADMIN): Chỉ Role ADMIN mới được chui vào Controller này
+@Controller('api/v1/users')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(Role.ADMIN)
+@Roles(UserRole.ADMIN)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Get()
-  @Render('admin/users/index')  // render views/admin/users/index.ejs
-  async index(
-    @Query('page') page: string = '1',
-    @Query('limit') limit: string = '10',
-    @Query('role') role?: string,
-    @Query('isActive') isActive?: string,
-    @Query('search') search?: string,
-  ) {
-    const parsedPage = parseInt(page, 10) || 1;
-    const parsedLimit = parseInt(limit, 10) || 10;
-    const parsedIsActive = isActive ? isActive === 'true' : undefined;
-
-    const result = await this.userService.findAllUsers({
-      page: parsedPage,
-      limit: parsedLimit,
-      role: role as Role | undefined,
-      isActive: parsedIsActive,
-      search,
-    });
-
-    return {
-      users: result.data,
-      pagination: {
-        page: parsedPage,
-        limit: parsedLimit,
-        totalPages: result.totalPages,
-        total: result.total,
-      },
-      filters: { role, isActive: parsedIsActive, search },
-      // truyền thêm dữ liệu cho select role
-      roles: Object.values(Role),
-    };
-  }
-
+  /**
+   * 1. TẠO TÀI KHOẢN NGƯỜI DÙNG
+   * POST /api/v1/users
+   */
   @Post()
-  @Redirect('/admin/users')  // redirect về list sau khi tạo
-  async create(@Body() createUserDto: CreateUserDto) {
-    await this.userService.createUser(createUserDto);
-    // có thể thêm flash message nếu dùng session
+  @HttpCode(HttpStatus.CREATED) // Trả về HTTP 201 Created
+  async createUser(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
+    // Controller nhận DTO đã được class-validator xác thực
+    const newUser = await this.userService.createUser(createUserDto);
+    
+    // Map Entity ra Response DTO trước khi trả về
+    return UserResponseDto.fromEntity(newUser);
   }
 
+  /**
+   * 2. GÁN VAI TRÒ CHO NGƯỜI DÙNG
+   * PATCH /api/v1/users/:id/role
+   */
   @Patch(':id/role')
-  @Redirect('/admin/users')
-  async assignRole(@Param('id') id: string, @Body() dto: AssignRoleDto) {
-    await this.userService.assignRole(+id, dto);
+  @HttpCode(HttpStatus.OK) // Trả về HTTP 200 OK
+  async assignRole(
+    @Param('id') userId: string,
+    @Body() assignRoleDto: AssignRoleDto,
+  ): Promise<UserResponseDto> {
+    const updatedUser = await this.userService.assignRole(userId, assignRoleDto.role);
+    return UserResponseDto.fromEntity(updatedUser);
   }
 
-  // Tương tự cho deactivate/activate
+  /**
+   * 3. VÔ HIỆU HÓA TÀI KHOẢN
+   * PATCH /api/v1/users/:id/deactivate
+   * (Dùng PATCH hợp lý hơn DELETE vì chúng ta đang làm Soft Delete)
+   */
+  @Patch(':id/deactivate')
+  @HttpCode(HttpStatus.OK)
+  async deactivateUser(@Param('id') userId: string): Promise<UserResponseDto> {
+    const deactivatedUser = await this.userService.deactivateUser(userId);
+    return UserResponseDto.fromEntity(deactivatedUser);
+  }
+
+  /**
+   * 4. TÌM KIẾM THEO EMAIL
+   * GET /api/v1/users/search?email=...
+   */
+  @Get('search')
+  @HttpCode(HttpStatus.OK)
+  async findUserByEmail(
+    // Dùng @Query để lấy tham số email từ URL ?email=...
+    @Query('email') email: string,
+  ): Promise<UserResponseDto> {
+    
+    const user = await this.userService.findUserViaEmail(email);
+    return UserResponseDto.fromEntity(user);
+  }
+
+  /**
+   * 5. TÌM KIẾM THEO ID
+   * GET /api/v1/users/{id}
+   */
+  @Get(':id')
+  @HttpCode(HttpStatus.OK)
+  async findUserById(@Param('id') userId: string): Promise<UserResponseDto> {
+    
+    const user = await this.userService.findUserViaId(userId);
+    return UserResponseDto.fromEntity(user);
+  }
 }

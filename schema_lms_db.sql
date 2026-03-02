@@ -1,4 +1,3 @@
-
 DROP TABLE IF EXISTS submissions            CASCADE;
 DROP TABLE IF EXISTS quiz_questions         CASCADE;
 DROP TABLE IF EXISTS quizzes                CASCADE;
@@ -14,8 +13,8 @@ DROP TABLE IF EXISTS students               CASCADE;
 DROP TABLE IF EXISTS admins                 CASCADE;
 -- Bảng từ schema v1/v2 cũ (nếu còn tồn tại)
 DROP TABLE IF EXISTS password_reset_tokens  CASCADE;
-DROP TABLE IF EXISTS departments             CASCADE;
-DROP TABLE IF EXISTS users                   CASCADE;
+DROP TABLE IF EXISTS departments            CASCADE;
+DROP TABLE IF EXISTS users                  CASCADE;
 
 -- =======================
 -- ENUM TYPES
@@ -34,17 +33,43 @@ CREATE TYPE quiz_type         AS ENUM ('multiple_choice', 'essay');
 CREATE TYPE submission_status AS ENUM ('submitted', 'graded', 'under_review');
 CREATE TYPE account_status    AS ENUM ('active', 'inactive', 'banned');
 
+-- ============================================================
+--  NHÓM 0: QUẢN LÝ TÀI KHOẢN CHUNG (IDENTITY)
+-- ============================================================
+
+-- =======================
+-- BẢNG: users
+-- Bảng identity chung cho xác thực và phân quyền (RBAC)
+-- =======================
+CREATE TABLE users (
+    id                    BIGSERIAL        PRIMARY KEY,
+    email                 VARCHAR(255)     NOT NULL UNIQUE,
+    password_hash         VARCHAR(255),
+    google_id             VARCHAR(255)     UNIQUE,
+    role                  VARCHAR(50)      NOT NULL CHECK (role IN ('STUDENT', 'LECTURER', 'HEAD_OF_DEPARTMENT', 'ADMIN')),
+    is_active             BOOLEAN          NOT NULL DEFAULT true,
+    last_login_at         TIMESTAMPTZ,
+    failed_login_attempts INT              DEFAULT 0,
+    locked_until          TIMESTAMPTZ,
+    created_at            TIMESTAMPTZ      NOT NULL DEFAULT NOW(),
+    updated_at            TIMESTAMPTZ      NOT NULL DEFAULT NOW()
+);
+
+COMMENT ON TABLE users IS 'Bảng identity chung cho xác thực và phân quyền (RBAC). Không lưu profile chi tiết.';
+COMMENT ON COLUMN users.email IS 'Email dùng để đăng nhập, unique toàn hệ thống';
+COMMENT ON COLUMN users.role IS 'Vai trò chính của người dùng, quyết định quyền hạn cơ bản';
+
 
 -- ============================================================
---  NHÓM 1: NGƯỜI DÙNG (3 thực thể nghiệp vụ độc lập)
+--  NHÓM 1: NGƯỜI DÙNG (3 thực thể nghiệp vụ kế thừa từ users)
 -- ============================================================
 
 -- =======================
 -- BẢNG: students
--- Học viên — thực thể độc lập
+-- Học viên — kế thừa users (Table-Per-Type)
 -- =======================
 CREATE TABLE students (
-    id              BIGSERIAL        PRIMARY KEY,
+    user_id         BIGINT           PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     fullname        VARCHAR(150)     NOT NULL,
     email           VARCHAR(255)     NOT NULL UNIQUE,
     phone           VARCHAR(20),
@@ -56,15 +81,14 @@ CREATE TABLE students (
     updated_at      TIMESTAMPTZ      NOT NULL DEFAULT NOW()
 );
 
-COMMENT ON TABLE students IS 'Học viên — thực thể nghiệp vụ độc lập';
+COMMENT ON TABLE students IS 'Học viên — kế thừa bảng users (quan hệ 1-1)';
 
 -- =======================
 -- BẢNG: lecturers
--- Giảng viên — thực thể độc lập
--- department lưu dạng VARCHAR (không cần bảng riêng vì không có nghiệp vụ độc lập)
+-- Giảng viên — kế thừa users (Table-Per-Type)
 -- =======================
 CREATE TABLE lecturers (
-    instructor_id   BIGSERIAL        PRIMARY KEY,
+    user_id         BIGINT           PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     fullname        VARCHAR(150)     NOT NULL,
     email           VARCHAR(255)     NOT NULL UNIQUE,
     phone           VARCHAR(20),
@@ -72,7 +96,7 @@ CREATE TABLE lecturers (
     bio             TEXT,
     academic_degree VARCHAR(50),     -- ThS, TS, PGS.TS, GS.TS
     subject         VARCHAR(150),    -- Chuyên ngành / môn giảng dạy chính
-    department      VARCHAR(150),    -- Tên bộ môn — thuộc tính đơn (không FK)
+    department      VARCHAR(150),    -- Tên bộ môn
     password_hash   VARCHAR(255),
     google_id       VARCHAR(255)     UNIQUE,
     status          account_status   NOT NULL DEFAULT 'active',
@@ -80,48 +104,36 @@ CREATE TABLE lecturers (
     updated_at      TIMESTAMPTZ      NOT NULL DEFAULT NOW()
 );
 
-COMMENT ON TABLE lecturers IS 'Giảng viên — thực thể nghiệp vụ độc lập';
+COMMENT ON TABLE lecturers IS 'Giảng viên — kế thừa bảng users (quan hệ 1-1)';
 COMMENT ON COLUMN lecturers.academic_degree IS 'Học vị: ThS, TS, PGS.TS, GS.TS';
-COMMENT ON COLUMN lecturers.department      IS 'Bộ môn — lưu trực tiếp, không FK vì không có nghiệp vụ riêng';
 
 -- =======================
 -- BẢNG: department_heads
--- Trưởng bộ môn — specialization (IS-A) của Lecturer
--- Kế thừa toàn bộ dữ liệu từ lecturers qua cùng PK
--- Chỉ bổ sung thuộc tính/quyền đặc biệt: quyền duyệt khóa học
+-- Trưởng bộ môn — kế thừa lecturers (Table-Per-Type)
 -- =======================
 CREATE TABLE department_heads (
-    instructor_id   BIGINT           PRIMARY KEY,  -- Cùng PK với lecturers (IS-A)
+    user_id         BIGINT           PRIMARY KEY REFERENCES lecturers(user_id) ON DELETE CASCADE,
     appointed_at    TIMESTAMPTZ      NOT NULL DEFAULT NOW(),
-    term_end        DATE,                          -- Ngày hết nhiệm kỳ (NULL = không xác định)
-
-    CONSTRAINT fk_dh_lecturer
-        FOREIGN KEY (instructor_id)
-        REFERENCES lecturers(instructor_id)
-        ON DELETE CASCADE
+    term_end        DATE             -- Ngày hết nhiệm kỳ (NULL = không xác định)
 );
 
-COMMENT ON TABLE department_heads IS 'Trưởng bộ môn — specialization của Lecturer (IS-A, PK chung). Có quyền duyệt/từ chối khóa học.';
-COMMENT ON COLUMN department_heads.term_end IS 'NULL = nhiệm kỳ chưa xác định kết thúc';
+COMMENT ON TABLE department_heads IS 'Trưởng bộ môn — kế thừa bảng lecturers (quan hệ 1-1)';
 
 -- =======================
 -- BẢNG: admins
--- Quản trị viên — thực thể độc lập
+-- Quản trị viên — kế thừa users (Table-Per-Type)
 -- =======================
 CREATE TABLE admins (
-    id                  BIGSERIAL        PRIMARY KEY,
+    user_id             BIGINT           PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     fullname            VARCHAR(150)     NOT NULL,
-    email               VARCHAR(255)     NOT NULL UNIQUE,
-    password_hash       VARCHAR(255),
     permissions         JSONB,           -- Danh sách quyền hạn
-    recent_activity_log JSONB,           -- Nhật ký hoạt động gần nhất (SRS mới)
+    recent_activity_log JSONB,           -- Nhật ký hoạt động gần nhất
     status              account_status   NOT NULL DEFAULT 'active',
     created_at          TIMESTAMPTZ      NOT NULL DEFAULT NOW(),
     updated_at          TIMESTAMPTZ      NOT NULL DEFAULT NOW()
 );
 
-COMMENT ON TABLE admins IS 'Quản trị viên — vận hành hệ thống';
-COMMENT ON COLUMN admins.recent_activity_log IS 'Nhật ký hoạt động gần nhất theo SRS';
+COMMENT ON TABLE admins IS 'Quản trị viên — kế thừa bảng users (quan hệ 1-1)';
 
 
 -- ============================================================
@@ -130,7 +142,6 @@ COMMENT ON COLUMN admins.recent_activity_log IS 'Nhật ký hoạt động gần
 
 -- =======================
 -- BẢNG: categories
--- Danh mục phân loại khóa học
 -- =======================
 CREATE TABLE categories (
     id          SERIAL          PRIMARY KEY,
@@ -139,11 +150,8 @@ CREATE TABLE categories (
     created_at  TIMESTAMPTZ     NOT NULL DEFAULT NOW()
 );
 
-COMMENT ON TABLE categories IS 'Danh mục khóa học (CNTT, Ngoại ngữ, ...)';
-
 -- =======================
 -- BẢNG: courses
--- Khóa học — thực thể trung tâm
 -- =======================
 CREATE TABLE courses (
     id              BIGSERIAL       PRIMARY KEY,
@@ -151,9 +159,9 @@ CREATE TABLE courses (
     description     TEXT,
     category_id     INT             NOT NULL,
     status          course_status   NOT NULL DEFAULT 'draft',
-    created_by      BIGINT          NOT NULL,    -- FK → lecturers.instructor_id
-    review_note     TEXT,                        -- Ghi chú từ DepartmentHead khi từ chối
-    reviewed_by     BIGINT,                      -- FK → department_heads.instructor_id
+    created_by      BIGINT          NOT NULL,    -- FK → lecturers.user_id
+    review_note     TEXT,
+    reviewed_by     BIGINT,                      -- FK → department_heads.user_id
     reviewed_at     TIMESTAMPTZ,
     created_at      TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
@@ -162,23 +170,18 @@ CREATE TABLE courses (
         FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,
 
     CONSTRAINT fk_course_creator
-        FOREIGN KEY (created_by) REFERENCES lecturers(instructor_id) ON DELETE RESTRICT,
+        FOREIGN KEY (created_by) REFERENCES lecturers(user_id) ON DELETE RESTRICT,
 
     CONSTRAINT fk_course_reviewer
-        FOREIGN KEY (reviewed_by) REFERENCES department_heads(instructor_id) ON DELETE SET NULL
+        FOREIGN KEY (reviewed_by) REFERENCES department_heads(user_id) ON DELETE SET NULL
 );
-
-COMMENT ON TABLE courses IS 'Khóa học. Luồng trạng thái: draft → pending → published | closed | archived';
-COMMENT ON COLUMN courses.reviewed_by IS 'Trưởng bộ môn duyệt khóa học';
 
 -- =======================
 -- BẢNG: course_instructors
--- Quan hệ N-N: Giảng viên phụ trách khóa học
--- (Một khóa học tối thiểu 1 giảng viên)
 -- =======================
 CREATE TABLE course_instructors (
     course_id       BIGINT          NOT NULL,
-    instructor_id   BIGINT          NOT NULL,
+    instructor_id   BIGINT          NOT NULL,    -- FK → lecturers.user_id
     assigned_at     TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
 
     PRIMARY KEY (course_id, instructor_id),
@@ -187,14 +190,11 @@ CREATE TABLE course_instructors (
         FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
 
     CONSTRAINT fk_ci_instructor
-        FOREIGN KEY (instructor_id) REFERENCES lecturers(instructor_id) ON DELETE CASCADE
+        FOREIGN KEY (instructor_id) REFERENCES lecturers(user_id) ON DELETE CASCADE
 );
-
-COMMENT ON TABLE course_instructors IS 'Giảng viên phụ trách khóa học — quan hệ N-N';
 
 -- =======================
 -- BẢNG: lessons
--- Bài giảng — thực thể yếu, phụ thuộc vào courses
 -- =======================
 CREATE TABLE lessons (
     id              BIGSERIAL       PRIMARY KEY,
@@ -210,11 +210,8 @@ CREATE TABLE lessons (
         FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE lessons IS 'Bài giảng — thực thể yếu, xóa khi khóa học bị xóa';
-
 -- =======================
 -- BẢNG: materials
--- Học liệu đính kèm bài giảng — thực thể yếu, phụ thuộc vào lessons
 -- =======================
 CREATE TABLE materials (
     id              BIGSERIAL           PRIMARY KEY,
@@ -230,8 +227,6 @@ CREATE TABLE materials (
         FOREIGN KEY (lesson_id) REFERENCES lessons(id) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE materials IS 'Học liệu (image/video/audio/document) — thực thể yếu, xóa khi bài giảng bị xóa';
-
 
 -- ============================================================
 --  NHÓM 3: GHI DANH & ĐÁNH GIÁ
@@ -239,35 +234,27 @@ COMMENT ON TABLE materials IS 'Học liệu (image/video/audio/document) — th�
 
 -- =======================
 -- BẢNG: enrollments
--- Ghi danh học viên vào khóa học — thực thể yếu
--- Phụ thuộc vào courses (cascade delete theo SRS)
 -- =======================
 CREATE TABLE enrollments (
     id              BIGSERIAL           PRIMARY KEY,
-    student_id      BIGINT              NOT NULL,
+    student_id      BIGINT              NOT NULL,    -- FK → students.user_id
     course_id       BIGINT              NOT NULL,
     status          enrollment_status   NOT NULL DEFAULT 'enrolled',
-    progress_pct    NUMERIC(5,2)        NOT NULL DEFAULT 0.00
-                    CHECK (progress_pct >= 0 AND progress_pct <= 100),
+    progress_pct    NUMERIC(5,2)        NOT NULL DEFAULT 0.00 CHECK (progress_pct >= 0 AND progress_pct <= 100),
     enrolled_at     TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
     completed_at    TIMESTAMPTZ,
 
-    -- Mỗi học viên chỉ ghi danh 1 lần vào 1 khóa học
     CONSTRAINT uq_enrollment UNIQUE (student_id, course_id),
 
     CONSTRAINT fk_enrollment_student
-        FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+        FOREIGN KEY (student_id) REFERENCES students(user_id) ON DELETE CASCADE,
 
     CONSTRAINT fk_enrollment_course
         FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 );
 
-COMMENT ON TABLE enrollments IS 'Ghi danh học viên — thực thể yếu. Xóa khi khóa học hoặc học viên bị xóa';
-COMMENT ON COLUMN enrollments.progress_pct IS 'Tiến độ hoàn thành (0-100%)';
-
 -- =======================
 -- BẢNG: quizzes
--- Bài kiểm tra — thực thể yếu, phụ thuộc vào courses
 -- =======================
 CREATE TABLE quizzes (
     id              BIGSERIAL       PRIMARY KEY,
@@ -277,7 +264,7 @@ CREATE TABLE quizzes (
     max_score       NUMERIC(6,2)    NOT NULL DEFAULT 100.00,
     pass_score      NUMERIC(6,2),
     duration_min    INT,
-    created_by      BIGINT          NOT NULL,   -- FK → lecturers
+    created_by      BIGINT          NOT NULL,   -- FK → lecturers.user_id
     created_at      TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
 
@@ -285,20 +272,17 @@ CREATE TABLE quizzes (
         FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE,
 
     CONSTRAINT fk_quiz_creator
-        FOREIGN KEY (created_by) REFERENCES lecturers(instructor_id) ON DELETE RESTRICT
+        FOREIGN KEY (created_by) REFERENCES lecturers(user_id) ON DELETE RESTRICT
 );
-
-COMMENT ON TABLE quizzes IS 'Bài kiểm tra — thực thể yếu, xóa khi khóa học bị xóa';
 
 -- =======================
 -- BẢNG: quiz_questions
--- Câu hỏi trong bài kiểm tra
 -- =======================
 CREATE TABLE quiz_questions (
     id              BIGSERIAL       PRIMARY KEY,
     quiz_id         BIGINT          NOT NULL,
     question_text   TEXT            NOT NULL,
-    options         JSONB,          -- [{label, text, is_correct}] — chỉ trắc nghiệm
+    options         JSONB,
     correct_answer  TEXT,
     score_weight    NUMERIC(5,2)    NOT NULL DEFAULT 1.00,
     order_index     INT             NOT NULL DEFAULT 0,
@@ -306,27 +290,20 @@ CREATE TABLE quiz_questions (
     CONSTRAINT fk_question_quiz
         FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
 );
-
-COMMENT ON TABLE quiz_questions IS 'Câu hỏi bài kiểm tra — xóa khi bài kiểm tra bị xóa';
-COMMENT ON COLUMN quiz_questions.options IS 'JSON array lựa chọn cho câu trắc nghiệm';
 
 -- =======================
 -- BẢNG: submissions
--- Bài nộp của học viên — thực thể yếu
--- Phụ thuộc học viên (cascade) và bài kiểm tra (cascade)
--- Trong ERD: submissions kết nối với users & quizzes qua "submit"
--- → Sửa đúng: kết nối với students (không phải users chung)
 -- =======================
 CREATE TABLE submissions (
     id                  BIGSERIAL           PRIMARY KEY,
     quiz_id             BIGINT              NOT NULL,
-    student_id          BIGINT              NOT NULL,
-    answer_data         JSONB,              -- Câu trả lời của học viên
+    student_id          BIGINT              NOT NULL,    -- FK → students.user_id
+    answer_data         JSONB,
     score               NUMERIC(6,2),
     status              submission_status   NOT NULL DEFAULT 'submitted',
     submitted_at        TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
     graded_at           TIMESTAMPTZ,
-    graded_by           BIGINT,             -- FK → lecturers (null nếu tự động)
+    graded_by           BIGINT,                          -- FK → lecturers.user_id
     regrade_requested   BOOLEAN             NOT NULL DEFAULT FALSE,
     regrade_note        TEXT,
 
@@ -334,66 +311,29 @@ CREATE TABLE submissions (
         FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE,
 
     CONSTRAINT fk_submission_student
-        FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
+        FOREIGN KEY (student_id) REFERENCES students(user_id) ON DELETE CASCADE,
 
     CONSTRAINT fk_submission_grader
-        FOREIGN KEY (graded_by) REFERENCES lecturers(instructor_id) ON DELETE SET NULL
+        FOREIGN KEY (graded_by) REFERENCES lecturers(user_id) ON DELETE SET NULL
 );
-
--- BẢNG: quiz_questions
--- Câu hỏi trong bài kiểm tra
-CREATE TABLE quiz_questions (
-    id              BIGSERIAL       PRIMARY KEY,
-    quiz_id         BIGINT          NOT NULL,
-    question_text   TEXT            NOT NULL,
-    options         JSONB,          -- [{label, text, is_correct}] — chỉ trắc nghiệm
-    correct_answer  TEXT,
-    score_weight    NUMERIC(5,2)    NOT NULL DEFAULT 1.00,
-    order_index     INT             NOT NULL DEFAULT 0,
-
-    CONSTRAINT fk_question_quiz
-        FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE
-);
-
-CREATE TABLE submissions (
-    id                  BIGSERIAL           PRIMARY KEY,
-    quiz_id             BIGINT              NOT NULL,
-    student_id          BIGINT              NOT NULL,
-    answer_data         JSONB,              -- Câu trả lời của học viên
-    score               NUMERIC(6,2),
-    status              submission_status   NOT NULL DEFAULT 'submitted',
-    submitted_at        TIMESTAMPTZ         NOT NULL DEFAULT NOW(),
-    graded_at           TIMESTAMPTZ,
-    graded_by           BIGINT,             -- FK → lecturers
-    regrade_requested   BOOLEAN             NOT NULL DEFAULT FALSE,
-    regrade_note        TEXT,
-
-    CONSTRAINT fk_submission_quiz
-        FOREIGN KEY (quiz_id) REFERENCES quizzes(id) ON DELETE CASCADE,
-
-    CONSTRAINT fk_submission_student
-        FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
-
-    CONSTRAINT fk_submission_grader
-        FOREIGN KEY (graded_by) REFERENCES lecturers(instructor_id) ON DELETE SET NULL
-);
-
-COMMENT ON TABLE submissions IS 'Bài nộp — thực thể yếu. Xóa khi học viên hoặc bài kiểm tra bị xóa';
-COMMENT ON COLUMN submissions.graded_by IS 'Giảng viên chấm điểm. NULL = hệ thống tự chấm (trắc nghiệm)';
-COMMENT ON COLUMN submissions.regrade_requested IS 'TRUE nếu học viên yêu cầu phúc khảo';
 
 
 -- ============================================================
---  INDEXES — Tối ưu truy vấn thường dùng
+--  INDEXES
 -- ============================================================
+
+-- users
+CREATE INDEX idx_users_email            ON users(email);
+CREATE INDEX idx_users_role             ON users(role);
+CREATE INDEX idx_users_is_active        ON users(is_active);
 
 -- students
-CREATE INDEX idx_students_email     ON students(email);
-CREATE INDEX idx_students_status    ON students(status);
+CREATE INDEX idx_students_email         ON students(email);
+CREATE INDEX idx_students_status        ON students(status);
 
 -- lecturers
 CREATE INDEX idx_lecturers_email        ON lecturers(email);
-CREATE INDEX idx_lecturers_department   ON lecturers(department);  -- VARCHAR, không phải FK
+CREATE INDEX idx_lecturers_department   ON lecturers(department);
 
 -- courses
 CREATE INDEX idx_courses_status         ON courses(status);
@@ -423,19 +363,32 @@ CREATE INDEX idx_submissions_student    ON submissions(student_id);
 CREATE INDEX idx_submissions_quiz       ON submissions(quiz_id);
 CREATE INDEX idx_submissions_status     ON submissions(status);
 
-
 -- ============================================================
 --  DỮ LIỆU MẪU (Seed)
 -- ============================================================
 
--- Danh mục khóa học mẫu
 INSERT INTO categories (name, description) VALUES
     ('Công nghệ thông tin', 'Lập trình, hệ thống, mạng'),
     ('Ngoại ngữ', 'Tiếng Anh, Tiếng Nhật ...'),
     ('Kinh tế - Quản trị', 'Quản trị kinh doanh, Tài chính');
 
--- Admin mặc định
-INSERT INTO admins (fullname, email, password_hash, permissions)
-VALUES ('Administrator', 'admin@lms.edu.vn', '$2b$12$placeholder', '["all"]');
+-- Để tạo admin mẫu, bây giờ bạn cần tạo user trước, sau đó dùng ID đó để tạo admin.
+-- Ví dụ (chạy trong function hoặc thủ công):
+-- INSERT INTO users (email, role) VALUES ('admin@lms.edu.vn', 'ADMIN');
+INSERT INTO users (
+    email,
+    password_hash,
+    role,
+    is_active,
+    created_at,
+    updated_at
+) VALUES (
+    'admin@lms.com',
+    '$2a$12$GNxEkDnEQxQ0M7t4NkA.bu9UaOsOM6dDFfnYxd.TCgh.Y/D6HcZ9C',
+    'ADMIN',
+    true,
+    CURRENT_TIMESTAMP,
+    CURRENT_TIMESTAMP
+);
 
-
+INSERT INTO admins ( user_id, fullname, permissions) VALUES ( 1, 'Administrator', '["all"]');
