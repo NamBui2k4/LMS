@@ -4,13 +4,13 @@ import { Repository } from 'typeorm';
 import { User } from '../models/user.entity';
 import { UserRole } from 'src/common/enums/role.enum';
 import { DeleteResult } from 'typeorm/browser';
-
 @Injectable()
 export class UserRepository {
   constructor(
     @InjectRepository(User)
     private readonly ormRepository: Repository<User>,
   ) {}
+
 
   /**
    * 1. TẠO TÀI KHOẢN NGƯỜI DÙNG
@@ -74,7 +74,7 @@ export class UserRepository {
   // Tìm user theo Email (dùng cho Service kiểm tra trùng lặp khi tạo, hoặc lúc đăng nhập)
   async findByEmail(email: string): Promise<User | null> {
     
-    return  await this.ormRepository.findOne({ where: { email },
+    return await this.ormRepository.findOne({ where: { email },
         select: {
           id: true,
           email: true,
@@ -86,10 +86,8 @@ export class UserRepository {
     });
    
   }
-
- 
   // Tìm user theo ID
-  async findById(userId: string): Promise<User> {
+  async findById(userId: string): Promise<User | null> {
 
     const user = await this.ormRepository.findOne({ 
         where: { id: userId },
@@ -107,5 +105,17 @@ export class UserRepository {
         throw new NotFoundException(`Không tìm thấy người dùng với id: ${userId}`);
     }
     return user
+  }
+
+  // cập nhật email
+  async updateEmailById(userId: string, email:string) : Promise<User | null>{
+    await this.ormRepository.update(userId, {email:email});
+    return this.ormRepository.findOne({where:{id:userId}})
+  }
+
+  // cập nhật trạng thái
+  async updateStatus(userId:string , status: boolean) : Promise<User | null>{
+    await this.ormRepository.update(userId, {isActive : status});
+    return this.ormRepository.findOne({where:{id:userId}})
   }
 }

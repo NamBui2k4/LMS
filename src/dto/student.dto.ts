@@ -17,3 +17,10 @@ export class CreateStudentDto{
   @IsString()
   password?: string; // plain text, sẽ hash sau
 }
+
+export class UpdateStudentDto {
+  fullname?: string;
+  email?: string;
+  phone?: string;
+  avatarUrl?: string;
+}

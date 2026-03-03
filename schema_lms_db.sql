@@ -74,7 +74,6 @@ CREATE TABLE students (
     email           VARCHAR(255)     NOT NULL UNIQUE,
     phone           VARCHAR(20),
     avatar_url      TEXT,
-    password_hash   VARCHAR(255),
     google_id       VARCHAR(255)     UNIQUE,
     status          account_status   NOT NULL DEFAULT 'active',
     created_at      TIMESTAMPTZ      NOT NULL DEFAULT NOW(),

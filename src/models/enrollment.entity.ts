@@ -13,5 +13,4 @@ export class Enrollment {
   @ManyToOne(() => Course, (course) => course.enrollments)
   course: Course;
 
-  // ... các field khác như progressPercentage, status...
 }

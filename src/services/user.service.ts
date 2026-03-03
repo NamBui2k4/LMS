@@ -8,17 +8,14 @@ import { UserRepository } from '../repository/user.repository';
 import { User} from '../models/user.entity';
 import { UserRole } from 'src/common/enums/role.enum';
 import { NotFoundException } from '@nestjs/common';
-
-// Định nghĩa nhanh DTO (Data Transfer Object) để nhận dữ liệu từ Controller
-export interface CreateUserDto {
-  email: string;
-  password?: string;
-  role: UserRole;
-}
+import { CreateUserDto } from 'src/dto/user.dto';
+import { AccountStatus } from 'src/common/enums/account-status.enum';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+  ) {}
 
   /**
    * 1. TẠO TÀI KHOẢN NGƯỜI DÙNG
@@ -88,8 +85,12 @@ export class UserService {
   /**
    * 5. TÌM KIẾM THEO id
    */
-  async findUserViaId(email: string): Promise<User> {
-    return await this.userRepository.findById(email);
+  async findUserViaId(userId: string): Promise<User> {
+    const result = await this.userRepository.findById(userId);
+    if (!result) {
+      throw new NotFoundException(`Không tìm thấy tài khoản với ID: ${userId} để xóa.`);
+    } 
+    return result
   }
 
   /**
@@ -102,4 +103,31 @@ export class UserService {
     } 
   }
 
+  /**
+   * 7. cẬP NHẬT EMAIL
+   */
+  async updateEmailUser(userId: string, email: string): Promise<void | null> {
+    const result = await this.userRepository.updateEmailById(userId, email);
+    if (!result) {
+      throw new NotFoundException(`Không tìm thấy tài khoản với ID: ${userId} để xóa.`);
+    } 
+  }
+
+  /**
+   * 7. cẬP NHẬT TRẠNG  Thái
+   */
+  async updateStatus(id: string, status: AccountStatus): Promise<User> {
+    
+    let isActivate = true;
+    if (status === AccountStatus.SUSPENDED) isActivate = false;
+
+    const user = await this.userRepository.updateStatus(id, isActivate);
+    
+    if (!user) {
+      throw new NotFoundException(`Người dùng với ID ${id} không tồn tại.`);
+    }
+
+    
+    return await user;
+  }
 }

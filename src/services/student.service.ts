@@ -1,78 +1,69 @@
-// import { StudentRepository } from "src/repository/student.repository";
-// import { Student } from "src/models/student.entity";
-// import { AccountStatus } from "src/common/enums/account-status.enum";
-// import { CreateStudentDto } from "src/dto/create-student.dto";
-// import * as bcript from 'bcrypt';
-// import { BadRequestException } from "@nestjs/common";
+import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Student } from 'src/models/student.entity';
+import { UpdateStudentDto } from 'src/dto/student.dto';
+import { AccountStatus } from 'src/common/enums/account-status.enum';
+import { emit } from 'process';
+import { StudentRepository } from 'src/repository/student.repository';
+import { UserRepository } from 'src/repository/user.repository';
 
-// export class StudentService{
-//   constructor(private studentRepository: StudentRepository){
-//     this.studentRepository = studentRepository;
-//   }
+@Injectable()
+export class StudentService {
+  constructor(
+    private readonly studenRepo: StudentRepository,
+    private readonly userRepo: UserRepository
+  ) {}
+
+  // 1. Dành cho Admin: Lấy danh sách học viên (có phân trang cơ bản)
+  async findAll(page: number = 1, limit: number = 10) {
+    const {data, meta} = await this.studenRepo.findAllPaginated(page, limit);
+
+    return {
+      data,
+      meta
+    };
+  }
+
+  // 2. Dành cho cả Admin & Student: Xem chi tiết hồ sơ
+  async findOne(id: string): Promise<Student> {
+    const student = await this.studenRepo.findById(id);
+    if (!student) throw new NotFoundException('Không tìm thấy học viên.');
+    return student;
+  }
+
+  // 3. Dành cho Student: Tự cập nhật thông tin cá nhân
+  async updateProfile(id: string, updateDto: UpdateStudentDto) {
+    const student = await this.findOne(id);
+
+  // 2. Xử lý cập nhật Email (Nếu có và nếu khác email cũ)
+  if (updateDto.email && updateDto.email !== student.email) {
+    // Gọi UserService để thực hiện logic kiểm tra trùng và update ở bảng Users
+    // Giả sử updateEmailUser trả về user đã update hoặc throw lỗi nếu trùng
+    await this.userRepo.updateEmailById(id, updateDto.email);
+    
+    // Cập nhật luôn email ở bảng Student để đồng bộ dữ liệu (vì bạn đang để email ở cả 2 bảng)
+    student.email = updateDto.email;
+  }
+
+  // 3. Cập nhật các thông tin còn lại của Student
+  // Loại bỏ email ra khỏi object để không ghi đè lại nếu đã xử lý ở trên
+  const { email, ...otherInfo } = updateDto;
   
-//   // Tạo user mới (trước khi save, có thể thêm logic validate)
-//   async createUser(createDto: CreateStudentDto): Promise<Student> {
-//     const student = this.studentRepository.create({
-//         fullname: createDto.fullname,
-//         email: createDto.email,
-//         phone: createDto.phone,
-//         passwordHash: createDto.password ? await bcript.hash(createDto.password) : undefined
-//     })
+  // Gán các giá trị mới vào entity student
+  Object.assign(student, otherInfo);
 
-//     return this.studentRepository.save(student);
-//   }
+  // 4. Lưu vào database
+  return student;
+  }
 
-//   // Cập nhật profile (chỉ cho phép update một số field an toàn)
-//   async updateProfile(
-//     id: number, 
-//     updateData: Partial<Pick<Student, 'fullname' | 'avatarUrl'>>,
-//   ): Promise<Student | null> {
-
-//     const result = await this.studentRepository
-//         .createQueryBuilder()
-//         .update(Student)
-//         .set(updateData)
-//         .where("id =:id", {id})
-//         .returning("*")
-//         .execute();
+  // 4. Xử lý vi phạm (Ban/Unban) dành cho giảng viên
+  async updateAccountStatus(id: string, status: AccountStatus, reason?: string) {
+    let student: Student | null = null;
     
-//     if (result.affected === 0) {
-//         throw new BadRequestException("No student found");
-//     }
-//     return result.raw[0] as Student;
-//   }
-
-//   // Khóa tài khoản sinh viên
-//   async deactivate(id: string): Promise<boolean> {
-//     const result = await this.studentRepository
-//       .createQueryBuilder()
-//       .update(Student)
-//       .set({ status: AccountStatus.INACTIVE })
-//       .where("id =:id", {id})
-//       .returning("*")
-//       .execute();
-    
-//       if ((result.affected ?? 0) === 0) {
-//         throw new BadRequestException("No student found");
-//     }
-//     return true;
-//   }
-
-//   // Kiểm tra email đã tồn tại chưa (dùng khi register)
-//   async emailExists(email: string): Promise<boolean> {
-//       // Trong các phiên bản TypeORM mới, bạn có thể dùng .exists() sẽ nhanh hơn
-//       return await this.studentRepository
-//         .count({ where: { email } as any }) > 0; 
-//   }
-
-// // Tìm giảng viên (instructor) có ít nhất một khóa học
-//   async findInstructorsWithCourses(): Promise<Student[]> {
-//       return this.studentRepository
-//           .createQueryBuilder('user')
-//           // Sử dụng innerJoinAndSelect để chỉ lấy những user CÓ khóa học
-//           // Nó sẽ tự động loại bỏ những user không có course
-//           .innerJoinAndSelect('user.createdCourses', 'course')
-//           .where('lecturer.id in (SELECT "lectureId" FROM AssignedLecturers)') 
-//           .getMany();
-//   }
-// }
+    if (AccountStatus.SUSPENDED) student = await this.studenRepo.updateStatus(id, status);
+    if(!student){
+        throw new NotFoundException("student not found");
+    }
+    return student;
+  }
+  
+}
