@@ -1,0 +1,45 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor LightPink
+  BorderColor DarkRed
+  ArrowColor Black
+}
+skinparam actor {
+  BackgroundColor Gold
+  BorderColor DarkGoldenRod
+}
+
+actor "Quản trị viên (Admin)" as Admin
+actor "Khách (Guest)" as Guest
+actor "Người dùng (User)" as User
+
+rectangle "Phân rã: Tài khoản và bảo mật" {
+  usecase "Thêm người dùng mới" as UC_AddUser
+  usecase "Đăng nhập" as UC_login
+  usecase "Đăng ký" as UC_sigin
+  usecase "Đăng xuất" as UC_logout
+  usecase "Phân quyền (Gán Role)" as UC_AssignRole
+  usecase "Khóa / Vô hiệu hóa tài khoản" as UC_Block
+  usecase "Mở khóa tài khoản" as UC_Unblock
+  usecase "Khôi phục mật khẩu" as UC_recoverPassword
+  usecase "Thay đổi mật khẩu" as UC_ChangePassword
+  usecase "Tìm kiếm & Lọc danh sách" as UC_SearchUser
+}
+
+Admin -- UC_SearchUser
+Admin -- UC_AddUser
+Admin -- UC_AssignRole
+Admin -- UC_Block
+Admin -- UC_Unblock
+
+Guest -- UC_recoverPassword
+Guest -- UC_ChangePassword
+Guest -- UC_sigin
+Guest -- UC_login
+
+User -- UC_logout
+
+
+@enduml
