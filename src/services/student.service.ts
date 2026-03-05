@@ -1,10 +1,12 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { Student } from 'src/models/student.entity';
 import { UpdateStudentDto } from 'src/dto/student.dto';
 import { AccountStatus } from 'src/common/enums/account-status.enum';
 import { emit } from 'process';
 import { StudentRepository } from 'src/repository/student.repository';
 import { UserRepository } from 'src/repository/user.repository';
+import { Enrollment } from 'src/models/enrollment.entity';
+import { Submission } from 'src/models/submission.entity';
 
 @Injectable()
 export class StudentService {
@@ -65,5 +67,29 @@ export class StudentService {
     }
     return student;
   }
-  
+
+  // [MỚI] Xem danh sách khóa học mà học viên đã ghi danh
+  // Phục vụ chức năng "Xem khóa học của học viên" cho Giảng viên / Trưởng bộ môn
+  async getEnrollments(id: string): Promise<Enrollment[]> {
+    const student = await this.studenRepo.findByIdWithEnrollments(id);
+    if (!student) throw new NotFoundException('Không tìm thấy học viên.');
+    return student.enrollments ?? [];
+  }
+
+  // [MỚI] Xem lịch sử bài nộp của học viên
+  // Phục vụ chức năng "Xem lịch sử làm bài" cho Giảng viên / Trưởng bộ môn hoặc chính học viên
+  async getSubmissions(id: string): Promise<Submission[]> {
+    const student = await this.studenRepo.findByIdWithSubmissions(id);
+    if (!student) throw new NotFoundException('Không tìm thấy học viên.');
+    return student.submissions ?? [];
+  }
+
+  // [MỚI] Kiểm tra quyền: học viên chỉ được xem/sửa dữ liệu của chính mình
+  // Được gọi từ controller sau khi decode JWT để lấy requesterId
+  async assertIsOwnerOrStaff(targetId: string, requesterId: string, requesterRole: string): Promise<void> {
+    const staffRoles = ['LECTURER', 'HEAD_OF_DEPARTMENT', 'ADMIN'];
+    if (targetId !== requesterId && !staffRoles.includes(requesterRole)) {
+      throw new ForbiddenException('Bạn không có quyền truy cập thông tin của học viên khác.');
+    }
+  }
 }

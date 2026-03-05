@@ -33,6 +33,13 @@ export class CourseRepository {
       .getMany();
   }
 
+  async findById(id: number): Promise<Course | null> {
+  return this.courseRepo.findOne({
+    where: { id },
+    relations: ['createdBy', 'category'],
+  });
+}
+
   async findByIdDetailed(id: number): Promise<Course | null> {
     return this.courseRepo.findOne({
       where: { id },

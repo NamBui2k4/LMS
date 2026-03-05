@@ -1,4 +1,3 @@
-
 import { Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -85,5 +84,39 @@ export class StudentRepository {
       // Và bảng Enrollments để lấy danh sách khóa học
       relations: ['user', 'enrollments'], 
     });
+  }
+
+  // [MỚI] Tìm học viên kèm danh sách khóa học đã ghi danh (đầy đủ thông tin khóa học)
+  // Phục vụ chức năng "Xem danh sách khóa học của học viên"
+  async findByIdWithEnrollments(id: string): Promise<Student | null> {
+    return this.studentRepo.findOne({
+      where: { id } as any,
+      relations: [
+        'enrollments',
+        'enrollments.course',
+        'enrollments.course.category',
+        'enrollments.course.createdBy',
+      ],
+    });
+  }
+
+  // [MỚI] Tìm học viên kèm danh sách bài nộp
+  // Phục vụ chức năng xem lịch sử làm bài của học viên
+  async findByIdWithSubmissions(id: string): Promise<Student | null> {
+    return this.studentRepo.findOne({
+      where: { id } as any,
+      relations: [
+        'submissions',
+        'submissions.quiz',
+        'submissions.quiz.course',
+        'submissions.gradedBy',
+      ],
+    });
+  }
+
+  // [MỚI] Cập nhật thông tin hồ sơ học viên
+  async update(id: string, data: Partial<Student>): Promise<Student | null> {
+    await this.studentRepo.update(id, data as any);
+    return this.findById(id);
   }
 }
