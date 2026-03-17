@@ -28,7 +28,7 @@ export class CategoryController {
    * Lấy danh sách danh mục
    */
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.LECTURER, UserRole.DEPARTMENT_HEAD)
+  @Roles(UserRole.ADMIN, UserRole.LECTURER, UserRole.HEAD_OF_DEPARTMENT)
   async findAll(): Promise<CategoryResponseDto[]> {
     const categories = await this.categoryService.findAll();
     return categories.map(CategoryResponseDto.fromEntity);
@@ -39,7 +39,7 @@ export class CategoryController {
    * Xem chi tiết danh mục
    */
   @Get(':id')
-  @Roles(UserRole.ADMIN, UserRole.LECTURER, UserRole.DEPARTMENT_HEAD)
+  @Roles(UserRole.ADMIN, UserRole.LECTURER, UserRole.HEAD_OF_DEPARTMENT   )
   async findOne(@Param('id', ParseIntPipe) id: number): Promise<CategoryResponseDto> {
     const category = await this.categoryService.findOne(id);
     return CategoryResponseDto.fromEntity(category);
@@ -51,7 +51,7 @@ export class CategoryController {
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @Roles(UserRole.ADMIN, UserRole.DEPARTMENT_HEAD)
+  @Roles(UserRole.ADMIN, UserRole.HEAD_OF_DEPARTMENT)
   async create(@Body() dto: CreateCategoryDto): Promise<CategoryResponseDto> {
     const category = await this.categoryService.create(dto);
     return CategoryResponseDto.fromEntity(category);
@@ -62,7 +62,7 @@ export class CategoryController {
    * Cập nhật danh mục
    */
   @Put(':id')
-  @Roles(UserRole.ADMIN, UserRole.DEPARTMENT_HEAD)
+  @Roles(UserRole.ADMIN, UserRole.HEAD_OF_DEPARTMENT)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateCategoryDto,
@@ -77,7 +77,7 @@ export class CategoryController {
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Roles(UserRole.ADMIN, UserRole.DEPARTMENT_HEAD)
+  @Roles(UserRole.ADMIN, UserRole.HEAD_OF_DEPARTMENT)
   async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     await this.categoryService.delete(id);
   }

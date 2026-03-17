@@ -1,15 +1,15 @@
-import { 
-  Injectable, 
-  ConflictException, 
-  BadRequestException 
+import {
+  Injectable,
+  ConflictException,
+  BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
-import * as bcrypt from 'bcrypt'; // Nhớ cài đặt: npm i bcrypt
+import * as bcrypt from 'bcrypt';
 import { UserRepository } from '../repository/user.repository';
-import { User} from '../models/user.entity';
-import { UserRole } from 'src/common/enums/role.enum';
-import { NotFoundException } from '@nestjs/common';
-import { CreateUserDto } from 'src/dto/user.dto';
-import { AccountStatus } from 'src/common/enums/account-status.enum';
+import { User } from '../models/user.entity';
+import { UserRole } from '../common/enums/role.enum';
+import { CreateUserDto } from '../dto/user.dto';
+import { AccountStatus } from '../common/enums/account-status.enum';
 
 @Injectable()
 export class UserService {
@@ -19,6 +19,8 @@ export class UserService {
 
   /**
    * 1. TẠO TÀI KHOẢN NGƯỜI DÙNG
+   * Tác nhân: Quản trị viên
+   * Kiểm tra email trùng, hash mật khẩu, lưu vào DB
    */
   async createUser(createUserDto: CreateUserDto): Promise<User> {
     const { email, password, role } = createUserDto;
@@ -39,7 +41,6 @@ export class UserService {
       throw new BadRequestException('Tài khoản Quản trị viên bắt buộc phải có mật khẩu khởi tạo.');
     }
 
-    // Gọi Repository để lưu vào Database
     return await this.userRepository.createUser({
       email,
       passwordHash,
@@ -50,23 +51,22 @@ export class UserService {
 
   /**
    * 2. GÁN VAI TRÒ CHO NGƯỜI DÙNG
+   * Tác nhân: Quản trị viên
    */
   async assignRole(targetUserId: string, newRole: UserRole): Promise<User> {
-    // Rule nghiệp vụ (Ví dụ): Không cho phép gán vai trò không hợp lệ (nếu cần bắt chặt hơn enum)
     if (!Object.values(UserRole).includes(newRole)) {
       throw new BadRequestException(`Vai trò ${newRole} không hợp lệ.`);
     }
-
     // Repository đã lo việc quăng lỗi NotFoundException nếu targetUserId không tồn tại
     return await this.userRepository.assignRole(targetUserId, newRole);
   }
 
   /**
-   * 3. VÔ HIỆU HÓA TÀI KHOẢN
+   * 3. VÔ HIỆU HÓA TÀI KHOẢN (SOFT DELETE)
+   * Tác nhân: Quản trị viên
+   * Set isActive = false — giữ lại lịch sử dữ liệu
    */
   async deactivateUser(targetUserId: string): Promise<User> {
-    // Gọi Repository để set isActive = false
-    // Tương tự, nếu không tìm thấy user, Repo sẽ tự ném lỗi NotFoundException
     return await this.userRepository.deactivateUser(targetUserId);
   }
 
@@ -75,22 +75,21 @@ export class UserService {
    */
   async findUserViaEmail(email: string): Promise<User> {
     const user = await this.userRepository.findByEmail(email);
-    if (!user){
+    if (!user) {
       throw new ConflictException(`Người dùng không tồn tại trong hệ thống.`);
     }
-    return user
+    return user;
   }
-  
 
   /**
-   * 5. TÌM KIẾM THEO id
+   * 5. TÌM KIẾM THEO ID
    */
   async findUserViaId(userId: string): Promise<User> {
     const result = await this.userRepository.findById(userId);
     if (!result) {
       throw new NotFoundException(`Không tìm thấy tài khoản với ID: ${userId} để xóa.`);
-    } 
-    return result
+    }
+    return result;
   }
 
   /**
@@ -100,34 +99,33 @@ export class UserService {
     const result = await this.userRepository.permanentlyDeleteUser(userId);
     if (result.affected === 0) {
       throw new NotFoundException(`Không tìm thấy tài khoản với ID: ${userId} để xóa.`);
-    } 
+    }
   }
 
   /**
-   * 7. cẬP NHẬT EMAIL
+   * 7. CẬP NHẬT EMAIL
    */
   async updateEmailUser(userId: string, email: string): Promise<void | null> {
     const result = await this.userRepository.updateEmailById(userId, email);
     if (!result) {
-      throw new NotFoundException(`Không tìm thấy tài khoản với ID: ${userId} để xóa.`);
-    } 
+      throw new NotFoundException(`Không tìm thấy tài khoản với ID: ${userId}.`);
+    }
   }
 
   /**
-   * 7. cẬP NHẬT TRẠNG  Thái
+   * 8. CẬP NHẬT TRẠNG THÁI TÀI KHOẢN
+   * ✅ FIX: AccountStatus.SUSPENDED → AccountStatus.BANNED
+   *         DB enum account_status chỉ có: 'active' | 'inactive' | 'banned'
+   *         Không có 'suspended' — dùng SUSPENDED sẽ gây lỗi runtime
    */
   async updateStatus(id: string, status: AccountStatus): Promise<User> {
-    
-    let isActivate = true;
-    if (status === AccountStatus.SUSPENDED) isActivate = false;
+    // ✅ FIX: SUSPENDED không tồn tại → so sánh với BANNED và INACTIVE
+    const isActivate = status === AccountStatus.ACTIVE;
 
     const user = await this.userRepository.updateStatus(id, isActivate);
-    
     if (!user) {
       throw new NotFoundException(`Người dùng với ID ${id} không tồn tại.`);
     }
-
-    
-    return await user;
+    return user;
   }
 }

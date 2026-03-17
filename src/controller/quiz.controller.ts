@@ -28,7 +28,7 @@ export class QuizController {
    * Danh sách bài kiểm tra trong khóa học
    */
   @Get()
-  @Roles(UserRole.LECTURER, UserRole.DEPARTMENT_HEAD)
+  @Roles(UserRole.LECTURER, UserRole.HEAD_OF_DEPARTMENT)
   async findAll(@Param('courseId', ParseIntPipe) courseId: number) {
     return this.quizService.findByCourse(courseId);
   }
@@ -38,7 +38,7 @@ export class QuizController {
    * Chi tiết bài kiểm tra (kèm câu hỏi)
    */
   @Get(':id')
-  @Roles(UserRole.LECTURER, UserRole.DEPARTMENT_HEAD)
+  @Roles(UserRole.LECTURER, UserRole.HEAD_OF_DEPARTMENT)
   async findOne(
     @Param('courseId', ParseIntPipe) courseId: number,
     @Param('id', ParseIntPipe) id: number,

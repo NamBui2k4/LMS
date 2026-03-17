@@ -28,7 +28,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
     // Kết quả này chính là "user" mà RolesGuard sẽ kiểm tra (user.role)
     return { 
-      id: payload.sub, 
+      id: Number(payload.sub), 
       email: payload.email, 
       role: payload.role 
     };

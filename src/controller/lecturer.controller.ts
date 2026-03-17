@@ -1,7 +1,9 @@
 import {
   Controller,
   Get,
+  Post,
   Put,
+  Patch,
   Body,
   Param,
   UseGuards,
@@ -17,11 +19,41 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../common/enums/role.enum';
 import { UpdateLecturerDto, LecturerResponseDto } from '../dto/lecturer.dto';
 import { CourseResponseDto } from '../dto/course.dto';
+import { CreateLecturerDto } from '../dto/lecturer.dto'; // ✅ thêm
 
 @Controller('api/v1/lecturers')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class LecturerController {
   constructor(private readonly lecturerService: LecturerService) {}
+
+
+  /**
+   * POST /api/v1/lecturers
+   * Admin tạo tài khoản giảng viên mới
+   */
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
+  @Roles(UserRole.ADMIN)
+  async createLecturer(
+    @Body() dto: CreateLecturerDto,
+  ): Promise<LecturerResponseDto> {
+    const lecturer = await this.lecturerService.createLecturer(dto);
+    return LecturerResponseDto.fromEntity(lecturer);
+  }
+
+  /**
+   * PATCH /api/v1/lecturers/:id/promote
+   * Admin promote Lecturer → HEAD_OF_DEPARTMENT
+   */
+  @Patch(':id/promote')
+  @HttpCode(HttpStatus.OK)
+  @Roles(UserRole.ADMIN)
+  async promoteToHoD(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<LecturerResponseDto> {
+    const lecturer = await this.lecturerService.promoteToHoD(id);
+    return LecturerResponseDto.fromEntity(lecturer);
+  }
 
   /**
    * GET /api/v1/lecturers

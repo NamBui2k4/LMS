@@ -1,10 +1,20 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { DepartmentHeadRepository } from '../repository/department-heads.repository';
 import { LecturerRepository } from '../repository/lecturer.repository';
 import { DepartmentHead } from '../models/department-heads.entity';
+import { IsNumber, IsOptional } from 'class-validator';
 
+// ✅ FIX: DTO dùng userId (không phải instructorId)
 export class AppointDeptHeadDto {
-  instructorId: number;
+  @IsNumber()
+  userId: number; // ✅ FIX: userId (không phải instructorId)
+
+  @IsOptional()
   termEnd?: Date;
 }
 
@@ -19,8 +29,9 @@ export class DepartmentHeadService {
     return this.deptHeadRepo.findAll();
   }
 
-  async findOne(instructorId: number): Promise<DepartmentHead> {
-    const deptHead = await this.deptHeadRepo.findById(instructorId);
+  // ✅ FIX: tham số userId
+  async findOne(userId: number): Promise<DepartmentHead> {
+    const deptHead = await this.deptHeadRepo.findById(userId);
     if (!deptHead) throw new NotFoundException('Không tìm thấy trưởng bộ môn.');
     return deptHead;
   }
@@ -30,50 +41,47 @@ export class DepartmentHeadService {
   }
 
   async appoint(dto: AppointDeptHeadDto): Promise<DepartmentHead> {
-    const lecturer = await this.lecturerRepo.findById(dto.instructorId);
+    // ✅ FIX: tìm lecturer bằng userId
+    const lecturer = await this.lecturerRepo.findById(dto.userId);
     if (!lecturer) throw new NotFoundException('Không tìm thấy giảng viên.');
 
-    const existing = await this.deptHeadRepo.findById(dto.instructorId);
+    const existing = await this.deptHeadRepo.findById(dto.userId); // ✅ FIX
     if (existing) throw new ConflictException('Giảng viên đã là trưởng bộ môn.');
 
     return this.deptHeadRepo.create({
-      instructorId: dto.instructorId,
+      userId: dto.userId, // ✅ FIX
       termEnd: dto.termEnd,
     });
   }
 
-  async update(instructorId: number, termEnd?: Date): Promise<DepartmentHead> {
-    await this.findOne(instructorId);
-    const updated = await this.deptHeadRepo.update(instructorId, { termEnd });
+  // ✅ FIX: tham số userId
+  async update(userId: number, termEnd?: Date): Promise<DepartmentHead> {
+    await this.findOne(userId);
+    const updated = await this.deptHeadRepo.update(userId, { termEnd });
     return updated!;
   }
 
-  async remove(instructorId: number): Promise<void> {
-    await this.findOne(instructorId);
-    await this.deptHeadRepo.delete(instructorId);
+  // ✅ FIX: tham số userId
+  async remove(userId: number): Promise<void> {
+    await this.findOne(userId);
+    await this.deptHeadRepo.delete(userId);
   }
 
-  // [MỚI] Xem thông tin khóa học mà Trưởng bộ môn đã duyệt
-  // Phục vụ báo cáo hoạt động phê duyệt nội dung đào tạo
-  async getReviewedCourses(instructorId: number): Promise<DepartmentHead> {
-    const deptHead = await this.deptHeadRepo.findByIdWithReviewedCourses(instructorId);
+  async getReviewedCourses(userId: number): Promise<DepartmentHead> {
+    const deptHead = await this.deptHeadRepo.findByIdWithReviewedCourses(userId); // ✅ FIX
     if (!deptHead) throw new NotFoundException('Không tìm thấy trưởng bộ môn.');
     return deptHead;
   }
 
-  // [MỚI] Kiểm tra Trưởng bộ môn có đang trong nhiệm kỳ không
-  // Được dùng trước khi cho phép thực hiện các thao tác cần quyền Trưởng bộ môn
-  async assertIsInActiveTerm(instructorId: number): Promise<void> {
-    const isActive = await this.deptHeadRepo.isInActiveTerm(instructorId);
+  async assertIsInActiveTerm(userId: number): Promise<void> {
+    const isActive = await this.deptHeadRepo.isInActiveTerm(userId); // ✅ FIX
     if (!isActive) {
       throw new ForbiddenException('Trưởng bộ môn không còn trong nhiệm kỳ hiện tại.');
     }
   }
 
-  // [MỚI] Lấy danh sách Trưởng bộ môn kèm thông tin phân công
-  // Phục vụ Admin xem tổng quan quản lý nhân sự
-  async findByIdWithAssignments(instructorId: number): Promise<DepartmentHead> {
-    const deptHead = await this.deptHeadRepo.findByIdWithAssignments(instructorId);
+  async findByIdWithAssignments(userId: number): Promise<DepartmentHead> {
+    const deptHead = await this.deptHeadRepo.findByIdWithAssignments(userId); // ✅ FIX
     if (!deptHead) throw new NotFoundException('Không tìm thấy trưởng bộ môn.');
     return deptHead;
   }

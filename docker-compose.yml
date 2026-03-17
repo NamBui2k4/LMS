@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  backend:
+    build: .
+    container_name: lms_backend
+    ports:
+      - "3000:3000"
+
+    environment:
+      DB_HOST: host.docker.internal
+      DB_PORT: 5432
+      DB_USERNAME: postgres
+      DB_PASSWORD: quanminh08
+      DB_NAME: LMS-monolithic
+      JWT_SECRET: supersecretkey
+
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+    command: npm run start:dev

@@ -1,0 +1,99 @@
+<%- include('../../partials/header', { title: 'Tạo tài khoản', activePage: 'users' }) %>
+<%- include('../../partials/sidebar') %>
+
+<div class="main-content">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="breadcrumb">
+        <a href="/dashboard">Trang chủ</a><span>/</span>
+        <a href="/admin/users">Người dùng</a><span>/</span>
+        <span class="current">Tạo tài khoản</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Tạo tài khoản mới</div>
+      <div class="page-subtitle">Thêm người dùng mới vào hệ thống</div>
+    </div>
+    <a href="/admin/users" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Quay lại</a>
+  </div>
+
+  <div style="max-width:560px">
+    <div class="card">
+      <div class="card-title"><i class="fa-solid fa-user-plus" style="color:var(--accent)"></i> Thông tin tài khoản</div>
+      <div id="formAlert" style="display:none"></div>
+      <form id="createUserForm">
+        <div class="form-group">
+          <label class="form-label">Email <span style="color:var(--danger)">*</span></label>
+          <div style="position:relative">
+            <i class="fa-solid fa-envelope" style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px"></i>
+            <input type="email" name="email" class="form-control" style="padding-left:38px" placeholder="email@domain.com" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mật khẩu</label>
+          <div style="position:relative">
+            <i class="fa-solid fa-lock" style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:13px"></i>
+            <input type="password" name="password" id="pwInput" class="form-control" style="padding-left:38px" placeholder="Tối thiểu 6 ký tự" />
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:5px">Để trống nếu muốn tự động tạo mật khẩu</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Vai trò <span style="color:var(--danger)">*</span></label>
+          <select name="role" class="form-control" required>
+            <option value="">— Chọn vai trò —</option>
+            <option value="admin">Admin</option>
+            <option value="lecturer">Giảng viên</option>
+            <option value="head_of_department">Trưởng bộ môn</option>
+            <option value="student">Học viên</option>
+          </select>
+        </div>
+
+        <!-- Role info hints -->
+        <div style="padding:14px;background:var(--bg-surface);border-radius:10px;border:1px solid var(--border);margin-bottom:20px">
+          <div style="font-size:12px;color:var(--text-muted);line-height:1.7">
+            <i class="fa-solid fa-circle-info" style="color:var(--info);margin-right:6px"></i>
+            <strong style="color:var(--text-secondary)">Lưu ý:</strong> Tài khoản sau khi tạo sẽ ở trạng thái <span class="badge badge-green" style="font-size:10px">Hoạt động</span>. Vai trò có thể thay đổi sau trong mục quản lý người dùng.
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <a href="/admin/users" class="btn btn-secondary">Hủy</a>
+          <button type="submit" class="btn btn-primary" id="submitBtn">
+            <i class="fa-solid fa-user-plus"></i> Tạo tài khoản
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<%- include('../../partials/footer') %>
+
+<script>
+document.getElementById('createUserForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('submitBtn');
+  const alertEl = document.getElementById('formAlert');
+  alertEl.style.display = 'none';
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo...';
+
+  try {
+    const fd = new FormData(e.target);
+    const body = Object.fromEntries(fd.entries());
+    if (!body.password) delete body.password;
+    await LMS.api.post('/users', body);
+    LMS.toast('Tạo tài khoản thành công!', 'success');
+    setTimeout(() => window.location.href = '/admin/users', 1200);
+  } catch(err) {
+    alertEl.className = 'alert alert-error';
+    alertEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${err.message}`;
+    alertEl.style.display = 'flex';
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Tạo tài khoản';
+  }
+});
+</script>

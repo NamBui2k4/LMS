@@ -32,10 +32,15 @@ export class MaterialController {
   /**
    * GET /api/v1/lessons/:lessonId/materials
    * Xem danh sách học liệu trong bài giảng
+   * Tác nhân: Giảng viên, Trưởng bộ môn
    */
   @Get()
   @Roles(UserRole.LECTURER, UserRole.HEAD_OF_DEPARTMENT)
-  async findAll(@Param('lessonId') lessonId: string): Promise<MaterialResponseDto[]> {
+  // ✅ FIX: lessonId: string → number với ParseIntPipe
+  //         MaterialService.findByLesson(lessonId: number), LessonRepository.findById(number)
+  async findAll(
+    @Param('lessonId', ParseIntPipe) lessonId: number,
+  ): Promise<MaterialResponseDto[]> {
     const materials = await this.materialService.findByLesson(lessonId);
     return materials.map(MaterialResponseDto.fromEntity);
   }
@@ -46,8 +51,9 @@ export class MaterialController {
    */
   @Get(':id')
   @Roles(UserRole.LECTURER, UserRole.HEAD_OF_DEPARTMENT)
+  // ✅ FIX: Thêm ParseIntPipe cho cả lessonId và id — Material.id là BIGSERIAL (number)
   async findOne(
-    @Param('lessonId') lessonId: string,
+    @Param('lessonId', ParseIntPipe) lessonId: number,
     @Param('id', ParseIntPipe) id: number,
   ): Promise<MaterialResponseDto> {
     const material = await this.materialService.findOne(id);
@@ -61,8 +67,9 @@ export class MaterialController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @Roles(UserRole.LECTURER)
+  // ✅ FIX: ParseIntPipe cho lessonId
   async create(
-    @Param('lessonId') lessonId: string,
+    @Param('lessonId', ParseIntPipe) lessonId: number,
     @Body() dto: CreateMaterialDto,
     @Request() req: any,
   ): Promise<MaterialResponseDto> {
@@ -76,8 +83,9 @@ export class MaterialController {
    */
   @Put(':id')
   @Roles(UserRole.LECTURER)
+  // ✅ FIX: ParseIntPipe cho cả lessonId và id
   async update(
-    @Param('lessonId') lessonId: string,
+    @Param('lessonId', ParseIntPipe) lessonId: number,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateMaterialDto,
     @Request() req: any,
@@ -92,13 +100,14 @@ export class MaterialController {
    */
   @Patch(':id/order')
   @Roles(UserRole.LECTURER)
+  // ✅ FIX: ParseIntPipe cho lessonId và id
   async reorder(
-    @Param('lessonId') lessonId: string,
+    @Param('lessonId', ParseIntPipe) lessonId: number,
     @Param('id', ParseIntPipe) id: number,
-    @Body('order', ParseIntPipe) order: number,
+    @Body('orderIndex', ParseIntPipe) orderIndex: number,
     @Request() req: any,
   ): Promise<MaterialResponseDto> {
-    const material = await this.materialService.reorder(id, order, req.user.id);
+    const material = await this.materialService.reorder(id, orderIndex, req.user.id);
     return MaterialResponseDto.fromEntity(material);
   }
 
@@ -109,8 +118,9 @@ export class MaterialController {
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Roles(UserRole.LECTURER)
+  // ✅ FIX: ParseIntPipe cho lessonId và id
   async delete(
-    @Param('lessonId') lessonId: string,
+    @Param('lessonId', ParseIntPipe) lessonId: number,
     @Param('id', ParseIntPipe) id: number,
     @Request() req: any,
   ): Promise<void> {

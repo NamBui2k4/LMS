@@ -3,6 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { DepartmentHead } from '../models/department-heads.entity';
 
+/**
+ * ✅ FIX: Đổi toàn bộ tham số `instructorId` → `userId` để khớp với entity mới
+ *         (DepartmentHead.userId — PK là user_id trong DB)
+ */
 @Injectable()
 export class DepartmentHeadRepository {
   constructor(
@@ -15,9 +19,10 @@ export class DepartmentHeadRepository {
     return this.deptHeadRepo.find({ relations: ['lecturer'] });
   }
 
-  async findById(instructorId: number): Promise<DepartmentHead | null> {
+  // ✅ FIX: tham số userId (không phải instructorId)
+  async findById(userId: number): Promise<DepartmentHead | null> {
     return this.deptHeadRepo.findOne({
-      where: { instructorId },
+      where: { userId },
       relations: ['lecturer'],
     });
   }
@@ -35,41 +40,39 @@ export class DepartmentHeadRepository {
     return this.deptHeadRepo.save(entity);
   }
 
-  async update(instructorId: number, data: Partial<DepartmentHead>): Promise<DepartmentHead | null> {
-    await this.deptHeadRepo.update(instructorId, data);
-    return this.findById(instructorId);
+  // ✅ FIX: tham số userId
+  async update(userId: number, data: Partial<DepartmentHead>): Promise<DepartmentHead | null> {
+    await this.deptHeadRepo.update({ userId }, data);
+    return this.findById(userId);
   }
 
-  async delete(instructorId: number): Promise<void | null> {
-    await this.deptHeadRepo.delete(instructorId);
+  // ✅ FIX: tham số userId
+  async delete(userId: number): Promise<void> {
+    await this.deptHeadRepo.delete({ userId });
   }
 
-  // [MỚI] Tìm Trưởng bộ môn kèm toàn bộ thông tin khóa học đã duyệt
-  // Phục vụ báo cáo hoạt động phê duyệt và quản lý khóa học
-  async findByIdWithReviewedCourses(instructorId: number): Promise<DepartmentHead | null> {
+  async findByIdWithReviewedCourses(userId: number): Promise<DepartmentHead | null> {
     return this.deptHeadRepo
       .createQueryBuilder('dh')
       .leftJoinAndSelect('dh.lecturer', 'lecturer')
       .leftJoinAndSelect('lecturer.createdCourses', 'createdCourses')
-      .where('dh.instructorId = :instructorId', { instructorId })
+      .where('dh.userId = :userId', { userId }) // ✅ FIX
       .getOne();
   }
 
-  // [MỚI] Tìm Trưởng bộ môn kèm danh sách giảng viên đã phân công
-  // Phục vụ xem tổng quan hoạt động quản lý phân công
-  async findByIdWithAssignments(instructorId: number): Promise<DepartmentHead | null> {
+  async findByIdWithAssignments(userId: number): Promise<DepartmentHead | null> {
     return this.deptHeadRepo
       .createQueryBuilder('dh')
       .leftJoinAndSelect('dh.lecturer', 'lecturer')
-      .where('dh.instructorId = :instructorId', { instructorId })
+      .where('dh.userId = :userId', { userId }) // ✅ FIX
       .getOne();
   }
 
-  // [MỚI] Kiểm tra Trưởng bộ môn có đang trong nhiệm kỳ không
-  async isInActiveTerm(instructorId: number): Promise<boolean> {
+  // ✅ FIX: tham số userId
+  async isInActiveTerm(userId: number): Promise<boolean> {
     const result = await this.deptHeadRepo
       .createQueryBuilder('dh')
-      .where('dh.instructorId = :instructorId', { instructorId })
+      .where('dh.userId = :userId', { userId }) // ✅ FIX
       .andWhere('dh.termEnd IS NULL OR dh.termEnd > CURRENT_DATE')
       .getCount();
     return result > 0;

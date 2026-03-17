@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 
 import { QuizType } from '../common/enums/quiz-type.enum';
-import { Course } from './courses.entity';
+import { Courses } from './courses.entity';
 import { Lecturer } from './lecturers.entity';
 import { QuizQuestion } from './quiz-question.entity';
 import { Submission } from './submission.entity';
@@ -24,8 +24,8 @@ export class Quiz {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Course, (course) => course.quizzes, { onDelete: 'CASCADE' })
-  course: Course;
+  @ManyToOne(() => Courses, (course) => course.quizzes, { onDelete: 'CASCADE' })
+  course: Courses;
 
   @Column({ length: 255 })
   title: string;

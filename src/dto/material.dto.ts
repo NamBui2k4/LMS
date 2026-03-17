@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsEnum, IsNotEmpty, IsUrl, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsEnum, IsNotEmpty, MaxLength } from 'class-validator';
 import { MaterialType } from '../common/enums/material-type.enum';
 import { Material } from '../models/material.entity';
 
@@ -7,73 +7,75 @@ import { Material } from '../models/material.entity';
 // ========================
 
 export class CreateMaterialDto {
+  // ✅ FIX: name → fileName (khớp với Material entity: fileName, DB: file_name)
   @IsString()
   @IsNotEmpty()
   @MaxLength(255)
-  name: string;
+  fileName: string;
 
-  @IsOptional()
-  @IsString()
-  description?: string;
-
+  // ✅ FIX: type → fileType (khớp với Material entity: fileType, DB: file_type)
   @IsEnum(MaterialType)
-  type: MaterialType;
+  fileType: MaterialType;
 
-  @IsOptional()
+  // ✅ FIX: fileUrl bắt buộc (DB: file_url NOT NULL)
   @IsString()
-  fileUrl?: string;
+  @IsNotEmpty()
+  fileUrl: string;
 
+  // ✅ FIX: Thêm fileSizeKb (DB: file_size_kb, entity: fileSizeKb)
   @IsOptional()
   @IsNumber()
-  order?: number;
+  fileSizeKb?: number;
+
+  // ✅ FIX: order → orderIndex (khớp với Material entity: orderIndex, DB: order_index)
+  @IsOptional()
+  @IsNumber()
+  orderIndex?: number;
 }
 
 export class UpdateMaterialDto {
+  // ✅ FIX: name → fileName
   @IsOptional()
   @IsString()
   @MaxLength(255)
-  name?: string;
-
-  @IsOptional()
-  @IsString()
-  description?: string;
+  fileName?: string;
 
   @IsOptional()
   @IsString()
   fileUrl?: string;
 
+  // ✅ FIX: Thêm fileSizeKb
   @IsOptional()
   @IsNumber()
-  order?: number;
-}
+  fileSizeKb?: number;
 
-export class ReorderMaterialsDto {
-  materialId: number;
-  order: number;
+  // ✅ FIX: order → orderIndex
+  @IsOptional()
+  @IsNumber()
+  orderIndex?: number;
 }
 
 export class MaterialResponseDto {
+  // ✅ FIX: id: string → number (Material PK là BIGSERIAL)
   id: number;
-  name: string;
-  description?: string;
-  type: MaterialType;
-  fileUrl?: string;
-  fileSize?: number;
-  order: number;
-  lessonId: string;
-  uploadedAt?: Date;
+  fileName: string;       // ✅ FIX: name → fileName
+  fileType: MaterialType; // ✅ FIX: type → fileType
+  fileUrl: string;
+  fileSizeKb?: number;    // ✅ FIX: fileSize → fileSizeKb
+  orderIndex: number;     // ✅ FIX: order → orderIndex
+  lessonId: number;       // ✅ FIX: string → number (Lesson PK là BIGSERIAL)
+  createdAt: Date;
 
   static fromEntity(material: Material): MaterialResponseDto {
     const dto = new MaterialResponseDto();
-    dto.id = material.id;
-    dto.name = material.name;
-    dto.description = material.description;
-    dto.type = material.type;
+    dto.id = material.id;                     // ✅ FIX: number
+    dto.fileName = material.fileName;         // ✅ FIX
+    dto.fileType = material.fileType;         // ✅ FIX
     dto.fileUrl = material.fileUrl;
-    dto.fileSize = material.fileSize;
-    dto.order = material.order;
-    dto.lessonId = material.lesson?.id;
-    dto.uploadedAt = material.uploadedAt;
+    dto.fileSizeKb = material.fileSizeKb;     // ✅ FIX
+    dto.orderIndex = material.orderIndex;     // ✅ FIX
+    dto.lessonId = material.lesson?.id;       // ✅ FIX: number
+    dto.createdAt = material.createdAt;
     return dto;
   }
 }

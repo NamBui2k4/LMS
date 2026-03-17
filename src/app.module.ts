@@ -1,4 +1,5 @@
 // src/app.module.ts
+
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -6,42 +7,90 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { LoggerModule } from 'nestjs-pino';
 
-// Entities - tất cả chung
+// ── Entities ────────────────────────────────────────────────
 import { User } from './models/user.entity';
-// import { Course } from './entities/course.entity';
-// import { Category } from './entities/category.entity';
-// import { Enrollment } from './entities/enrollment.entity';
-// import { Lesson } from './entities/lesson.entity';
-// import { Material } from './entities/material.entity';
-// import { Quiz } from './entities/quiz.entity';
-// import { Submission } from './entities/submission.entity';
+import { Student } from './models/student.entity';
+import { Lecturer } from './models/lecturers.entity';
+import { Admin } from './models/admins.entity';
+import { Enrollment } from './models/enrollment.entity';
+import { Submission } from './models/submission.entity';
+import { DepartmentHead } from './models/department-heads.entity';
+import { Courses } from './models/courses.entity';
+import { Category } from './models/categories.entity';
+import { Lesson } from './models/lesson.entity';
+import { Material } from './models/material.entity';
+import { Quiz } from './models/quizzes.entity';
+import { QuizQuestion } from './models/quiz-question.entity';
+import { AssignedLecturers } from './models/assigned-lecturers.entity';
 
-// // Controllers - tất cả chung
-// import { AuthController } from './controllers/auth.controller';
+// ── Controllers (đã implement) ──────────────────────────────
 import { UserController } from './controller/user.controller';
-// import { CoursesController } from './controllers/courses.controller';
-// import { LessonsController } from './controllers/lessons.controller';
-// import { QuizzesController } from './controllers/quizzes.controller';
 import { AuthController } from './controller/auth.controller';
 
-// // Services - tất cả chung
-// import { AuthService } from './services/auth.service';
+// ── Services (đã implement) ─────────────────────────────────
 import { UserService } from './services/user.service';
-// import { CoursesService } from './services/courses.service';
-// import { LessonsService } from './services/lessons.service';
-// import { QuizzesService } from './services/quizzes.service';
 import { AuthService } from './services/auth.service';
 
-// // Guards, Strategies...
+// ── Services (TODO: tạo file khi implement feature) ─────────
+import { StudentService }    from './services/student.service';
+import { LecturerService }   from './services/lecturer.service';
+import { CourseService }     from './services/course.service';
+import { CategoryService }   from './services/categories.service';
+import { LessonService }     from './services/lesson.service';
+import { MaterialService }   from './services/material.service';
+import { EnrollmentService } from './services/enrollment.service';
+import { QuizService }       from './services/quiz.service';
+import { SubmissionService } from './services/submissions.service';
+
+// ── Repositories (đã implement) ─────────────────────────────
+import { UserRepository } from './repository/user.repository';
+
+// ── Repositories (TODO: tạo file khi implement feature) ─────
+import { StudentRepository }    from './repository/student.repository';
+import { LecturerRepository }   from './repository/lecturer.repository';
+import { CourseRepository }     from './repository/course.repository';
+import { CategoryRepository }   from './repository/categories.repository';
+import { LessonRepository }     from './repository/lesson.repository';
+import { MaterialRepository }   from './repository/material.repository';
+import { EnrollmentRepository } from './repository/enrollment.repository';
+import { QuizRepository }       from './repository/quiz.repository';
+import { SubmissionRepository } from './repository/submissions.repository';
+
+// ── Auth ────────────────────────────────────────────────────
 import { RolesGuard } from './auth/guard/roles.guard';
 import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
 import { JwtStrategy } from './auth/strategies/jwt.strategy';
+import { StudentController } from './controller/student.controller';
+import { LecturerController } from './controller/lecturer.controller';
+import { CourseController } from './controller/course.controller';
+import { CategoryController } from './controller/categories.controller';
+import { LessonController } from './controller/lesson.controller';
+import { MaterialController } from './controller/material.controller';
+import { EnrollmentController } from './controller/enrollment.controller';
+import { QuizController } from './controller/quiz.controller';
+import { SubmissionController } from './controller/submissions.controller';
 
-// repository
-import { UserRepository } from './repository/user.repository';
+// ── All entities array (dùng cho TypeORM) ───────────────────
+const allEntities = [
+  User,
+  Student,
+  Lecturer,
+  Admin,
+  Enrollment,
+  Submission,
+  DepartmentHead,
+  Courses,
+  Category,
+  Lesson,
+  Material,
+  Quiz,
+  QuizQuestion,
+  AssignedLecturers,
+];
 
 @Module({
   imports: [
+    // ── Logger ──────────────────────────────────────────────
     LoggerModule.forRoot({
       pinoHttp: {
         transport: {
@@ -51,80 +100,113 @@ import { UserRepository } from './repository/user.repository';
             colorize: true,
             levelFirst: true,
             translateTime: 'HH:MM:ss',
-            ignore: 'req,res,responseTime'
+            ignore: 'req,res,responseTime',
           },
         },
         serializers: {
           req: () => undefined,
           res: () => undefined,
         },
-        customSuccessMessage: (req, res, responseTime) => {
-          return `${req.method} ${req.url} - Status: ${res.statusCode} - ${responseTime}ms`;
-        },
-        customErrorMessage: (req, res, err) => {
-          return `FAILED: ${req.method} ${req.url} - Error: ${err.message}`;
-        },
       },
-
     }),
-    ConfigModule.forRoot({ isGlobal: true }),
+
+    // ── Config (global) ─────────────────────────────────────
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+
+    // ── Database ────────────────────────────────────────────
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
+      inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
         host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
+        port: Number(configService.get('DB_PORT')),
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_NAME'), // Ép kiểu string ở đây
-        entities: [User],
-        synchronize: true, // Lưu ý: Chỉ dùng true khi đang phát triển (dev)
-        logging: true,              // Bật ghi log SQL
-        logger: 'advanced-console'
+        database: configService.get<string>('DB_NAME'),
+        entities: allEntities,
+        synchronize: true, // dev only — tắt khi production
+        logging: true,
       }),
-      inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([
-      User,
-      // Course,
-      // Category,
-      // Enrollment,
-      // Lesson,
-      // Material,
-      // Quiz,
-      // Submission
-    ]),
+
+    // ── Feature repositories ────────────────────────────────
+    TypeOrmModule.forFeature(allEntities),
+
+    // ── Auth ────────────────────────────────────────────────
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get('JWT_SECRET'),
-        signOptions: { expiresIn: '15m' },
-      }),
       inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: {
+          expiresIn: '15m',
+        },
+      }),
     }),
   ],
 
+  // ── Controllers ─────────────────────────────────────────────
+  // Thêm controller mới vào đây sau khi tạo file tương ứng
   controllers: [
-    // AuthController,
     UserController,
     AuthController,
-    // CoursesController,
-    // LessonsController,
-    // QuizzesController,
+    StudentController,
+    LecturerController,
+    CourseController,
+    CategoryController,
+    LessonController,
+    MaterialController,
+    EnrollmentController,
+    QuizController,
+    SubmissionController,
   ],
+
+  // ── Providers ───────────────────────────────────────────────
+  // Thêm service + repository mới vào đây sau khi tạo file tương ứng
   providers: [
-    // AuthService,
-    UserService,
-    UserRepository,
-    // CoursesService,
-    // LessonsService,
-    // QuizzesService,
-    AuthService,
+    // Auth
     JwtAuthGuard,
     RolesGuard,
-    JwtStrategy
-    // ... các provider khác
+    JwtStrategy,
+
+    // User
+    UserService,
+    UserRepository,
+
+    // Auth
+    AuthService,
+
+    // TODO: uncomment từng nhóm khi implement xong feature
+    StudentService,
+    StudentRepository,
+
+    LecturerService,
+    LecturerRepository,
+
+    CourseService,
+    CourseRepository,
+
+    CategoryService,
+    CategoryRepository,
+
+    LessonService,
+    LessonRepository,
+
+    MaterialService,
+    MaterialRepository,
+
+    EnrollmentService,
+    EnrollmentRepository,
+
+    QuizService,
+    QuizRepository,
+
+    SubmissionService,
+    SubmissionRepository,
   ],
 })
-export class AppModule { }
+export class AppModule {}

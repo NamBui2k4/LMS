@@ -4,20 +4,27 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Student } from '../models/student.entity';
 import { AccountStatus } from '../common/enums/account-status.enum';
 
+/**
+ * ✅ FIX: Students PK là `userId` (maps to DB column `user_id`)
+ *         Trước đây nhiều method dùng `id` → TypeORM không tìm được cột đúng.
+ *
+ * ✅ FIX: Bỏ relations ['createdCourses'] — Student không có property này trong entity mới
+ * ✅ FIX: AccountStatus.BANNED (không còn SUSPENDED)
+ * ✅ FIX: select dùng đúng property name của entity (userId, không phải id)
+ */
 @Injectable()
 export class StudentRepository {
   constructor(
     @InjectRepository(Student)
     private readonly studentRepo: Repository<Student>,
     private readonly dataSource: DataSource,
-  ) { }
+  ) {}
 
-  // Tìm user theo email (thường dùng cho login)
   async findByEmail(email: string): Promise<Student | null> {
     return this.studentRepo.findOne({
       where: { email },
       select: {
-        id: true,
+        userId: true,    // ✅ FIX: userId (không phải id)
         email: true,
         fullname: true,
         avatarUrl: true,
@@ -27,45 +34,40 @@ export class StudentRepository {
     });
   }
 
-  // Tìm user theo id, kèm một số relation nếu cần
-  async findByIdWithRelations(id: string): Promise<Student | null> {
+  async findById(userId: number): Promise<Student | null> {
     return this.studentRepo.findOne({
-      where: { id: id },
-      relations: ['enrollments', 'createdCourses', 'submissions'],
+      // ✅ FIX: where dùng userId (PK đúng)
+      where: { userId },
+      relations: ['user', 'enrollments'],
     });
   }
 
-  // Tìm tất cả user theo role (ví dụ: lấy tất cả giảng viên)
-  async findByRole(status: AccountStatus): Promise<Student[]> {
+  async findByIdWithRelations(userId: number): Promise<Student | null> {
+    return this.studentRepo.findOne({
+      where: { userId }, // ✅ FIX
+      relations: ['enrollments', 'submissions'],
+    });
+  }
+
+  async findByStatus(status: AccountStatus): Promise<Student[]> {
     return this.studentRepo.find({
       where: { status },
       order: { fullname: 'ASC' },
     });
   }
 
-  // Tìm sinh viên theo email
-  async findByIdEmail(email: string): Promise<Student | null> {
-    return this.studentRepo.findOne({
-      where: { email, },
-      select: ['id', 'email', 'fullname', 'avatarUrl', 'googleId'],
-    });
-  }
-
-  async updateStatus(id: string, status: AccountStatus): Promise<Student | null> {
-    // Cú pháp đúng: update(điều kiện, { các trường cần sửa })
-    await this.studentRepo.update(id, { status });
-    return this.studentRepo.findOne({ where: { id } });
+  async updateStatus(userId: number, status: AccountStatus): Promise<Student | null> {
+    // ✅ FIX: update theo userId (PK đúng)
+    await this.studentRepo.update({ userId }, { status });
+    return this.findById(userId);
   }
 
   async findAllPaginated(page: number = 1, limit: number = 10) {
-    // 1. Thực hiện truy vấn findAndCount
     const [data, total] = await this.studentRepo.findAndCount({
       skip: (page - 1) * limit,
       take: limit,
-      order: { createdAt: 'DESC' } as any, // Ép kiểu nếu TS báo lỗi với createdAt
+      order: { createdAt: 'DESC' },
     });
-
-    // 2. Tính toán metadata ngay tại đây
     return {
       data,
       meta: {
@@ -77,20 +79,9 @@ export class StudentRepository {
     };
   }
 
-  async findById(id: string): Promise<Student | null> {
-    return await this.studentRepo.findOne({
-      where: { id } as any,
-      // Tự động JOIN với bảng User để lấy Email, Role...
-      // Và bảng Enrollments để lấy danh sách khóa học
-      relations: ['user', 'enrollments'], 
-    });
-  }
-
-  // [MỚI] Tìm học viên kèm danh sách khóa học đã ghi danh (đầy đủ thông tin khóa học)
-  // Phục vụ chức năng "Xem danh sách khóa học của học viên"
-  async findByIdWithEnrollments(id: string): Promise<Student | null> {
+  async findByIdWithEnrollments(userId: number): Promise<Student | null> {
     return this.studentRepo.findOne({
-      where: { id } as any,
+      where: { userId }, // ✅ FIX
       relations: [
         'enrollments',
         'enrollments.course',
@@ -100,11 +91,9 @@ export class StudentRepository {
     });
   }
 
-  // [MỚI] Tìm học viên kèm danh sách bài nộp
-  // Phục vụ chức năng xem lịch sử làm bài của học viên
-  async findByIdWithSubmissions(id: string): Promise<Student | null> {
+  async findByIdWithSubmissions(userId: number): Promise<Student | null> {
     return this.studentRepo.findOne({
-      where: { id } as any,
+      where: { userId }, // ✅ FIX
       relations: [
         'submissions',
         'submissions.quiz',
@@ -114,9 +103,38 @@ export class StudentRepository {
     });
   }
 
-  // [MỚI] Cập nhật thông tin hồ sơ học viên
-  async update(id: string, data: Partial<Student>): Promise<Student | null> {
-    await this.studentRepo.update(id, data as any);
-    return this.findById(id);
+  async update(userId: number, data: Partial<Student>): Promise<Student | null> {
+    await this.studentRepo.update({ userId }, data as any); // ✅ FIX
+    return this.findById(userId);
+  }
+
+  async createWithTransaction(data: {
+    fullname: string;
+    email: string;
+    passwordHash: string;
+    phone?: string | null;
+  }): Promise<Student> {
+    return this.dataSource.transaction(async (manager) => {
+      // Bước 1: Insert vào bảng users
+      const userResult = await manager.query(
+        `INSERT INTO users (email, password_hash, role, is_active)
+         VALUES ($1, $2, 'STUDENT', true) RETURNING id`,
+        [data.email, data.passwordHash],
+      );
+      const userId = Number(userResult[0].id);
+
+      // Bước 2: Insert vào bảng students
+      // ✅ null → undefined để tránh TypeORM type error
+      const student = manager.create(Student, {
+        userId,
+        fullname: data.fullname,
+        email: data.email,
+        //passwordHash: data.passwordHash,
+        status: AccountStatus.ACTIVE,
+        phone: data.phone ?? undefined,
+      });
+
+      return manager.save(Student, student);
+    });
   }
 }

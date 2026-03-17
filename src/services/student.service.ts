@@ -1,92 +1,97 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
-import { Student } from 'src/models/student.entity';
-import { UpdateStudentDto } from 'src/dto/student.dto';
-import { AccountStatus } from 'src/common/enums/account-status.enum';
-import { emit } from 'process';
-import { StudentRepository } from 'src/repository/student.repository';
-import { UserRepository } from 'src/repository/user.repository';
-import { Enrollment } from 'src/models/enrollment.entity';
-import { Submission } from 'src/models/submission.entity';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
+import { Student } from '../models/student.entity';
+import { UpdateStudentDto } from '../dto/student.dto';
+import { AccountStatus } from '../common/enums/account-status.enum';
+import { StudentRepository } from '../repository/student.repository';
+import { UserRepository } from '../repository/user.repository';
+import { Enrollment } from '../models/enrollment.entity';
+import { Submission } from '../models/submission.entity';
 
 @Injectable()
 export class StudentService {
   constructor(
-    private readonly studenRepo: StudentRepository,
-    private readonly userRepo: UserRepository
+    private readonly studentRepo: StudentRepository,
+    private readonly userRepo: UserRepository,
   ) {}
 
-  // 1. Dành cho Admin: Lấy danh sách học viên (có phân trang cơ bản)
   async findAll(page: number = 1, limit: number = 10) {
-    const {data, meta} = await this.studenRepo.findAllPaginated(page, limit);
-
-    return {
-      data,
-      meta
-    };
+    return this.studentRepo.findAllPaginated(page, limit);
   }
 
-  // 2. Dành cho cả Admin & Student: Xem chi tiết hồ sơ
-  async findOne(id: string): Promise<Student> {
-    const student = await this.studenRepo.findById(id);
+  // ✅ FIX: id là number (userId — PK bigint)
+  async findOne(userId: number): Promise<Student> {
+    const student = await this.studentRepo.findById(userId);
     if (!student) throw new NotFoundException('Không tìm thấy học viên.');
     return student;
   }
 
-  // 3. Dành cho Student: Tự cập nhật thông tin cá nhân
-  async updateProfile(id: string, updateDto: UpdateStudentDto) {
-    const student = await this.findOne(id);
+  async updateProfile(userId: number, updateDto: UpdateStudentDto): Promise<Student> {
+    const student = await this.findOne(userId);
 
-  // 2. Xử lý cập nhật Email (Nếu có và nếu khác email cũ)
-  if (updateDto.email && updateDto.email !== student.email) {
-    // Gọi UserService để thực hiện logic kiểm tra trùng và update ở bảng Users
-    // Giả sử updateEmailUser trả về user đã update hoặc throw lỗi nếu trùng
-    await this.userRepo.updateEmailById(id, updateDto.email);
-    
-    // Cập nhật luôn email ở bảng Student để đồng bộ dữ liệu (vì bạn đang để email ở cả 2 bảng)
-    student.email = updateDto.email;
-  }
-
-  // 3. Cập nhật các thông tin còn lại của Student
-  // Loại bỏ email ra khỏi object để không ghi đè lại nếu đã xử lý ở trên
-  const { email, ...otherInfo } = updateDto;
-  
-  // Gán các giá trị mới vào entity student
-  Object.assign(student, otherInfo);
-
-  // 4. Lưu vào database
-  return student;
-  }
-
-  // 4. Xử lý vi phạm (Ban/Unban) dành cho giảng viên
-  async updateAccountStatus(id: string, status: AccountStatus, reason?: string) {
-    let student: Student | null = null;
-    
-    if (AccountStatus.SUSPENDED) student = await this.studenRepo.updateStatus(id, status);
-    if(!student){
-        throw new NotFoundException("student not found");
+    // Nếu đổi email → cập nhật cả bảng users (để đồng bộ)
+    if (updateDto.email && updateDto.email !== student.email) {
+      // ✅ FIX: truyền userId dạng string vì UserRepository dùng string id
+      await this.userRepo.updateEmailById(String(userId), updateDto.email);
     }
-    return student;
+
+    const { email, ...otherInfo } = updateDto;
+    const updated = await this.studentRepo.update(userId, {
+      ...otherInfo,
+      ...(email && { email }),
+    });
+    return updated!;
   }
 
-  // [MỚI] Xem danh sách khóa học mà học viên đã ghi danh
-  // Phục vụ chức năng "Xem khóa học của học viên" cho Giảng viên / Trưởng bộ môn
-  async getEnrollments(id: string): Promise<Enrollment[]> {
-    const student = await this.studenRepo.findByIdWithEnrollments(id);
+  /**
+   * Cập nhật trạng thái tài khoản (active / inactive / banned)
+   * ✅ FIX: AccountStatus.BANNED (không còn SUSPENDED)
+   */
+  async updateAccountStatus(
+    userId: number,
+    status: AccountStatus,
+    reason?: string,
+  ): Promise<Student> {
+    // Validate: chỉ cho phép set BANNED, ACTIVE, INACTIVE
+    if (!Object.values(AccountStatus).includes(status)) {
+      throw new BadRequestException(`Trạng thái không hợp lệ: ${status}`);
+    }
+
+    const updated = await this.studentRepo.updateStatus(userId, status);
+    if (!updated) throw new NotFoundException('Không tìm thấy học viên.');
+
+    // Đồng bộ isActive trên bảng users
+    const isActive = status === AccountStatus.ACTIVE;
+    await this.userRepo.updateStatus(String(userId), isActive);
+
+    return updated;
+  }
+
+  async getEnrollments(userId: number): Promise<Enrollment[]> {
+    const student = await this.studentRepo.findByIdWithEnrollments(userId);
     if (!student) throw new NotFoundException('Không tìm thấy học viên.');
     return student.enrollments ?? [];
   }
 
-  // [MỚI] Xem lịch sử bài nộp của học viên
-  // Phục vụ chức năng "Xem lịch sử làm bài" cho Giảng viên / Trưởng bộ môn hoặc chính học viên
-  async getSubmissions(id: string): Promise<Submission[]> {
-    const student = await this.studenRepo.findByIdWithSubmissions(id);
+  async getSubmissions(userId: number): Promise<Submission[]> {
+    const student = await this.studentRepo.findByIdWithSubmissions(userId);
     if (!student) throw new NotFoundException('Không tìm thấy học viên.');
     return student.submissions ?? [];
   }
 
-  // [MỚI] Kiểm tra quyền: học viên chỉ được xem/sửa dữ liệu của chính mình
-  // Được gọi từ controller sau khi decode JWT để lấy requesterId
-  async assertIsOwnerOrStaff(targetId: string, requesterId: string, requesterRole: string): Promise<void> {
+  /**
+   * Kiểm tra quyền: học viên chỉ được xem/sửa dữ liệu của chính mình
+   * ✅ FIX: so sánh number với number (userId)
+   */
+  async assertIsOwnerOrStaff(
+    targetId: number,
+    requesterId: number,
+    requesterRole: string,
+  ): Promise<void> {
     const staffRoles = ['LECTURER', 'HEAD_OF_DEPARTMENT', 'ADMIN'];
     if (targetId !== requesterId && !staffRoles.includes(requesterRole)) {
       throw new ForbiddenException('Bạn không có quyền truy cập thông tin của học viên khác.');

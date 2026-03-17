@@ -1,10 +1,10 @@
+// DB: CREATE TYPE course_status AS ENUM ('draft', 'pending', 'published', 'closed', 'archived');
+// LƯU Ý: Các giá trị PLANNED_TO_OPEN, OPEN_FOR_ENROLLMENT, CANCELLED không tồn tại trong DB.
+// Quy trình SRS: draft → pending → published → closed / archived
 export enum CourseStatus {
-  DRAFT = 'draft',
-  PENDING = 'pending',
+  DRAFT     = 'draft',
+  PENDING   = 'pending',
   PUBLISHED = 'published',
-  CLOSED = 'closed',
-  ARCHIVED = 'archived',
-  PLANNED_TO_OPEN = "PLANNED_TO_OPEN",
-  OPEN_FOR_ENROLLMENT = "OPEN_FOR_ENROLLMENT",
-  CANCELLED = "CANCELLED"
+  CLOSED    = 'closed',
+  ARCHIVED  = 'archived',
 }

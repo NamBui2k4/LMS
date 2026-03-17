@@ -1,0 +1,159 @@
+<%- include('../partials/header', { title: 'Khóa học', activePage: 'courses' }) %>
+<%- include('../partials/sidebar') %>
+
+<div class="main-content">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="breadcrumb">
+        <a href="/dashboard">Trang chủ</a><span>/</span>
+        <span class="current">Khóa học</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Khóa học</div>
+      <div class="page-subtitle">Quản lý toàn bộ khóa học trong hệ thống</div>
+    </div>
+    <button class="btn btn-primary" onclick="LMS.modal.open('createCourseModal')">
+      <i class="fa-solid fa-plus"></i> Tạo khóa học
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="card" style="margin-bottom:20px;padding:14px 20px">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="searchInput" placeholder="Tìm khóa học..." oninput="filterCourses()" />
+      </div>
+      <select id="statusFilter" class="form-control" style="width:160px" onchange="filterCourses()">
+        <option value="">Tất cả trạng thái</option>
+        <option value="draft">Draft</option>
+        <option value="pending">Chờ duyệt</option>
+        <option value="published">Đã xuất bản</option>
+        <option value="rejected">Bị từ chối</option>
+        <option value="archived">Lưu trữ</option>
+      </select>
+      <button class="btn btn-secondary" onclick="loadCourses()"><i class="fa-solid fa-rotate"></i></button>
+    </div>
+  </div>
+
+  <!-- Cards grid -->
+  <div id="courseGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:18px">
+    <div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text-muted)">
+      <i class="fa-solid fa-spinner fa-spin" style="font-size:28px;margin-bottom:12px;display:block"></i> Đang tải...
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Create Course -->
+<div class="modal-overlay" id="createCourseModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-book-open" style="color:var(--accent);margin-right:8px"></i>Tạo khóa học mới</div>
+      <button class="modal-close" onclick="LMS.modal.close('createCourseModal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tên khóa học <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="courseTitle" class="form-control" placeholder="VD: Lập trình Python cơ bản" maxlength="255" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mô tả</label>
+      <textarea id="courseDesc" class="form-control" placeholder="Mô tả ngắn về khóa học..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Danh mục</label>
+      <select id="courseCatId" class="form-control">
+        <option value="">— Chọn danh mục —</option>
+      </select>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="LMS.modal.close('createCourseModal')">Hủy</button>
+      <button class="btn btn-primary" onclick="createCourse()"><i class="fa-solid fa-plus"></i> Tạo</button>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
+
+<script>
+const statusConfig = {
+  draft:     { label:'Draft',        color:'badge-gray',   icon:'fa-file' },
+  pending:   { label:'Chờ duyệt',    color:'badge-yellow', icon:'fa-clock' },
+  published: { label:'Đã xuất bản',  color:'badge-green',  icon:'fa-circle-check' },
+  rejected:  { label:'Bị từ chối',   color:'badge-red',    icon:'fa-circle-xmark' },
+  archived:  { label:'Lưu trữ',      color:'badge-gray',   icon:'fa-box-archive' },
+};
+
+let allCourses = [];
+
+async function loadCourses() {
+  document.getElementById('courseGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin" style="font-size:28px;margin-bottom:12px;display:block"></i> Đang tải...</div>';
+  try {
+    allCourses = await LMS.api.get('/courses');
+    renderCourses(allCourses);
+  } catch(e) {
+    document.getElementById('courseGrid').innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><i class="fa-solid fa-circle-xmark"></i><p>${e.message}</p></div></div>`;
+  }
+}
+
+function filterCourses() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const s = document.getElementById('statusFilter').value;
+  renderCourses(allCourses.filter(c =>
+    (!q || c.title.toLowerCase().includes(q)) &&
+    (!s || c.status === s)
+  ));
+}
+
+function renderCourses(courses) {
+  const grid = document.getElementById('courseGrid');
+  if (!courses.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1"><div class="empty-state"><i class="fa-solid fa-book-open"></i><p>Không có khóa học nào</p></div></div>';
+    return;
+  }
+  grid.innerHTML = courses.map(c => {
+    const st = statusConfig[c.status] || { label:c.status, color:'badge-gray', icon:'fa-question' };
+    return `<div class="card" style="cursor:pointer;transition:all .2s;border-color:var(--border)" onmouseenter="this.style.borderColor='var(--accent)';this.style.transform='translateY(-2px)'" onmouseleave="this.style.borderColor='var(--border)';this.style.transform='none'" onclick="window.location.href='/courses/${c.id}'">
+      <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:12px">
+        <span class="badge ${st.color}"><i class="fa-solid ${st.icon}"></i> ${st.label}</span>
+        <span style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono)">#${c.id}</span>
+      </div>
+      <div style="font-size:15px;font-weight:700;color:var(--text-primary);margin-bottom:8px;line-height:1.3">${c.title}</div>
+      <div style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${c.description || 'Chưa có mô tả'}</div>
+      <div style="display:flex;gap:12px;font-size:11px;color:var(--text-muted);padding-top:14px;border-top:1px solid var(--border)">
+        <span><i class="fa-solid fa-tag" style="margin-right:4px"></i>${c.categoryName || '—'}</span>
+        <span style="margin-left:auto"><i class="fa-solid fa-user" style="margin-right:4px"></i>${c.createdByName || '—'}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function loadCategories() {
+  try {
+    const cats = await LMS.api.get('/categories');
+    const sel = document.getElementById('courseCatId');
+    cats.forEach(c => sel.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+  } catch(e) {}
+}
+
+async function createCourse() {
+  try {
+    const body = {
+      title: document.getElementById('courseTitle').value,
+      description: document.getElementById('courseDesc').value || undefined,
+      categoryId: parseInt(document.getElementById('courseCatId').value) || undefined,
+    };
+    if (!body.title) { LMS.toast('Vui lòng nhập tên khóa học', 'warning'); return; }
+    const course = await LMS.api.post('/courses', body);
+    LMS.toast('Tạo khóa học thành công!', 'success');
+    LMS.modal.close('createCourseModal');
+    setTimeout(() => window.location.href = `/courses/${course.id}`, 800);
+  } catch(e) { LMS.toast(e.message, 'error'); }
+}
+
+loadCourses();
+loadCategories();
+</script>

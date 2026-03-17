@@ -1,0 +1,277 @@
+<%- include('../partials/header', { title: 'Chi tiết khóa học', activePage: 'courses' }) %>
+<%- include('../partials/sidebar') %>
+
+<div class="main-content">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="breadcrumb">
+        <a href="/dashboard">Trang chủ</a><span>/</span>
+        <a href="/courses">Khóa học</a><span>/</span>
+        <span class="current" id="breadcrumbTitle">Chi tiết</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="courseContent" style="color:var(--text-muted);text-align:center;padding:80px">
+    <i class="fa-solid fa-spinner fa-spin" style="font-size:32px;margin-bottom:16px;display:block"></i> Đang tải khóa học...
+  </div>
+</div>
+
+<!-- Modal: Đổi trạng thái -->
+<div class="modal-overlay" id="statusModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-toggle-on" style="color:var(--accent);margin-right:8px"></i>Thay đổi trạng thái</div>
+      <button class="modal-close" onclick="LMS.modal.close('statusModal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Trạng thái mới</label>
+      <select id="newStatus" class="form-control">
+        <option value="draft">Draft</option>
+        <option value="pending">Chờ duyệt</option>
+        <option value="published">Đã xuất bản</option>
+        <option value="rejected">Từ chối</option>
+        <option value="archived">Lưu trữ</option>
+      </select>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="LMS.modal.close('statusModal')">Hủy</button>
+      <button class="btn btn-primary" onclick="changeStatus()"><i class="fa-solid fa-floppy-disk"></i> Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Phân công giảng viên -->
+<div class="modal-overlay" id="assignModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-chalkboard-user" style="color:var(--accent);margin-right:8px"></i>Phân công giảng viên</div>
+      <button class="modal-close" onclick="LMS.modal.close('assignModal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ID Giảng viên <span style="color:var(--danger)">*</span></label>
+      <input type="number" id="assignLecturerId" class="form-control" placeholder="Nhập ID giảng viên" min="1" />
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="LMS.modal.close('assignModal')">Hủy</button>
+      <button class="btn btn-primary" onclick="assignLecturer()"><i class="fa-solid fa-check"></i> Phân công</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Thêm học viên -->
+<div class="modal-overlay" id="enrollModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-user-plus" style="color:var(--accent);margin-right:8px"></i>Thêm học viên vào khóa học</div>
+      <button class="modal-close" onclick="LMS.modal.close('enrollModal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">ID Học viên <span style="color:var(--danger)">*</span></label>
+      <input type="number" id="enrollStudentId" class="form-control" placeholder="Nhập ID học viên" min="1" />
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="LMS.modal.close('enrollModal')">Hủy</button>
+      <button class="btn btn-primary" onclick="enrollStudent()"><i class="fa-solid fa-check"></i> Thêm vào</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Thêm bài giảng -->
+<div class="modal-overlay" id="lessonModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-file-alt" style="color:var(--accent);margin-right:8px"></i>Thêm bài giảng</div>
+      <button class="modal-close" onclick="LMS.modal.close('lessonModal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tiêu đề bài giảng <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="lessonTitle" class="form-control" placeholder="VD: Giới thiệu về Python" maxlength="255" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nội dung</label>
+      <textarea id="lessonContent" class="form-control" placeholder="Nội dung bài giảng..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Thứ tự</label>
+      <input type="number" id="lessonOrder" class="form-control" placeholder="1" min="1" value="1" />
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="LMS.modal.close('lessonModal')">Hủy</button>
+      <button class="btn btn-primary" onclick="createLesson()"><i class="fa-solid fa-plus"></i> Thêm</button>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
+
+<script>
+const courseId = window.location.pathname.split('/')[2];
+const statusConfig = {
+  draft:     { label:'Draft',        color:'badge-gray',   icon:'fa-file' },
+  pending:   { label:'Chờ duyệt',    color:'badge-yellow', icon:'fa-clock' },
+  published: { label:'Đã xuất bản',  color:'badge-green',  icon:'fa-circle-check' },
+  rejected:  { label:'Bị từ chối',   color:'badge-red',    icon:'fa-circle-xmark' },
+  archived:  { label:'Lưu trữ',      color:'badge-gray',   icon:'fa-box-archive' },
+};
+let currentCourse = null;
+
+async function loadCourse() {
+  try {
+    const [course, lessons, enrollments, assignedLecturers] = await Promise.allSettled([
+      LMS.api.get(`/courses/${courseId}`),
+      LMS.api.get(`/courses/${courseId}/lessons`),
+      LMS.api.get(`/courses/${courseId}/enrollments`),
+      LMS.api.get(`/courses/${courseId}/assigned-lecturers`),
+    ]);
+    currentCourse = course.value;
+    const st = statusConfig[currentCourse.status] || { label:currentCourse.status, color:'badge-gray', icon:'fa-question' };
+    document.getElementById('breadcrumbTitle').textContent = currentCourse.title;
+
+    document.getElementById('courseContent').innerHTML = `
+      <!-- Header -->
+      <div style="display:flex;align-items:start;justify-content:space-between;margin-bottom:28px;gap:16px;flex-wrap:wrap">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+            <span class="badge ${st.color}"><i class="fa-solid ${st.icon}"></i> ${st.label}</span>
+            ${currentCourse.categoryName ? `<span class="badge badge-blue"><i class="fa-solid fa-tag"></i> ${currentCourse.categoryName}</span>` : ''}
+          </div>
+          <div class="page-title">${currentCourse.title}</div>
+          <div class="page-subtitle">${currentCourse.description || 'Chưa có mô tả'}</div>
+          <div style="margin-top:10px;font-size:12px;color:var(--text-muted)">
+            <i class="fa-solid fa-user" style="margin-right:5px"></i>Tạo bởi: <strong style="color:var(--text-secondary)">${currentCourse.createdByName || '—'}</strong>
+            &nbsp;·&nbsp;
+            <i class="fa-solid fa-calendar" style="margin-right:5px"></i>${new Date(currentCourse.createdAt).toLocaleDateString('vi-VN')}
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-secondary" onclick="LMS.modal.open('statusModal');document.getElementById('newStatus').value='${currentCourse.status}'">
+            <i class="fa-solid fa-toggle-on"></i> Đổi trạng thái
+          </button>
+          <button class="btn btn-secondary" onclick="LMS.modal.open('assignModal')">
+            <i class="fa-solid fa-chalkboard-user"></i> Phân công GV
+          </button>
+          <button class="btn btn-secondary" onclick="LMS.modal.open('enrollModal')">
+            <i class="fa-solid fa-user-plus"></i> Thêm HV
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabs content -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <!-- Lessons -->
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div class="card-title" style="margin-bottom:0"><i class="fa-solid fa-file-alt" style="color:var(--accent)"></i> Bài giảng (${lessons.value?.length || 0})</div>
+            <button class="btn btn-primary btn-sm" onclick="LMS.modal.open('lessonModal')"><i class="fa-solid fa-plus"></i> Thêm</button>
+          </div>
+          <div id="lessonsList">
+            ${(lessons.value || []).length ? lessons.value.map(l => `
+              <a href="/courses/${courseId}/lessons/${l.id}" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:8px;background:var(--bg-surface);border:1px solid var(--border);margin-bottom:8px;color:var(--text-primary);text-decoration:none;transition:all .15s" onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
+                <div style="display:flex;align-items:center;gap:10px">
+                  <span style="width:24px;height:24px;border-radius:6px;background:var(--accent-glow);color:var(--accent);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center">${l.order || '—'}</span>
+                  <span style="font-size:13px;font-weight:500">${l.title}</span>
+                </div>
+                <span style="font-size:11px;color:var(--text-muted)"><i class="fa-solid fa-paperclip" style="margin-right:4px"></i>${l.materialCount || 0}</span>
+              </a>`).join('') : '<div class="empty-state" style="padding:30px"><i class="fa-solid fa-file-alt"></i><p>Chưa có bài giảng</p></div>'}
+          </div>
+        </div>
+
+        <!-- Enrolled students -->
+        <div class="card">
+          <div class="card-title"><i class="fa-solid fa-users" style="color:var(--success)"></i> Học viên (${enrollments.value?.length || 0})</div>
+          <div id="enrollmentsList">
+            ${(enrollments.value || []).length ? enrollments.value.slice(0,6).map(e => `
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#7c3aed);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff">${(e.student?.fullname || e.studentId || 'S')[0]}</div>
+                  <span style="font-size:13px;font-weight:500">${e.student?.fullname || 'Học viên #' + e.studentId}</span>
+                </div>
+                <span class="badge badge-green" style="font-size:10px">${e.status || 'active'}</span>
+              </div>`).join('') : '<div class="empty-state" style="padding:30px"><i class="fa-solid fa-users"></i><p>Chưa có học viên</p></div>'}
+          </div>
+        </div>
+
+        <!-- Assigned lecturers -->
+        <div class="card">
+          <div class="card-title"><i class="fa-solid fa-chalkboard-user" style="color:#a78bfa)"></i> Giảng viên phụ trách</div>
+          <div>
+            ${(assignedLecturers.value || []).length ? assignedLecturers.value.map(al => `
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,var(--accent));display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff">${(al.lecturer?.fullname || 'L')[0]}</div>
+                  <span style="font-size:13px;font-weight:500">${al.lecturer?.fullname || 'GV #' + al.lecturerId}</span>
+                </div>
+                <button class="btn btn-danger btn-sm btn-icon" onclick="unassign(${al.lecturerId})" title="Hủy phân công"><i class="fa-solid fa-xmark"></i></button>
+              </div>`).join('') : '<div class="empty-state" style="padding:30px"><i class="fa-solid fa-chalkboard-user"></i><p>Chưa phân công giảng viên</p></div>'}
+          </div>
+        </div>
+
+        <!-- Review note -->
+        ${currentCourse.reviewNote ? `<div class="card">
+          <div class="card-title"><i class="fa-solid fa-comment-dots" style="color:var(--warning)"></i> Ghi chú phê duyệt</div>
+          <div style="padding:12px;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.2);border-radius:8px;font-size:13px;color:var(--text-secondary);line-height:1.6">${currentCourse.reviewNote}</div>
+        </div>` : ''}
+      </div>`;
+  } catch(e) {
+    document.getElementById('courseContent').innerHTML = `<div class="empty-state"><i class="fa-solid fa-circle-xmark"></i><p>${e.message}</p></div>`;
+  }
+}
+
+async function changeStatus() {
+  try {
+    const status = document.getElementById('newStatus').value;
+    await LMS.api.patch(`/courses/${courseId}/status`, { status });
+    LMS.toast('Đổi trạng thái thành công!', 'success');
+    LMS.modal.close('statusModal');
+    loadCourse();
+  } catch(e) { LMS.toast(e.message, 'error'); }
+}
+
+async function assignLecturer() {
+  try {
+    const lecturerId = parseInt(document.getElementById('assignLecturerId').value);
+    if (!lecturerId) { LMS.toast('Vui lòng nhập ID giảng viên', 'warning'); return; }
+    await LMS.api.post(`/courses/${courseId}/assigned-lecturers`, { lecturerId });
+    LMS.toast('Phân công thành công!', 'success');
+    LMS.modal.close('assignModal');
+    loadCourse();
+  } catch(e) { LMS.toast(e.message, 'error'); }
+}
+
+async function unassign(lecturerId) {
+  if (!LMS.confirm('Hủy phân công giảng viên này?')) return;
+  try {
+    await LMS.api.delete(`/courses/${courseId}/assigned-lecturers/${lecturerId}`);
+    LMS.toast('Đã hủy phân công!', 'success');
+    loadCourse();
+  } catch(e) { LMS.toast(e.message, 'error'); }
+}
+
+async function enrollStudent() {
+  try {
+    const studentId = parseInt(document.getElementById('enrollStudentId').value);
+    if (!studentId) { LMS.toast('Vui lòng nhập ID học viên', 'warning'); return; }
+    await LMS.api.post(`/courses/${courseId}/enrollments`, { studentId });
+    LMS.toast('Thêm học viên thành công!', 'success');
+    LMS.modal.close('enrollModal');
+    loadCourse();
+  } catch(e) { LMS.toast(e.message, 'error'); }
+}
+
+async function createLesson() {
+  try {
+    const title = document.getElementById('lessonTitle').value;
+    if (!title) { LMS.toast('Vui lòng nhập tiêu đề bài giảng', 'warning'); return; }
+    const lesson = await LMS.api.post(`/courses/${courseId}/lessons`, {
+      title, content: document.getElementById('lessonContent').value || undefined,
+      order: parseInt(document.getElementById('lessonOrder').value) || 1,
+    });
+    LMS.toast('Thêm bài giảng thành công!', 'success');
+    LMS.modal.close('lessonModal');
+    setTimeout(() => window.location.href = `/courses/${courseId}/lessons/${lesson.id}`, 800);
+  } catch(e) { LMS.toast(e.message, 'error'); }
+}
+
+loadCourse();
+</script>

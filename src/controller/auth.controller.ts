@@ -1,5 +1,5 @@
 import { Controller, Post, Body, HttpCode, HttpStatus, Res, Req } from '@nestjs/common';
-import { type Response, type Request } from 'express'; // <-- NHẬP ĐÚNG TỪ EXPRESS
+import { type Response, type Request } from 'express';
 import { AuthService } from '../services/auth.service';
 import { UnauthorizedException } from '@nestjs/common';
 
@@ -7,36 +7,47 @@ import { UnauthorizedException } from '@nestjs/common';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  // ✅ THÊM: Đăng ký Student
+  @Post('register')
+  @HttpCode(HttpStatus.CREATED)
+  async register(
+    @Body() dto: {
+      fullname: string;
+      email: string;
+      password: string;
+      phone?: string;
+    },
+  ) {
+    return this.authService.register(dto);
+  }
+
+  // ✅ FIX: Xóa duplicate @Post('login') và @HttpCode
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @Post('login')
-  @HttpCode(HttpStatus.OK)
-  async login(@Body() loginDto: any, @Res({ passthrough: true }) response: Response) {
+  async login(
+    @Body() loginDto: any,
+    @Res({ passthrough: true }) response: Response,
+  ) {
     const user = await this.authService.validateUser(loginDto.email, loginDto.password);
     const { accessToken, refreshToken } = await this.authService.generateTokens(user);
 
-    // Ép kiểu response về Response của express để nhận diện hàm .cookie()
-    const expressResponse = response as Response; 
-
-    expressResponse.cookie('refreshToken', refreshToken, {
-      httpOnly: true, // Bảo mật XSS
-      secure: true,   // Chỉ gửi qua HTTPS
-      sameSite: 'strict', // Chống CSRF
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 ngày
+    response.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // ✅ FIX: false ở dev → test Postman được
+      sameSite: 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    return { accessToken }; // Chỉ trả về access token ở body
+    return { accessToken };
   }
 
   @Post('refresh')
   async refreshToken(@Req() request: Request) {
-    // Lấy token từ header "Authorization: Bearer <token>"
     const authHeader = request.headers.authorization;
     if (!authHeader) {
       throw new UnauthorizedException('Không tìm thấy token');
     }
-    const refreshToken = authHeader.split(' ')[1]; // Lấy phần token sau chữ 'Bearer'
-    
+    const refreshToken = authHeader.split(' ')[1];
     return this.authService.refresh(refreshToken);
   }
 }

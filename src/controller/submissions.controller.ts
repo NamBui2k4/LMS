@@ -31,7 +31,7 @@ export class SubmissionController {
    * Danh sách bài nộp của quiz (Giảng viên xem)
    */
   @Get('quizzes/:quizId/submissions')
-  @Roles(UserRole.LECTURER, UserRole.DEPARTMENT_HEAD)
+  @Roles(UserRole.LECTURER, UserRole.HEAD_OF_DEPARTMENT)
   async findByQuiz(@Param('quizId', ParseIntPipe) quizId: number) {
     return this.submissionService.findByQuiz(quizId);
   }
@@ -41,7 +41,7 @@ export class SubmissionController {
    * Chi tiết một bài nộp
    */
   @Get('submissions/:id')
-  @Roles(UserRole.LECTURER, UserRole.DEPARTMENT_HEAD, UserRole.STUDENT)
+  @Roles(UserRole.LECTURER, UserRole.HEAD_OF_DEPARTMENT, UserRole.STUDENT)
   async findOne(@Param('id', ParseIntPipe) id: number) {
     return this.submissionService.findOne(id);
   }

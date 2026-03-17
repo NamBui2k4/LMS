@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Đăng nhập — EduLMS</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg-deep: #0d0f14; --bg-surface: #13161d; --bg-card: #1a1e28;
+      --border: #252a38; --border-light: #2e3548;
+      --text-primary: #e8eaf2; --text-secondary: #8b90a7; --text-muted: #555c73;
+      --accent: #4f8ef7; --accent-light: #6ea8ff; --accent-glow: rgba(79,142,247,0.18);
+      --success: #34d399; --danger: #f87171;
+      --font-main: 'Be Vietnam Pro', sans-serif; --font-mono: 'JetBrains Mono', monospace;
+    }
+    html, body { height: 100%; background: var(--bg-deep); color: var(--text-primary); font-family: var(--font-main); -webkit-font-smoothing: antialiased; }
+    .login-wrap {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(79,142,247,0.08) 0%, transparent 70%);
+      padding: 24px;
+    }
+    .login-box {
+      width: 100%; max-width: 420px;
+      background: var(--bg-card); border: 1px solid var(--border-light);
+      border-radius: 20px; padding: 44px 40px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+      animation: fadeUp .4s ease;
+    }
+    @keyframes fadeUp { from { opacity:0; transform: translateY(18px); } to { opacity:1; transform:none; } }
+    .login-logo {
+      display: flex; align-items: center; gap: 14px; margin-bottom: 36px;
+    }
+    .logo-icon {
+      width: 48px; height: 48px; border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent), #7c3aed);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; color: #fff;
+      box-shadow: 0 0 0 6px var(--accent-glow);
+    }
+    .logo-text { font-size: 22px; font-weight: 800; color: var(--text-primary); letter-spacing: -.4px; }
+    .logo-sub  { font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); }
+
+    h1 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .subtitle { font-size: 13px; color: var(--text-secondary); margin-bottom: 32px; }
+
+    .form-group { margin-bottom: 18px; }
+    .form-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; color: var(--text-muted); margin-bottom: 8px; }
+    .input-wrap { position: relative; }
+    .input-wrap i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
+    .form-control {
+      width: 100%; padding: 11px 14px 11px 40px;
+      background: var(--bg-surface); border: 1px solid var(--border);
+      border-radius: 10px; color: var(--text-primary);
+      font-size: 14px; font-family: var(--font-main);
+      transition: all .2s; outline: none;
+    }
+    .form-control:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    .form-control::placeholder { color: var(--text-muted); }
+    .toggle-pw {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: var(--text-muted); cursor: pointer;
+      font-size: 14px; transition: color .15s;
+    }
+    .toggle-pw:hover { color: var(--text-primary); }
+
+    .btn-login {
+      width: 100%; padding: 13px;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 700; font-family: var(--font-main);
+      cursor: pointer; transition: all .2s; margin-top: 8px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .btn-login:hover { background: var(--accent-light); box-shadow: 0 0 0 4px var(--accent-glow); }
+    .btn-login:disabled { opacity: .6; cursor: not-allowed; }
+
+    .alert {
+      padding: 12px 16px; border-radius: 10px; font-size: 13px;
+      margin-bottom: 20px; display: flex; align-items: center; gap: 9px;
+    }
+    .alert-error { background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.25); color: var(--danger); }
+    .alert-success { background: rgba(52,211,153,.1); border: 1px solid rgba(52,211,153,.25); color: var(--success); }
+
+    .login-footer { margin-top: 28px; text-align: center; font-size: 12px; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+      <div>
+        <div class="logo-text">EduLMS</div>
+        <div class="logo-sub">Learning Management System</div>
+      </div>
+    </div>
+
+    <h1>Chào mừng trở lại 👋</h1>
+    <p class="subtitle">Đăng nhập để tiếp tục quản lý hệ thống</p>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+    <div class="alert alert-error">
+      <i class="fa-solid fa-circle-xmark"></i> <%= error %>
+    </div>
+    <% } %>
+    <% if (typeof success !== 'undefined' && success) { %>
+    <div class="alert alert-success">
+      <i class="fa-solid fa-check-circle"></i> <%= success %>
+    </div>
+    <% } %>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-envelope"></i>
+          <input type="email" id="email" name="email" class="form-control" placeholder="admin@edlms.vn" required autocomplete="email" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mật khẩu</label>
+        <div class="input-wrap">
+          <i class="fa-solid fa-lock"></i>
+          <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required autocomplete="current-password" />
+          <button type="button" class="toggle-pw" id="togglePw"><i class="fa-solid fa-eye-slash"></i></button>
+        </div>
+      </div>
+      <div id="formError" class="alert alert-error" style="display:none"></div>
+      <button type="submit" class="btn-login" id="submitBtn">
+        <i class="fa-solid fa-right-to-bracket"></i> Đăng nhập
+      </button>
+    </form>
+
+    <div class="login-footer">© 2024 EduLMS — Hệ thống Quản lý Học tập</div>
+  </div>
+</div>
+
+<script>
+  // Toggle password visibility
+  const togglePw = document.getElementById('togglePw');
+  const pwInput  = document.getElementById('password');
+  togglePw.addEventListener('click', () => {
+    const isText = pwInput.type === 'text';
+    pwInput.type = isText ? 'password' : 'text';
+    togglePw.innerHTML = `<i class="fa-solid fa-eye${isText ? '-slash' : ''}"></i>`;
+  });
+
+  // Login form submit
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('submitBtn');
+    const errEl = document.getElementById('formError');
+    errEl.style.display = 'none';
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang đăng nhập...';
+
+    try {
+      const res = await fetch('/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: document.getElementById('email').value,
+          password: document.getElementById('password').value,
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Đăng nhập thất bại');
+      localStorage.setItem('lms_access_token', data.accessToken);
+      window.location.href = '/dashboard';
+    } catch (err) {
+      errEl.textContent = err.message;
+      errEl.style.display = 'flex';
+      errEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> ${err.message}`;
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Đăng nhập';
+    }
+  });
+</script>
+</body>
+</html>

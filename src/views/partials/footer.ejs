@@ -1,0 +1,79 @@
+  </div><!-- end main-content -->
+</div><!-- end layout -->
+
+<script>
+  // ── GLOBAL UTILS ──────────────────────────────────────────────────────────
+  const LMS = {
+    api: {
+      base: '/api/v1',
+      token: null,
+
+      getToken() {
+        return this.token || localStorage.getItem('lms_access_token');
+      },
+
+      async request(method, path, body = null) {
+        const headers = {
+          'Content-Type': 'application/json',
+          ...(this.getToken() ? { 'Authorization': `Bearer ${this.getToken()}` } : {})
+        };
+        const res = await fetch(this.base + path, {
+          method, headers,
+          body: body ? JSON.stringify(body) : undefined
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.message || `HTTP ${res.status}`);
+        }
+        return res.status === 204 ? null : res.json();
+      },
+
+      get:    (path)       => LMS.api.request('GET',    path),
+      post:   (path, body) => LMS.api.request('POST',   path, body),
+      put:    (path, body) => LMS.api.request('PUT',    path, body),
+      patch:  (path, body) => LMS.api.request('PATCH',  path, body),
+      delete: (path)       => LMS.api.request('DELETE', path),
+    },
+
+    toast(msg, type = 'info') {
+      const el = document.createElement('div');
+      el.className = `lms-toast lms-toast-${type}`;
+      el.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-circle-xmark' : type === 'warning' ? 'fa-triangle-exclamation' : 'fa-circle-info'}"></i> ${msg}`;
+      document.body.appendChild(el);
+      requestAnimationFrame(() => el.classList.add('show'));
+      setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 350); }, 3200);
+    },
+
+    modal: {
+      open(id)  { document.getElementById(id)?.classList.add('open');  },
+      close(id) { document.getElementById(id)?.classList.remove('open'); },
+    },
+
+    confirm(msg) { return window.confirm(msg); },
+  };
+
+  // Close modal on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(ov => {
+    ov.addEventListener('click', e => { if (e.target === ov) ov.classList.remove('open'); });
+  });
+</script>
+
+<style>
+  /* ── TOAST ──────────────────────────────────────── */
+  .lms-toast {
+    position: fixed; bottom: 28px; right: 28px; z-index: 9999;
+    display: flex; align-items: center; gap: 10px;
+    padding: 13px 20px; border-radius: 10px;
+    font-size: 13px; font-weight: 500; font-family: var(--font-main);
+    box-shadow: 0 8px 32px rgba(0,0,0,.4);
+    opacity: 0; transform: translateY(8px) scale(.97); pointer-events: none;
+    transition: all .3s cubic-bezier(.4,0,.2,1);
+  }
+  .lms-toast.show { opacity: 1; transform: none; pointer-events: all; }
+  .lms-toast-success { background: #103a2a; border: 1px solid rgba(52,211,153,.3); color: var(--success); }
+  .lms-toast-error   { background: #3a1010; border: 1px solid rgba(248,113,113,.3); color: var(--danger); }
+  .lms-toast-info    { background: #102040; border: 1px solid rgba(96,165,250,.3); color: var(--info); }
+  .lms-toast-warning { background: #3a2810; border: 1px solid rgba(251,191,36,.3); color: var(--warning); }
+</style>
+</body>
+</html>

@@ -13,7 +13,7 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { LessonService } from '../services/lessons.service';
+import { LessonService } from '../services/lesson.service';
 import {
   CreateLessonDto,
   UpdateLessonDto,
@@ -32,10 +32,11 @@ export class LessonController {
 
   /**
    * GET /api/v1/courses/:courseId/lessons
-   * Xem danh sách bài giảng trong khóa học
+   * Xem danh sách bài giảng trong khóa học (sắp xếp theo orderIndex)
+   * Tác nhân: Giảng viên, Trưởng bộ môn
    */
   @Get()
-  @Roles(UserRole.LECTURER, UserRole.DEPARTMENT_HEAD)
+  @Roles(UserRole.LECTURER, UserRole.HEAD_OF_DEPARTMENT)
   async findAll(
     @Param('courseId', ParseIntPipe) courseId: number,
   ): Promise<LessonResponseDto[]> {
@@ -45,13 +46,15 @@ export class LessonController {
 
   /**
    * GET /api/v1/courses/:courseId/lessons/:id
-   * Xem chi tiết bài giảng
+   * Xem chi tiết bài giảng kèm danh sách học liệu
+   * Tác nhân: Giảng viên, Trưởng bộ môn
    */
   @Get(':id')
-  @Roles(UserRole.LECTURER, UserRole.DEPARTMENT_HEAD)
+  @Roles(UserRole.LECTURER, UserRole.HEAD_OF_DEPARTMENT)
+  // ✅ FIX: Thêm ParseIntPipe — id từ URL là string, service.findOne(id: number)
   async findOne(
     @Param('courseId', ParseIntPipe) courseId: number,
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
   ): Promise<LessonDetailResponseDto> {
     const lesson = await this.lessonService.findOne(id);
     return LessonDetailResponseDto.fromEntity(lesson);
@@ -59,7 +62,9 @@ export class LessonController {
 
   /**
    * POST /api/v1/courses/:courseId/lessons
-   * Tạo bài giảng mới (Giảng viên)
+   * Tạo bài giảng mới trong khóa học
+   * Tác nhân: Giảng viên (chỉ người tạo khóa học)
+   * Khóa học phải ở trạng thái DRAFT hoặc PENDING
    */
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -75,13 +80,16 @@ export class LessonController {
 
   /**
    * PUT /api/v1/courses/:courseId/lessons/:id
-   * Chỉnh sửa bài giảng (Giảng viên)
+   * Chỉnh sửa nội dung bài giảng
+   * Tác nhân: Giảng viên (chỉ người tạo khóa học)
+   * Khóa học phải ở trạng thái DRAFT hoặc PENDING
    */
   @Put(':id')
   @Roles(UserRole.LECTURER)
+  // ✅ FIX: Thêm ParseIntPipe cho id
   async update(
     @Param('courseId', ParseIntPipe) courseId: number,
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateLessonDto,
     @Request() req: any,
   ): Promise<LessonResponseDto> {
@@ -91,30 +99,37 @@ export class LessonController {
 
   /**
    * PATCH /api/v1/courses/:courseId/lessons/:id/order
-   * Thay đổi thứ tự bài giảng (Giảng viên)
+   * Thay đổi thứ tự bài giảng trong khóa học
+   * Tác nhân: Giảng viên (chỉ người tạo khóa học)
+   * Body: { orderIndex: number }
    */
   @Patch(':id/order')
   @Roles(UserRole.LECTURER)
+  // ✅ FIX: Thêm ParseIntPipe cho id
+  // ✅ FIX: @Body('order') → @Body('orderIndex') — khớp với DTO & service
   async reorder(
     @Param('courseId', ParseIntPipe) courseId: number,
-    @Param('id') id: string,
-    @Body('order', ParseIntPipe) order: number,
+    @Param('id', ParseIntPipe) id: number,
+    @Body('orderIndex', ParseIntPipe) orderIndex: number,
     @Request() req: any,
   ): Promise<LessonResponseDto> {
-    const lesson = await this.lessonService.reorder(courseId, id, order, req.user.id);
+    const lesson = await this.lessonService.reorder(courseId, id, orderIndex, req.user.id);
     return LessonResponseDto.fromEntity(lesson);
   }
 
   /**
    * DELETE /api/v1/courses/:courseId/lessons/:id
-   * Xóa bài giảng (Giảng viên)
+   * Xóa bài giảng
+   * Tác nhân: Giảng viên (chỉ người tạo khóa học)
+   * Khóa học phải ở trạng thái DRAFT hoặc PENDING
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   @Roles(UserRole.LECTURER)
+  // ✅ FIX: Thêm ParseIntPipe cho id
   async delete(
     @Param('courseId', ParseIntPipe) courseId: number,
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Request() req: any,
   ): Promise<void> {
     await this.lessonService.delete(id, req.user.id);

@@ -1,0 +1,155 @@
+<%- include('../../../partials/header', { title: 'Học liệu', activePage: 'courses' }) %>
+<%- include('../../../partials/sidebar') %>
+
+<div class="main-content">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="breadcrumb">
+        <a href="/courses">Khóa học</a><span>/</span>
+        <a href="#" id="brcCourse">—</a><span>/</span>
+        <a href="#" id="brcLessons">Bài giảng</a><span>/</span>
+        <a href="#" id="brcLesson">—</a><span>/</span>
+        <span class="current">Học liệu</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Học liệu</div>
+      <div class="page-subtitle" id="lessonSubtitle">—</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <a href="#" id="backBtn" class="btn btn-secondary"><i class="fa-solid fa-arrow-left"></i> Về bài giảng</a>
+      <button class="btn btn-primary" onclick="LMS.modal.open('addMatModal')"><i class="fa-solid fa-plus"></i> Thêm học liệu</button>
+    </div>
+  </div>
+
+  <!-- Type filter -->
+  <div class="card" style="margin-bottom:20px;padding:14px 20px">
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-secondary btn-sm active-filter" data-type="" onclick="filterType(this,'')">Tất cả</button>
+      <button class="btn btn-secondary btn-sm" data-type="pdf" onclick="filterType(this,'pdf')"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+      <button class="btn btn-secondary btn-sm" data-type="video" onclick="filterType(this,'video')"><i class="fa-solid fa-video"></i> Video</button>
+      <button class="btn btn-secondary btn-sm" data-type="document" onclick="filterType(this,'document')"><i class="fa-solid fa-file-word"></i> Tài liệu</button>
+      <button class="btn btn-secondary btn-sm" data-type="link" onclick="filterType(this,'link')"><i class="fa-solid fa-link"></i> Đường dẫn</button>
+    </div>
+  </div>
+
+  <div id="matGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">
+    <div style="grid-column:1/-1;text-align:center;padding:60px;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin" style="font-size:24px;display:block;margin-bottom:12px"></i> Đang tải...</div>
+  </div>
+</div>
+
+<!-- Modal: Add material -->
+<div class="modal-overlay" id="addMatModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-paperclip" style="color:var(--accent);margin-right:8px"></i>Thêm học liệu</div>
+      <button class="modal-close" onclick="LMS.modal.close('addMatModal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="form-group"><label class="form-label">Tên file <span style="color:var(--danger)">*</span></label><input type="text" id="mFileName" class="form-control" placeholder="VD: Slide tuần 1" /></div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">Loại file</label>
+        <select id="mFileType" class="form-control">
+          <option value="pdf">PDF</option><option value="video">Video</option>
+          <option value="audio">Audio</option><option value="image">Hình ảnh</option>
+          <option value="document">Tài liệu</option><option value="link">Đường dẫn</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Dung lượng (KB)</label><input type="number" id="mFileSize" class="form-control" placeholder="512" min="0" /></div>
+    </div>
+    <div class="form-group"><label class="form-label">URL <span style="color:var(--danger)">*</span></label><input type="url" id="mFileUrl" class="form-control" placeholder="https://..." /></div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="LMS.modal.close('addMatModal')">Hủy</button>
+      <button class="btn btn-primary" onclick="addMat()"><i class="fa-solid fa-plus"></i> Thêm</button>
+    </div>
+  </div>
+</div>
+
+<%- include('../../../partials/footer') %>
+
+<script>
+const pathParts = window.location.pathname.split('/');
+const courseId = pathParts[2];
+const lessonId = pathParts[4];
+const matTypeIcon  = { pdf:'fa-file-pdf', video:'fa-video', audio:'fa-headphones', image:'fa-image', document:'fa-file-word', link:'fa-link' };
+const matTypeColor = { pdf:'badge-red', video:'badge-blue', audio:'badge-yellow', image:'badge-green', document:'badge-blue', link:'badge-gray' };
+let allMaterials = [];
+
+document.getElementById('backBtn').href = `/courses/${courseId}/lessons/${lessonId}`;
+document.getElementById('brcLessons').href = `/courses/${courseId}/lessons`;
+
+async function loadMaterials() {
+  try {
+    const [course, lesson, materials] = await Promise.all([
+      LMS.api.get(`/courses/${courseId}`),
+      LMS.api.get(`/courses/${courseId}/lessons/${lessonId}`),
+      LMS.api.get(`/lessons/${lessonId}/materials`),
+    ]);
+    document.getElementById('brcCourse').textContent = course.title;
+    document.getElementById('brcCourse').href = `/courses/${courseId}`;
+    document.getElementById('brcLesson').textContent = lesson.title;
+    document.getElementById('brcLesson').href = `/courses/${courseId}/lessons/${lessonId}`;
+    document.getElementById('lessonSubtitle').textContent = `Bài giảng: ${lesson.title}`;
+    allMaterials = materials;
+    renderMaterials(allMaterials);
+  } catch(e) {
+    document.getElementById('matGrid').innerHTML = `<div style="grid-column:1/-1"><div class="empty-state"><i class="fa-solid fa-circle-xmark"></i><p>${e.message}</p></div></div>`;
+  }
+}
+
+function renderMaterials(mats) {
+  const grid = document.getElementById('matGrid');
+  if (!mats.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1"><div class="empty-state"><i class="fa-solid fa-paperclip"></i><p>Chưa có học liệu nào</p></div></div>';
+    return;
+  }
+  grid.innerHTML = mats.map(m => `
+    <div class="card" style="transition:all .2s" onmouseenter="this.style.borderColor='var(--accent)';this.style.transform='translateY(-2px)'" onmouseleave="this.style.borderColor='var(--border)';this.style.transform='none'">
+      <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+        <span class="badge ${matTypeColor[m.fileType]||'badge-gray'}"><i class="fa-solid ${matTypeIcon[m.fileType]||'fa-file'}"></i> ${m.fileType}</span>
+        <span style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono)">#${m.id}</span>
+      </div>
+      <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:6px">${m.fileName}</div>
+      ${m.fileSizeKb ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px"><i class="fa-solid fa-weight-hanging" style="margin-right:4px"></i>${m.fileSizeKb > 1024 ? (m.fileSizeKb/1024).toFixed(1)+' MB' : m.fileSizeKb+' KB'}</div>` : '<div style="margin-bottom:12px"></div>'}
+      <div style="display:flex;gap:8px;margin-top:auto">
+        <a href="${m.fileUrl}" target="_blank" class="btn btn-primary btn-sm" style="flex:1;justify-content:center"><i class="fa-solid fa-arrow-up-right-from-square"></i> Mở</a>
+        <button class="btn btn-danger btn-sm btn-icon" onclick="deleteMat(${m.id})"><i class="fa-solid fa-trash"></i></button>
+      </div>
+    </div>`).join('');
+}
+
+function filterType(btn, type) {
+  document.querySelectorAll('.active-filter').forEach(b => b.classList.remove('active-filter'));
+  btn.classList.add('active-filter');
+  renderMaterials(type ? allMaterials.filter(m => m.fileType === type) : allMaterials);
+}
+
+async function addMat() {
+  try {
+    const body = {
+      fileName: document.getElementById('mFileName').value,
+      fileType: document.getElementById('mFileType').value,
+      fileUrl: document.getElementById('mFileUrl').value,
+      fileSizeKb: parseInt(document.getElementById('mFileSize').value) || undefined,
+    };
+    if (!body.fileName || !body.fileUrl) { LMS.toast('Điền đủ thông tin bắt buộc', 'warning'); return; }
+    await LMS.api.post(`/lessons/${lessonId}/materials`, body);
+    LMS.toast('Thêm học liệu thành công!', 'success');
+    LMS.modal.close('addMatModal');
+    loadMaterials();
+  } catch(e) { LMS.toast(e.message, 'error'); }
+}
+
+async function deleteMat(id) {
+  if (!LMS.confirm('Xóa học liệu này?')) return;
+  try {
+    await LMS.api.delete(`/lessons/${lessonId}/materials/${id}`);
+    LMS.toast('Đã xóa!', 'success');
+    loadMaterials();
+  } catch(e) { LMS.toast(e.message, 'error'); }
+}
+
+loadMaterials();
+</script>

@@ -1,5 +1,7 @@
-import { IsEmail, IsOptional, IsString, IsEnum, MaxLength, IsUrl } from 'class-validator';
-import { AccountStatus } from '../common/enums/account-status.enum';
+import { 
+  IsEmail, IsNotEmpty, IsOptional, IsString, 
+  IsEnum, MaxLength, IsUrl, MinLength 
+} from 'class-validator';import { AccountStatus } from '../common/enums/account-status.enum';
 
 /**
  * DTO dùng cho việc cập nhật thông tin giảng viên
@@ -85,4 +87,42 @@ export class LecturerResponseDto {
     dto.updatedAt = entity.updatedAt;
     return dto;
   }
+}
+
+// Thêm vào cuối file lecturer.dto.ts
+
+export class CreateLecturerDto {
+  @IsNotEmpty({ message: 'Họ tên không được để trống.' })
+  @IsString()
+  @MaxLength(150)
+  fullname: string;
+
+  @IsEmail({}, { message: 'Email không đúng định dạng.' })
+  @IsNotEmpty()
+  email: string;
+
+  @IsNotEmpty({ message: 'Mật khẩu không được để trống.' })
+  @IsString()
+  @MinLength(6, { message: 'Mật khẩu phải có ít nhất 6 ký tự.' })
+  password: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  phone?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  academicDegree?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  subject?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  department?: string;
 }

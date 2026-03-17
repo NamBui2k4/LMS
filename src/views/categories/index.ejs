@@ -1,0 +1,188 @@
+<%- include('../partials/header', { title: 'Danh mục', activePage: 'categories' }) %>
+<%- include('../partials/sidebar') %>
+
+<div class="main-content">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="breadcrumb">
+        <a href="/dashboard">Trang chủ</a><span>/</span>
+        <span class="current">Danh mục khóa học</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Danh mục khóa học</div>
+      <div class="page-subtitle">Quản lý phân loại nội dung đào tạo</div>
+    </div>
+    <button class="btn btn-primary" onclick="LMS.modal.open('createModal')">
+      <i class="fa-solid fa-plus"></i> Thêm danh mục
+    </button>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 340px;gap:22px;align-items:start">
+    <!-- Table -->
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>ID</th><th>Tên danh mục</th><th>Mô tả</th><th>Ngày tạo</th><th>Thao tác</th></tr>
+          </thead>
+          <tbody id="catTableBody">
+            <tr><td colspan="5" style="text-align:center;padding:40px;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Quick add -->
+    <div class="card">
+      <div class="card-title"><i class="fa-solid fa-tags" style="color:var(--accent)"></i> Thêm nhanh</div>
+      <form id="quickAddForm">
+        <div class="form-group">
+          <label class="form-label">Tên danh mục <span style="color:var(--danger)">*</span></label>
+          <input type="text" name="name" class="form-control" placeholder="Ví dụ: Lập trình Web" required maxlength="100" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mô tả</label>
+          <textarea name="description" class="form-control" placeholder="Mô tả ngắn về danh mục..." style="min-height:80px"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%">
+          <i class="fa-solid fa-plus"></i> Thêm danh mục
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Edit -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-pen" style="color:var(--accent);margin-right:8px"></i>Chỉnh sửa danh mục</div>
+      <button class="modal-close" onclick="LMS.modal.close('editModal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <input type="hidden" id="editCatId" />
+    <div class="form-group">
+      <label class="form-label">Tên danh mục</label>
+      <input type="text" id="editCatName" class="form-control" />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mô tả</label>
+      <textarea id="editCatDesc" class="form-control"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="LMS.modal.close('editModal')">Hủy</button>
+      <button class="btn btn-primary" onclick="updateCat()"><i class="fa-solid fa-floppy-disk"></i> Lưu</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Create (full) -->
+<div class="modal-overlay" id="createModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-plus" style="color:var(--accent);margin-right:8px"></i>Thêm danh mục</div>
+      <button class="modal-close" onclick="LMS.modal.close('createModal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tên danh mục <span style="color:var(--danger)">*</span></label>
+      <input type="text" id="newCatName" class="form-control" placeholder="Ví dụ: Machine Learning" required />
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mô tả</label>
+      <textarea id="newCatDesc" class="form-control" placeholder="Mô tả ngắn..."></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="LMS.modal.close('createModal')">Hủy</button>
+      <button class="btn btn-primary" onclick="createCat()"><i class="fa-solid fa-plus"></i> Thêm</button>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
+
+<script>
+async function loadCats() {
+  try {
+    const data = await LMS.api.get('/categories');
+    const tbody = document.getElementById('catTableBody');
+    if (!data.length) {
+      tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state"><i class="fa-solid fa-tags"></i><p>Chưa có danh mục nào</p></div></td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(c => `
+      <tr>
+        <td class="text-muted" style="font-family:var(--font-mono);font-size:12px">${c.id}</td>
+        <td><span class="td-main">${c.name}</span></td>
+        <td class="text-secondary" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.description || '—'}</td>
+        <td class="text-secondary">${new Date(c.createdAt).toLocaleDateString('vi-VN')}</td>
+        <td>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-secondary btn-sm" onclick="openEdit(${c.id},'${c.name.replace(/'/g,"\\'")}','${(c.description||'').replace(/'/g,"\\'")}')">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="deleteCat(${c.id})">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        </td>
+      </tr>`).join('');
+  } catch(e) { LMS.toast(e.message, 'error'); }
+}
+
+document.getElementById('quickAddForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    const fd = new FormData(e.target);
+    await LMS.api.post('/categories', Object.fromEntries(fd.entries()));
+    LMS.toast('Thêm danh mục thành công!', 'success');
+    e.target.reset();
+    loadCats();
+  } catch(err) { LMS.toast(err.message, 'error'); }
+});
+
+async function createCat() {
+  try {
+    await LMS.api.post('/categories', {
+      name: document.getElementById('newCatName').value,
+      description: document.getElementById('newCatDesc').value,
+    });
+    LMS.toast('Thêm danh mục thành công!', 'success');
+    LMS.modal.close('createModal');
+    loadCats();
+  } catch(e) { LMS.toast(e.message, 'error'); }
+}
+
+function openEdit(id, name, desc) {
+  document.getElementById('editCatId').value = id;
+  document.getElementById('editCatName').value = name;
+  document.getElementById('editCatDesc').value = desc;
+  LMS.modal.open('editModal');
+}
+
+async function updateCat() {
+  const id = document.getElementById('editCatId').value;
+  try {
+    await LMS.api.put(`/categories/${id}`, {
+      name: document.getElementById('editCatName').value,
+      description: document.getElementById('editCatDesc').value,
+    });
+    LMS.toast('Cập nhật thành công!', 'success');
+    LMS.modal.close('editModal');
+    loadCats();
+  } catch(e) { LMS.toast(e.message, 'error'); }
+}
+
+async function deleteCat(id) {
+  if (!LMS.confirm('Xóa danh mục này?')) return;
+  try {
+    await LMS.api.delete(`/categories/${id}`);
+    LMS.toast('Đã xóa danh mục!', 'success');
+    loadCats();
+  } catch(e) { LMS.toast(e.message, 'error'); }
+}
+
+loadCats();
+</script>

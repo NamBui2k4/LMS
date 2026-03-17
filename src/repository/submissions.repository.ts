@@ -20,9 +20,12 @@ export class SubmissionRepository {
     });
   }
 
-  async findByStudent(studentId: string): Promise<Submission[]> {
+  // ✅ FIX 1: studentId: string → number
+  // ✅ FIX 2: student: { id: studentId } → student: { userId: studentId }
+  //           Student PK là userId (maps to DB column user_id), không phải id
+  async findByStudent(studentId: number): Promise<Submission[]> {
     return this.submissionRepo.find({
-      where: { student: { id: studentId } },
+      where: { student: { userId: studentId } },
       relations: ['quiz'],
       order: { submittedAt: 'DESC' },
     });
@@ -35,9 +38,10 @@ export class SubmissionRepository {
     });
   }
 
-  async findByQuizAndStudent(quizId: number, studentId: string): Promise<Submission | null> {
+  // ✅ FIX: studentId string → number; student.id → student.userId
+  async findByQuizAndStudent(quizId: number, studentId: number): Promise<Submission | null> {
     return this.submissionRepo.findOne({
-      where: { quiz: { id: quizId }, student: { id: studentId } },
+      where: { quiz: { id: quizId }, student: { userId: studentId } },
     });
   }
 

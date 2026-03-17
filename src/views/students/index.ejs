@@ -1,0 +1,169 @@
+<%- include('../partials/header', { title: 'Học viên', activePage: 'students' }) %>
+<%- include('../partials/sidebar') %>
+
+<div class="main-content">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="breadcrumb">
+        <a href="/dashboard">Trang chủ</a><span>/</span>
+        <span class="current">Học viên</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">Học viên</div>
+      <div class="page-subtitle">Danh sách và quản lý học viên trong hệ thống</div>
+    </div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <div class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="searchInput" placeholder="Tìm tên, email..." oninput="filterStudents()" />
+      </div>
+      <select id="statusFilter" class="form-control" style="width:160px" onchange="filterStudents()">
+        <option value="">Tất cả trạng thái</option>
+        <option value="active">Hoạt động</option>
+        <option value="inactive">Không hoạt động</option>
+        <option value="suspended">Tạm khóa</option>
+        <option value="banned">Bị cấm</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Pagination info -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div style="font-size:13px;color:var(--text-muted)" id="countInfo">—</div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-secondary btn-sm" id="prevBtn" onclick="changePage(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+      <span style="font-size:13px;color:var(--text-secondary);padding:6px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:7px" id="pageInfo">1</span>
+      <button class="btn btn-secondary btn-sm" id="nextBtn" onclick="changePage(1)"><i class="fa-solid fa-chevron-right"></i></button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>ID</th><th>Họ tên</th><th>Email</th><th>Điện thoại</th><th>Trạng thái</th><th>Thao tác</th></tr>
+        </thead>
+        <tbody id="studentTableBody">
+          <tr><td colspan="6" style="text-align:center;padding:40px;color:var(--text-muted)"><i class="fa-solid fa-spinner fa-spin"></i></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Đổi trạng thái -->
+<div class="modal-overlay" id="statusModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fa-solid fa-toggle-on" style="color:var(--accent);margin-right:8px"></i>Đổi trạng thái tài khoản</div>
+      <button class="modal-close" onclick="LMS.modal.close('statusModal')"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <input type="hidden" id="statusStudentId" />
+    <div class="form-group">
+      <label class="form-label">Trạng thái mới</label>
+      <select id="newStatus" class="form-control">
+        <option value="active">Hoạt động</option>
+        <option value="inactive">Không hoạt động</option>
+        <option value="suspended">Tạm khóa</option>
+        <option value="banned">Bị cấm</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Lý do (tuỳ chọn)</label>
+      <textarea id="statusReason" class="form-control" placeholder="Lý do thay đổi trạng thái..." style="min-height:70px"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="LMS.modal.close('statusModal')">Hủy</button>
+      <button class="btn btn-primary" onclick="saveStatus()"><i class="fa-solid fa-floppy-disk"></i> Lưu</button>
+    </div>
+  </div>
+</div>
+
+<%- include('../partials/footer') %>
+
+<script>
+const statusConfig = { active:{label:'Hoạt động',color:'badge-green'}, inactive:{label:'Không HĐ',color:'badge-gray'}, suspended:{label:'Tạm khóa',color:'badge-yellow'}, banned:{label:'Bị cấm',color:'badge-red'} };
+let allStudents = [];
+let currentPage = 1;
+const pageSize = 10;
+
+async function loadStudents(page = 1) {
+  try {
+    const data = await LMS.api.get(`/students?page=${page}&limit=${pageSize}`);
+    allStudents = Array.isArray(data) ? data : (data.data || []);
+    const total = data.total || allStudents.length;
+    document.getElementById('countInfo').textContent = `Tổng: ${total} học viên`;
+    document.getElementById('pageInfo').textContent = `Trang ${page}`;
+    document.getElementById('prevBtn').disabled = page <= 1;
+    document.getElementById('nextBtn').disabled = allStudents.length < pageSize;
+    filterStudents();
+  } catch(e) {
+    document.getElementById('studentTableBody').innerHTML = `<tr><td colspan="6"><div class="empty-state"><i class="fa-solid fa-circle-xmark"></i><p>${e.message}</p></div></td></tr>`;
+  }
+}
+
+function filterStudents() {
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const s = document.getElementById('statusFilter').value;
+  const filtered = allStudents.filter(st =>
+    (!q || st.fullname?.toLowerCase().includes(q) || st.email?.toLowerCase().includes(q)) &&
+    (!s || st.status === s)
+  );
+  renderStudents(filtered);
+}
+
+function renderStudents(students) {
+  const tbody = document.getElementById('studentTableBody');
+  if (!students.length) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><i class="fa-solid fa-user-graduate"></i><p>Không tìm thấy học viên</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = students.map(s => {
+    const st = statusConfig[s.status] || { label:s.status||'—', color:'badge-gray' };
+    return `<tr>
+      <td class="text-muted" style="font-family:var(--font-mono);font-size:12px">${s.id}</td>
+      <td><span class="td-main">${s.fullname || '—'}</span></td>
+      <td class="text-secondary">${s.email || '—'}</td>
+      <td class="text-secondary">${s.phone || '—'}</td>
+      <td><span class="badge ${st.color}">${st.label}</span></td>
+      <td>
+        <div style="display:flex;gap:6px">
+          <a href="/students/${s.id}" class="btn btn-secondary btn-sm"><i class="fa-solid fa-eye"></i></a>
+          <button class="btn btn-secondary btn-sm" onclick="openStatus(${s.id},'${s.status||'active'}')"><i class="fa-solid fa-toggle-on"></i></button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openStatus(id, status) {
+  document.getElementById('statusStudentId').value = id;
+  document.getElementById('newStatus').value = status;
+  document.getElementById('statusReason').value = '';
+  LMS.modal.open('statusModal');
+}
+
+async function saveStatus() {
+  const id = document.getElementById('statusStudentId').value;
+  try {
+    await LMS.api.patch(`/students/${id}/status`, {
+      status: document.getElementById('newStatus').value,
+      reason: document.getElementById('statusReason').value || undefined,
+    });
+    LMS.toast('Cập nhật trạng thái thành công!', 'success');
+    LMS.modal.close('statusModal');
+    loadStudents(currentPage);
+  } catch(e) { LMS.toast(e.message, 'error'); }
+}
+
+function changePage(dir) {
+  currentPage = Math.max(1, currentPage + dir);
+  loadStudents(currentPage);
+}
+
+loadStudents();
+</script>

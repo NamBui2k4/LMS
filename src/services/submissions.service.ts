@@ -1,9 +1,15 @@
-import { Injectable, NotFoundException, ForbiddenException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  ConflictException,
+  BadRequestException,
+} from '@nestjs/common';
 import { SubmissionRepository } from '../repository/submissions.repository';
 import { QuizRepository } from '../repository/quiz.repository';
 import { Submission } from '../models/submission.entity';
 import { SubmissionStatus } from '../common/enums/submission-status.enum';
-import { IsOptional, IsNumber, IsString } from 'class-validator';
+import { IsOptional, IsNumber, IsString, IsNotEmpty, Min } from 'class-validator';
 
 export class CreateSubmissionDto {
   answerData?: any;
@@ -11,11 +17,18 @@ export class CreateSubmissionDto {
 
 export class GradeSubmissionDto {
   @IsNumber()
+  @Min(0)
   score: number;
 
   @IsOptional()
   @IsString()
   note?: string;
+}
+
+export class RequestRegradeDto {
+  @IsString()
+  @IsNotEmpty()
+  note: string;
 }
 
 @Injectable()
@@ -31,7 +44,8 @@ export class SubmissionService {
     return this.submissionRepo.findByQuiz(quizId);
   }
 
-  async findByStudent(studentId: string): Promise<Submission[]> {
+  // ✅ FIX: studentId là number (userId), không phải string
+  async findByStudent(studentId: number): Promise<Submission[]> {
     return this.submissionRepo.findByStudent(studentId);
   }
 
@@ -41,7 +55,8 @@ export class SubmissionService {
     return submission;
   }
 
-  async submit(quizId: number, studentId: string, dto: CreateSubmissionDto): Promise<Submission> {
+  // ✅ FIX: studentId là number
+  async submit(quizId: number, studentId: number, dto: CreateSubmissionDto): Promise<Submission> {
     const quiz = await this.quizRepo.findById(quizId);
     if (!quiz) throw new NotFoundException('Không tìm thấy bài kiểm tra.');
 
@@ -49,33 +64,51 @@ export class SubmissionService {
     if (existing) throw new ConflictException('Học viên đã nộp bài kiểm tra này.');
 
     return this.submissionRepo.create({
-      quiz: { id: quizId } as any,
-      student: { id: studentId } as any,
+      quiz:      { id: quizId } as any,
+      // ✅ FIX: student PK là userId
+      student:   { userId: studentId } as any,
       answerData: dto.answerData,
-      status: SubmissionStatus.SUBMITTED,
+      status:    SubmissionStatus.SUBMITTED,
     });
   }
 
+  // ✅ FIX: lecturerId là number (userId), không phải string
   async grade(id: number, dto: GradeSubmissionDto, lecturerId: number): Promise<Submission> {
     const submission = await this.findOne(id);
+    if (submission.status === SubmissionStatus.GRADED) {
+      throw new ConflictException('Bài nộp này đã được chấm điểm rồi.');
+    }
+
     const updated = await this.submissionRepo.update(id, {
-      score: dto.score,
-      status: SubmissionStatus.GRADED,
-      gradedAt: new Date(),
-      gradedBy: { id: lecturerId } as any,
+      score:     dto.score,
+      status:    SubmissionStatus.GRADED,
+      gradedAt:  new Date(),
+      // ✅ FIX: Lecturer PK là userId
+      gradedBy:  { userId: lecturerId } as any,
     });
     return updated!;
   }
 
-  async requestRegrade(id: number, note: string, studentId: string): Promise<Submission> {
+  /**
+   * Học viên yêu cầu phúc khảo
+   * ✅ FIX: SubmissionStatus.UNDER_REVIEW (không phải PENDING_REVIEW — không tồn tại trong DB)
+   * ✅ FIX: so sánh student.userId (không phải student.id)
+   */
+  async requestRegrade(id: number, note: string, studentId: number): Promise<Submission> {
     const submission = await this.findOne(id);
-    if (submission.student?.id !== studentId)
+
+    // ✅ FIX: so sánh userId
+    if (Number(submission.student?.userId) !== studentId)
       throw new ForbiddenException('Bạn không có quyền yêu cầu phúc khảo bài này.');
+
     if (submission.status !== SubmissionStatus.GRADED)
-      throw new ForbiddenException('Chỉ có thể yêu cầu phúc khảo bài đã được chấm điểm.');
+      throw new BadRequestException('Chỉ có thể yêu cầu phúc khảo bài đã được chấm điểm.');
+
+    // ✅ FIX: UNDER_REVIEW (không phải PENDING_REVIEW)
     const updated = await this.submissionRepo.update(id, {
       regradeRequested: true,
-      regradeNote: note,
+      regradeNote:      note,
+      status:           SubmissionStatus.UNDER_REVIEW,
     });
     return updated!;
   }

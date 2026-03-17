@@ -15,31 +15,39 @@ export class LessonRepository {
     return this.lessonRepo.find({
       where: { course: { id: courseId } },
       relations: ['materials'],
-      order: { order: 'ASC' },
+      // ✅ FIX: order → orderIndex (đúng tên property trong Lesson entity)
+      order: { orderIndex: 'ASC' },
     });
   }
 
-  async findById(id: string): Promise<Lesson | null> {
+  // ✅ FIX: id: string → number (Lesson PK là BIGSERIAL → number)
+  async findById(id: number): Promise<Lesson | null> {
     return this.lessonRepo.findOne({
       where: { id },
       relations: ['course'],
     });
   }
 
-  async findByIdWithMaterials(id: string): Promise<Lesson | null> {
+  // ✅ FIX: id: string → number
+  async findByIdWithMaterials(id: number): Promise<Lesson | null> {
     return this.lessonRepo.findOne({
       where: { id },
       relations: ['course', 'materials'],
     });
   }
 
-  async findMaxOrder(courseId: number): Promise<number> {
+  /**
+   * Tìm orderIndex lớn nhất trong khóa học để tự động gán thứ tự kế tiếp khi tạo bài giảng mới
+   * ✅ FIX: đổi tên findMaxOrder → findMaxOrderIndex (khớp với lesson.service.ts)
+   * ✅ FIX: MAX(lesson.orderIndex) thay vì MAX(lesson.order)
+   */
+  async findMaxOrderIndex(courseId: number): Promise<number> {
     const result = await this.lessonRepo
       .createQueryBuilder('lesson')
-      .select('MAX(lesson.order)', 'maxOrder')
-      .where('lesson.courseId = :courseId', { courseId })
+      .select('MAX(lesson.orderIndex)', 'maxOrderIndex')
+      .where('lesson.course_id = :courseId', { courseId })
       .getRawOne();
-    return result?.maxOrder ?? 0;
+    return parseInt(result?.maxOrderIndex, 10) || 0;
   }
 
   async create(data: Partial<Lesson>): Promise<Lesson> {
@@ -47,17 +55,24 @@ export class LessonRepository {
     return this.lessonRepo.save(entity);
   }
 
-  async update(id: string, data: Partial<Lesson>): Promise<Lesson | null> {
+  // ✅ FIX: id: string → number
+  async update(id: number, data: Partial<Lesson>): Promise<Lesson | null> {
     await this.lessonRepo.update(id, data);
     return this.findById(id);
   }
 
-  async updateOrder(id: string, order: number): Promise<Lesson | null> {
-    await this.lessonRepo.update(id, { order });
+  /**
+   * Cập nhật thứ tự bài giảng trong khóa học (reorder)
+   * ✅ FIX: đổi tên updateOrder → updateOrderIndex (khớp với lesson.service.ts)
+   * ✅ FIX: id: string → number; { order } → { orderIndex }
+   */
+  async updateOrderIndex(id: number, orderIndex: number): Promise<Lesson | null> {
+    await this.lessonRepo.update(id, { orderIndex });
     return this.findById(id);
   }
 
-  async delete(id: string): Promise<void | null> {
+  // ✅ FIX: id: string → number
+  async delete(id: number): Promise<void> {
     await this.lessonRepo.delete(id);
   }
 }

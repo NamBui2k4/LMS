@@ -1,0 +1,122 @@
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon"><i class="fa-solid fa-graduation-cap"></i></div>
+    <div>
+      <div class="logo-text">EduLMS</div>
+      <div class="logo-sub">v1.0.0</div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Tổng quan</div>
+    <a href="/dashboard" class="nav-item <%= typeof activePage !== 'undefined' && activePage === 'dashboard' ? 'active' : '' %>">
+      <i class="fa-solid fa-chart-pie"></i><span>Dashboard</span>
+    </a>
+
+    <% if (typeof user !== 'undefined' && (user.role === 'admin')) { %>
+    <div class="nav-section-label">Quản trị</div>
+    <a href="/admin/users" class="nav-item <%= typeof activePage !== 'undefined' && activePage === 'users' ? 'active' : '' %>">
+      <i class="fa-solid fa-users"></i><span>Người dùng</span>
+    </a>
+    <a href="/admin/department-heads" class="nav-item <%= typeof activePage !== 'undefined' && activePage === 'department-heads' ? 'active' : '' %>">
+      <i class="fa-solid fa-user-tie"></i><span>Trưởng bộ môn</span>
+    </a>
+    <a href="/categories" class="nav-item <%= typeof activePage !== 'undefined' && activePage === 'categories' ? 'active' : '' %>">
+      <i class="fa-solid fa-tags"></i><span>Danh mục</span>
+    </a>
+    <% } %>
+
+    <% if (typeof user !== 'undefined' && (user.role === 'lecturer' || user.role === 'head_of_department' || user.role === 'admin')) { %>
+    <div class="nav-section-label">Giảng dạy</div>
+    <a href="/courses" class="nav-item <%= typeof activePage !== 'undefined' && activePage === 'courses' ? 'active' : '' %>">
+      <i class="fa-solid fa-book-open"></i><span>Khóa học</span>
+    </a>
+    <a href="/lecturers" class="nav-item <%= typeof activePage !== 'undefined' && activePage === 'lecturers' ? 'active' : '' %>">
+      <i class="fa-solid fa-chalkboard-user"></i><span>Giảng viên</span>
+    </a>
+    <a href="/students" class="nav-item <%= typeof activePage !== 'undefined' && activePage === 'students' ? 'active' : '' %>">
+      <i class="fa-solid fa-user-graduate"></i><span>Học viên</span>
+    </a>
+    <% } %>
+
+    <% if (typeof user !== 'undefined' && user.role === 'lecturer') { %>
+    <div class="nav-section-label">Nội dung</div>
+    <a href="/quizzes" class="nav-item <%= typeof activePage !== 'undefined' && activePage === 'quizzes' ? 'active' : '' %>">
+      <i class="fa-solid fa-circle-question"></i><span>Bài kiểm tra</span>
+    </a>
+    <a href="/submissions" class="nav-item <%= typeof activePage !== 'undefined' && activePage === 'submissions' ? 'active' : '' %>">
+      <i class="fa-solid fa-file-lines"></i><span>Bài nộp</span>
+    </a>
+    <% } %>
+  </nav>
+
+  <div class="sidebar-footer">
+    <a href="/profile" class="nav-item">
+      <i class="fa-solid fa-circle-user"></i><span>Hồ sơ cá nhân</span>
+    </a>
+    <a href="/logout" class="nav-item nav-item-danger">
+      <i class="fa-solid fa-right-from-bracket"></i><span>Đăng xuất</span>
+    </a>
+  </div>
+</aside>
+
+<style>
+  .sidebar {
+    position: fixed; top: 0; left: 0; bottom: 0;
+    width: var(--sidebar-w);
+    background: var(--bg-surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    z-index: 200;
+    overflow: hidden;
+  }
+
+  .sidebar-logo {
+    display: flex; align-items: center; gap: 12px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .logo-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--accent), #7c3aed);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px; color: #fff; flex-shrink: 0;
+    box-shadow: 0 0 0 4px var(--accent-glow);
+  }
+  .logo-text { font-size: 15px; font-weight: 800; color: var(--text-primary); letter-spacing: -.3px; }
+  .logo-sub  { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); }
+
+  .sidebar-nav {
+    flex: 1; overflow-y: auto; padding: 16px 12px;
+    scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+  }
+
+  .nav-section-label {
+    font-size: 10px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: .1em; color: var(--text-muted);
+    padding: 10px 10px 4px; margin-top: 6px;
+  }
+
+  .nav-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 9px 12px; border-radius: 8px;
+    color: var(--text-secondary); font-size: 13.5px; font-weight: 500;
+    transition: all .17s; cursor: pointer;
+    margin-bottom: 2px;
+  }
+  .nav-item i { width: 18px; text-align: center; font-size: 14px; flex-shrink: 0; }
+  .nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+  .nav-item.active {
+    background: var(--accent-glow);
+    color: var(--accent-light);
+    border: 1px solid rgba(79,142,247,.22);
+    font-weight: 700;
+  }
+  .nav-item.active i { color: var(--accent); }
+  .nav-item-danger:hover { background: rgba(248,113,113,.1); color: var(--danger); }
+
+  .sidebar-footer {
+    padding: 12px; border-top: 1px solid var(--border); flex-shrink: 0;
+  }
+</style>
