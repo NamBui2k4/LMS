@@ -53,11 +53,18 @@ export class StudentRepository {
   }
 
   async findById(userId: number): Promise<Student | null> {
-    return this.studentRepo.findOne({
-      where: { userId },
-      relations: ['user', 'enrollments'],
-    });
-  }
+  return this.studentRepo.findOne({
+    where: { userId },
+    // Không cần load 'user' và 'enrollments' khi chỉ kiểm tra tồn tại + ghi danh
+    relations: [],   // hoặc chỉ cần những gì thật sự cần
+    select: {
+      userId: true,
+      fullname: true,
+      email: true,
+      status: true,
+    },
+  });
+}
 
   async findByIdWithRelations(userId: number): Promise<Student | null> {
     return this.studentRepo.findOne({

@@ -73,7 +73,7 @@ export class LecturerResponseDto {
   // Static method để map từ Entity sang DTO nhanh chóng
   static fromEntity(entity: any): LecturerResponseDto {
     const dto = new LecturerResponseDto();
-    dto.id = Number(entity.id);
+    dto.id = Number(entity.userId);        
     dto.fullname = entity.fullname;
     dto.email = entity.email;
     dto.phone = entity.phone;

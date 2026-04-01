@@ -6,6 +6,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Lecturer } from './lecturers.entity';
+import { DepartmentHeadService } from '../services/department-heads.service';
 
 /**
  * DB (schema mới - file upload):

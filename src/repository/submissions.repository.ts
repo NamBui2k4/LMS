@@ -34,7 +34,13 @@ export class SubmissionRepository {
   async findById(id: number): Promise<Submission | null> {
     return this.submissionRepo.findOne({
       where: { id },
-      relations: ['quiz', 'student', 'gradedBy'],
+      relations: [
+        'quiz', 
+        'quiz.course',             
+        'quiz.course.createdBy',   // <--- Thêm cái này nếu cần kiểm tra chủ sở hữu
+        'student', 
+        'gradedBy'
+      ],
     });
   }
 

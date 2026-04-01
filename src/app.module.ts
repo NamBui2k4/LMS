@@ -41,7 +41,7 @@ import { MaterialService }   from './services/material.service';
 import { EnrollmentService } from './services/enrollment.service';
 import { QuizService }       from './services/quiz.service';
 import { SubmissionService } from './services/submissions.service';
-
+import { DepartmentHeadService } from './services/department-heads.service';
 // ── Repositories (đã implement) ─────────────────────────────
 import { UserRepository } from './repository/user.repository';
 
@@ -55,7 +55,7 @@ import { MaterialRepository }   from './repository/material.repository';
 import { EnrollmentRepository } from './repository/enrollment.repository';
 import { QuizRepository }       from './repository/quiz.repository';
 import { SubmissionRepository } from './repository/submissions.repository';
-
+import { DepartmentHeadRepository } from './repository/department-heads.repository';
 // ── Auth ────────────────────────────────────────────────────
 import { RolesGuard } from './auth/guard/roles.guard';
 import { JwtAuthGuard } from './auth/guard/jwt-auth.guard';
@@ -207,6 +207,9 @@ const allEntities = [
 
     SubmissionService,
     SubmissionRepository,
+   
+    DepartmentHeadService,
+    DepartmentHeadRepository,
   ],
 })
 export class AppModule {}

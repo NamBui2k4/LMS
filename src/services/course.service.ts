@@ -9,6 +9,8 @@ import { Courses } from '../models/courses.entity';
 import { CourseStatus } from '../common/enums/course-status.enum';
 import { Lecturer } from '../models/lecturers.entity';
 import { DepartmentHead } from '../models/department-heads.entity';
+import { UserRole } from 'src/common/enums/role.enum';
+
 
 /**
  * ✅ FIX: Tất cả so sánh actor/owner dùng `userId` (Lecturer.userId, DepartmentHead.userId)
@@ -25,17 +27,17 @@ interface CreateCourseInput {
 export class CourseService {
   constructor(private readonly courseRepo: CourseRepository) {}
 
-  async findAll(userId: number, role: string): Promise<Courses[]> {
-    const isDepartmentHead = role === 'HEAD_OF_DEPARTMENT';
+  async findAll(userId: number, role: UserRole): Promise<Courses[]> {
+    const isDepartmentHead = role === UserRole.HEAD_OF_DEPARTMENT;
     return this.courseRepo.findAllForUser(userId, isDepartmentHead);
   }
 
-  async findOne(courseId: number, userId: number, role: string): Promise<Courses> {
+  async findOne(courseId: number, userId: number, role: UserRole): Promise<Courses> {
     const course = await this.courseRepo.findByIdDetailed(courseId);
     if (!course) throw new NotFoundException('Không tìm thấy khóa học.');
 
     const canView =
-      role === 'HEAD_OF_DEPARTMENT' ||
+      role === UserRole.HEAD_OF_DEPARTMENT ||
       Number(course.createdBy.userId) === userId || // ✅ FIX: userId
       course.assignedLecturers?.some((a) => Number(a.instructor.userId) === userId); // ✅ FIX
 
@@ -56,15 +58,16 @@ export class CourseService {
     });
   }
 
-  async changeStatus(
+      async changeStatus(
     courseId: number,
     newStatus: CourseStatus,
     actor: Lecturer | DepartmentHead,
     actorRole: string,
   ): Promise<Courses> {
-    const course = await this.courseRepo.findByIdForUpdate(courseId);
+    const course = await this.courseRepo.findById(courseId);
     if (!course) throw new NotFoundException('Không tìm thấy khóa học.');
 
+    // Kiểm tra trạng thái chuyển đổi hợp lệ
     const allowedTransitions: Record<CourseStatus, CourseStatus[]> = {
       [CourseStatus.DRAFT]:     [CourseStatus.PENDING],
       [CourseStatus.PENDING]:   [CourseStatus.PUBLISHED, CourseStatus.DRAFT],
@@ -80,42 +83,54 @@ export class CourseService {
       );
     }
 
+    // ==================== QUYỀN TRUY CẬP ====================
     if (newStatus === CourseStatus.PENDING) {
-      const lecturerActor = actor as Lecturer;
-      // ✅ FIX: so sánh userId
-      if (
-        actorRole !== 'LECTURER' ||
-        Number(course.createdBy.userId) !== Number(lecturerActor.userId)
-      ) {
-        throw new ForbiddenException('Chỉ giảng viên tạo khóa học mới được gửi duyệt.');
+      // ✅ Cho phép cả LECTURER lẫn HEAD_OF_DEPARTMENT chuyển sang PENDING
+      if (actorRole !== UserRole.LECTURER && actorRole !== UserRole.HEAD_OF_DEPARTMENT) {
+        throw new ForbiddenException('Chỉ giảng viên hoặc Trưởng bộ môn mới được đưa khóa học về trạng thái chờ duyệt.');
       }
-    } else if (newStatus === CourseStatus.PUBLISHED || newStatus === CourseStatus.DRAFT) {
-      if (actorRole !== 'HEAD_OF_DEPARTMENT') {
+
+      // Nếu là Lecturer thì phải là người tạo khóa học
+      if (actorRole === UserRole.LECTURER) {
+        const lecturerActor = actor as Lecturer;
+        if (Number(course.createdBy.userId) !== Number(lecturerActor.userId)) {
+          throw new ForbiddenException('Bạn chỉ được gửi duyệt khóa học do chính mình tạo.');
+        }
+      }
+
+      // Nếu là Trưởng bộ môn thì không cần kiểm tra owner (vì họ có quyền quản lý tất cả)
+    } 
+    else if (newStatus === CourseStatus.PUBLISHED || newStatus === CourseStatus.DRAFT) {
+      // Chỉ Trưởng bộ môn được phê duyệt hoặc trả về draft
+      if (actorRole !== UserRole.HEAD_OF_DEPARTMENT) {
         throw new ForbiddenException('Chỉ Trưởng bộ môn có quyền phê duyệt hoặc từ chối.');
       }
-    } else if (newStatus === CourseStatus.CLOSED) {
-      // ✅ FIX: so sánh userId
-      const isOwner =
-        actorRole === 'LECTURER' &&
+    } 
+    else if (newStatus === CourseStatus.CLOSED) {
+      // Giảng viên tạo hoặc Trưởng bộ môn đều được đóng khóa học
+      const isOwner = 
+        actorRole === UserRole.LECTURER && 
         Number(course.createdBy.userId) === Number((actor as Lecturer).userId);
-      const isHead = actorRole === 'HEAD_OF_DEPARTMENT';
+      
+      const isHead = actorRole === UserRole.HEAD_OF_DEPARTMENT;
+
       if (!isOwner && !isHead) {
         throw new ForbiddenException(
           'Chỉ giảng viên tạo khóa học hoặc Trưởng bộ môn có thể đóng khóa học.',
         );
       }
-    } else if (newStatus === CourseStatus.ARCHIVED) {
-      if (actorRole !== 'HEAD_OF_DEPARTMENT') {
+    } 
+    else if (newStatus === CourseStatus.ARCHIVED) {
+      if (actorRole !== UserRole.HEAD_OF_DEPARTMENT) {
         throw new ForbiddenException('Chỉ Trưởng bộ môn có quyền lưu trữ khóa học.');
       }
     }
 
-    const updated = await this.courseRepo.updateStatus(
-      courseId,
-      newStatus,
-      actorRole === 'HEAD_OF_DEPARTMENT' ? (actor as DepartmentHead) : undefined,
-    );
-    if (!updated) throw new NotFoundException('Khóa học không còn tồn tại.');
+    const reviewer = actorRole === UserRole.HEAD_OF_DEPARTMENT 
+      ? (actor as DepartmentHead) 
+      : undefined;
+
+    const updated = await this.courseRepo.updateStatus(courseId, newStatus, reviewer);
     return updated;
   }
 }

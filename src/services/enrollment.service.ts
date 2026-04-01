@@ -45,28 +45,48 @@ export class EnrollmentService {
    * SRS: Học viên chỉ ghi danh được khi khóa học đang ở trạng thái PUBLISHED
    */
   async enroll(studentId: number, courseId: number): Promise<Enrollment> {
-    const student = await this.studentRepo.findById(studentId);
-    if (!student) throw new NotFoundException('Không tìm thấy học viên.');
+  console.log(`[EnrollmentService.enroll] Starting with studentId=${studentId}, courseId=${courseId}`);
 
-    const course = await this.courseRepo.findById(courseId);
-    if (!course) throw new NotFoundException('Không tìm thấy khóa học.');
-
-    // ✅ FIX: dùng PUBLISHED (không phải OPEN_FOR_ENROLLMENT — không tồn tại trong DB)
-    if (course.status !== CourseStatus.PUBLISHED) {
-      throw new BadRequestException(
-        'Khóa học chưa được công bố. Chỉ ghi danh được khi khóa học ở trạng thái "Đã công bố" (published).',
-      );
-    }
-
-    const existing = await this.enrollmentRepo.findByStudentAndCourse(studentId, courseId);
-    if (existing) throw new ConflictException('Học viên đã được ghi danh vào khóa học này.');
-
-    return this.enrollmentRepo.create({
-      student: { userId: studentId } as any, // ✅ FIX: userId (không phải id)
-      course: { id: courseId } as any,
-      status: EnrollmentStatus.ENROLLED,
-    });
+  // Load student
+  const student = await this.studentRepo.findById(studentId);
+  if (!student) {
+    console.error(`Student ${studentId} not found`);
+    throw new NotFoundException('Không tìm thấy học viên.');
   }
+
+  // Load course
+  const course = await this.courseRepo.findById(courseId);
+  if (!course) {
+    console.error(`Course ${courseId} not found`);
+    throw new NotFoundException('Không tìm thấy khóa học.');
+  }
+
+  console.log(`Course found - id=${course.id}, status=${course.status}, createdBy=${course.createdBy?.userId}`);
+
+  // Chỉ cho phép ghi danh khi course đã PUBLISHED
+  if (course.status !== CourseStatus.PUBLISHED) {
+    console.warn(`Course status is ${course.status}, not PUBLISHED`);
+    throw new BadRequestException(
+      `Khóa học chưa được công bố. Hiện tại đang ở trạng thái "${course.status}". Chỉ ghi danh được khi khóa học đã "published".`
+    );
+  }
+
+  // Kiểm tra đã ghi danh chưa
+  const existing = await this.enrollmentRepo.findByStudentAndCourse(studentId, courseId);
+  if (existing) {
+    throw new ConflictException('Học viên đã được ghi danh vào khóa học này.');
+  }
+
+  // Tạo enrollment
+  const enrollment = await this.enrollmentRepo.create({
+    student: { userId: studentId } as any,
+    course: { id: courseId } as any,
+    status: EnrollmentStatus.ENROLLED,
+  });
+
+  console.log(`Enrollment created successfully: student ${studentId} -> course ${courseId}`);
+  return enrollment;
+}
 
   async unenroll(studentId: number, courseId: number): Promise<void> {
     const existing = await this.enrollmentRepo.findByStudentAndCourse(studentId, courseId);

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { DataSource, Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
+import { NotFoundException } from '@nestjs/common';
 // ✅ FIX: import Courses (không phải Course) — đúng export name trong courses.entity.ts
 import { Courses } from '../models/courses.entity';
 import { CourseStatus } from '../common/enums/course-status.enum';
@@ -45,11 +46,19 @@ export class CourseRepository {
    * Dùng cho các thao tác cần kiểm tra quyền hoặc trạng thái nhanh
    */
   async findById(id: number): Promise<Courses | null> {
-    return this.courseRepo.findOne({
-      where: { id },
-      relations: ['createdBy', 'category'],
-    });
-  }
+  return this.courseRepo.findOne({
+    where: { id },
+    relations: ['createdBy', 'category'],   // đã có
+    // Thêm để chắc chắn load createdBy.userId
+    select: {
+      id: true,
+      status: true,
+      createdBy: {
+        userId: true,     // quan trọng
+      }
+    }
+  });
+}
 
   /**
    * Tìm khóa học đầy đủ quan hệ (dùng cho xem chi tiết)
@@ -76,12 +85,14 @@ export class CourseRepository {
    * Tránh race condition khi nhiều request cùng thay đổi trạng thái
    */
   async findByIdForUpdate(id: number): Promise<Courses | null> {
-    return this.courseRepo.findOne({
-      where: { id },
-      relations: ['createdBy', 'reviewedBy'],
-      lock: { mode: 'pessimistic_write' },
-    });
-  }
+    // Sử dụng queryBuilder để dùng lock
+    return this.courseRepo.createQueryBuilder('course')
+      .setLock('pessimistic_write')
+      .leftJoinAndSelect('course.createdBy', 'createdBy')
+      .leftJoinAndSelect('course.reviewedBy', 'reviewedBy')
+      .where('course.id = :id', { id })
+      .getOne();
+}
 
   async create(courseData: Partial<Courses>): Promise<Courses> {
     const course = this.courseRepo.create(courseData);
@@ -93,20 +104,46 @@ export class CourseRepository {
    * Nếu có reviewer (Trưởng bộ môn), lưu lại người review và thời điểm review
    */
   async updateStatus(
-    courseId: number,
-    newStatus: CourseStatus,
-    reviewer?: DepartmentHead,
-  ): Promise<Courses | null> {
-    const course = await this.findByIdForUpdate(courseId);
-    if (!course) return null;
+  courseId: number,
+  newStatus: CourseStatus,
+  reviewer?: DepartmentHead,
+): Promise<Courses> {
+  return this.dataSource.transaction(async (manager) => {
+    // KHÔNG dùng relations ở đây
+    // Sử dụng queryBuilder để dùng lock
+    const course = await manager.createQueryBuilder(Courses, 'course')
+      .setLock('pessimistic_write')
+      .where('course.id = :id', { id: courseId })
+      .getOne();
+
+    if (!course) {
+      throw new NotFoundException(`Không tìm thấy khóa học với id ${courseId}`);
+    }
 
     course.status = newStatus;
 
     if (reviewer) {
       course.reviewedBy = reviewer;
       course.reviewedAt = new Date();
+    } else {
+      // Đảm bảo xóa reviewer nếu không phải HoD (ví dụ: lecturer gửi pending)
+      course.reviewedBy = undefined;
+      course.reviewedAt = undefined;
     }
 
-    return this.courseRepo.save(course);
+    await manager.save(course);
+
+    // Sau khi update, load lại relations nếu cần
+    const updatedCourse = await manager.findOne(Courses, {
+      where: { id: courseId },
+      relations: ['createdBy', 'reviewedBy'],
+    });
+
+    if (!updatedCourse) {
+      throw new NotFoundException(`Không tìm thấy khóa học với id ${courseId}`);
+    }
+
+    return updatedCourse;
+  });
   }
 }

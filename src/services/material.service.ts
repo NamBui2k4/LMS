@@ -42,23 +42,43 @@ export class MaterialService {
   }
 
   private async assertLecturerCanEdit(
-    lessonId: number,
-    lecturerId: number,
-  ): Promise<void> {
-    const lesson = await this.lessonRepo.findById(lessonId);
-    if (!lesson) throw new NotFoundException('Không tìm thấy bài giảng.');
+  lessonId: number,
+  lecturerId: number,
+): Promise<void> {
+  console.log(`[assertLecturerCanEdit] Checking lessonId=${lessonId}, lecturerId=${lecturerId}`);
 
-    const course = await this.courseRepo.findById(lesson.course.id);
-    if (!course) throw new NotFoundException('Không tìm thấy khóa học.');
-
-    if (course.createdBy?.userId !== lecturerId)
-      throw new ForbiddenException('Bạn không có quyền chỉnh sửa học liệu này.');
-
-    if (!EDITABLE_STATUSES.includes(course.status))
-      throw new BadRequestException(
-        'Không thể chỉnh sửa học liệu khi khóa học đã được công bố, đóng hoặc lưu trữ.',
-      );
+  const lesson = await this.lessonRepo.findById(lessonId);
+  if (!lesson) {
+    console.error(`Lesson ${lessonId} not found`);
+    throw new NotFoundException('Không tìm thấy bài giảng.');
   }
+
+  console.log(`Lesson found: "${lesson.title}", course_id=${lesson.course?.id}`);
+
+  // Load course với createdBy rõ ràng
+  const course = await this.courseRepo.findById(lesson.course.id);
+  if (!course) {
+    console.error(`Course ${lesson.course.id} not found`);
+    throw new NotFoundException('Không tìm thấy khóa học.');
+  }
+
+  console.log(`Course id=${course.id}, created_by=${course.createdBy?.userId}, status=${course.status}`);
+
+  // So sánh an toàn hơn
+  const courseOwnerId = Number(course.createdBy?.userId);
+  if (courseOwnerId !== Number(lecturerId)) {
+    console.error(`Permission denied: course owner=${courseOwnerId}, requester=${lecturerId}`);
+    throw new ForbiddenException('Bạn không có quyền chỉnh sửa học liệu này.');
+  }
+
+  if (!EDITABLE_STATUSES.includes(course.status)) {
+    throw new BadRequestException(
+      'Không thể chỉnh sửa học liệu khi khóa học đã được công bố, đóng hoặc lưu trữ.',
+    );
+  }
+
+  console.log(`[assertLecturerCanEdit] Permission GRANTED for lecturer ${lecturerId}`);
+}
 
   async create(
     lessonId: number,
