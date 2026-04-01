@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>LMS Staff — Chi tiết khóa học</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="layout">
+  <%- include('../partials/staff-topbar') %>
+  <div class="layout-body">
+    <%- include('../partials/staff-sidebar', { activeMenu: 'classes' }) %>
+    <main class="layout-main">
+      <div class="max-content">
+
+        <div class="page-header" style="display:flex;align-items:center;gap:12px;">
+          <a href="/staff/course" class="btn btn-ghost btn-sm" style="padding:6px 8px;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          </a>
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              <span style="font-size:.75rem;font-family:monospace;background:rgba(35,134,54,.15);color:#3fb950;border:1px solid rgba(35,134,54,.3);padding:3px 10px;border-radius:4px;">IT004</span>
+              <span class="badge badge-green">Đang hoạt động</span>
+            </div>
+            <h1 style="font-size:1.5rem;font-weight:700;color:#fff;">Phát triển Ứng dụng Web với React</h1>
+          </div>
+        </div>
+
+        <div class="grid-2" style="grid-template-columns:2fr 1fr;gap:2rem;align-items:start;">
+          <!-- Left: Lessons -->
+          <div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+              <h2 style="font-size:1.1rem;font-weight:600;color:#fff;">Danh sách bài giảng</h2>
+              <button class="btn btn-green btn-sm" data-modal-open="modal-add-lesson">+ Thêm bài giảng</button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:.75rem;">
+              <% const lessons = [
+                { id:1, title:'Giới thiệu React & JSX', summary:'Tổng quan về React ecosystem', order:1 },
+                { id:2, title:'Component & Props', summary:'Cách tạo và tái sử dụng component', order:2 },
+                { id:3, title:'State & Lifecycle', summary:'Quản lý trạng thái trong React', order:3 },
+              ]; %>
+              <% lessons.forEach(function(lesson){ %>
+              <div class="card" style="padding:1rem;display:flex;align-items:center;gap:12px;">
+                <div style="width:32px;height:32px;border-radius:6px;background:rgba(35,134,54,.15);border:1px solid rgba(35,134,54,.3);display:flex;align-items:center;justify-content:center;font-weight:700;color:#3fb950;font-size:.875rem;flex-shrink:0;"><%= lesson.order %></div>
+                <div style="flex:1;">
+                  <div style="font-weight:500;color:#fff;font-size:.9rem;"><%= lesson.title %></div>
+                  <div style="font-size:.75rem;color:var(--text-muted);margin-top:2px;"><%= lesson.summary %></div>
+                </div>
+                <div style="display:flex;gap:6px;">
+                  <button class="btn btn-ghost btn-sm">Sửa</button>
+                  <button class="btn btn-red btn-sm">Xóa</button>
+                </div>
+              </div>
+              <% }) %>
+            </div>
+          </div>
+
+          <!-- Right: Enrolled students -->
+          <div>
+            <h2 style="font-size:1.1rem;font-weight:600;color:#fff;margin-bottom:1rem;">Sinh viên ghi danh</h2>
+            <div class="card" style="padding:.5rem;">
+              <% const students = [
+                { name:'Nguyễn Văn A', id:'52100001', progress:75 },
+                { name:'Trần Thị B', id:'52100002', progress:60 },
+                { name:'Lê Hoàng C', id:'52100003', progress:90 },
+              ]; %>
+              <% students.forEach(function(s){ %>
+              <div style="padding:.75rem;border-radius:6px;border-bottom:1px solid var(--border);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                  <div>
+                    <div style="font-size:.875rem;font-weight:500;color:#fff;"><%= s.name %></div>
+                    <div style="font-size:.7rem;color:var(--text-muted);font-family:monospace;"><%= s.id %></div>
+                  </div>
+                  <span style="font-size:.75rem;font-weight:700;color:var(--text-primary);"><%= s.progress %>%</span>
+                </div>
+                <div class="progress-bar progress-sm">
+                  <div class="progress-bar-fill" style="background:<%= s.progress>=80?'#3fb950':s.progress>=50?'#1f6feb':'#f85149' %>;width:<%= s.progress %>%;"></div>
+                </div>
+              </div>
+              <% }) %>
+              <div style="padding:.75rem;text-align:center;">
+                <button class="btn btn-ghost btn-sm" onclick="showToast('Tính năng đang phát triển!')">Xem tất cả sinh viên</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+  <footer class="layout-footer">
+    <span>Copyright © 2026 TDTU. All rights reserved.</span>
+    <span>Portal Giảng Viên v2.1</span>
+  </footer>
+</div>
+
+<!-- Modal add lesson -->
+<div id="modal-add-lesson" class="modal-overlay hidden">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <span class="modal-title">Thêm bài giảng mới</span>
+      <button class="modal-close" data-modal-close="modal-add-lesson">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Tiêu đề bài giảng</label>
+        <input type="text" class="form-input" placeholder="Nhập tiêu đề...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Tóm tắt</label>
+        <input type="text" class="form-input" placeholder="Tóm tắt ngắn...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nội dung chi tiết</label>
+        <textarea class="form-input form-textarea" rows="4" placeholder="Nội dung bài giảng..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-modal-close="modal-add-lesson">Hủy</button>
+      <button class="btn btn-green" onclick="showToast('Đã thêm bài giảng!');closeModal('modal-add-lesson')">Lưu bài giảng</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+</body>
+</html>

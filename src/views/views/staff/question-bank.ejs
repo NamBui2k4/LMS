@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>LMS Staff — Ngân hàng Câu hỏi</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .q-card { background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:1rem;transition:border-color .2s; }
+    .q-card:hover { border-color:#8b949e; }
+    .q-options { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:.75rem; }
+    .q-opt { padding:.5rem .75rem;border-radius:6px;font-size:.8rem;background:var(--bg-hover);border:1px solid var(--border);color:var(--text-primary); }
+    .q-opt.correct { background:rgba(63,185,80,.1);border-color:rgba(63,185,80,.35);color:#3fb950;font-weight:600; }
+    .q-essay { background:var(--bg-hover);border-radius:6px;padding:.75rem;font-size:.85rem;color:var(--text-muted);border:1px solid var(--border);margin-top:.75rem; }
+    .badge-diff-easy   { background:rgba(63,185,80,.15);color:#3fb950;border:1px solid rgba(63,185,80,.3); }
+    .badge-diff-medium { background:rgba(251,189,35,.15);color:#f0b429;border:1px solid rgba(251,189,35,.3); }
+    .badge-diff-hard   { background:rgba(248,81,73,.15);color:#f85149;border:1px solid rgba(248,81,73,.3); }
+    .toolbar { display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:1.5rem; }
+    .toolbar select, .toolbar input { height:36px; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <%- include('../partials/staff-topbar') %>
+  <div class="layout-body">
+    <%- include('../partials/staff-sidebar', { activeMenu: 'qbank' }) %>
+    <main class="layout-main">
+      <div class="max-content">
+
+        <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h1 class="page-title">Ngân hàng Câu hỏi</h1>
+            <p class="page-subtitle">Quản lý và tái sử dụng câu hỏi cho các bài kiểm tra</p>
+          </div>
+          <button class="btn btn-green" data-modal-open="modal-add-question">+ Thêm Câu hỏi</button>
+        </div>
+
+        <!-- Toolbar: search + filter -->
+        <div class="toolbar">
+          <div style="position:relative;flex:1;min-width:200px;">
+            <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;" width="15" height="15" fill="none" stroke="var(--text-muted)" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" class="form-input" id="q-search" placeholder="Tìm nội dung câu hỏi..." style="padding-left:34px;" oninput="filterQuestions()">
+          </div>
+          <select class="form-input form-select" id="q-filter-course" style="min-width:180px;" onchange="filterQuestions()">
+            <option value="">Mọi thể loại</option>
+            <option value="IT004">Phát triển Web với React</option>
+            <option value="DB001">Cơ sở dữ liệu PostgreSQL</option>
+            <option value="IT007">Kiến trúc Microservices</option>
+          </select>
+          <select class="form-input form-select" id="q-filter-diff" style="min-width:140px;" onchange="filterQuestions()">
+            <option value="">Mọi độ khó</option>
+            <option value="Dễ">Dễ</option>
+            <option value="Trung bình">Trung bình</option>
+            <option value="Khó">Khó</option>
+          </select>
+        </div>
+
+        <!-- Question list -->
+        <div id="q-list">
+          <%
+          const questions = [
+            {
+              id: 'q1',
+              course: 'IT004', courseName: 'Phát triển Web với React',
+              difficulty: 'Dễ', type: 'multiple_choice',
+              content: 'React là gì?',
+              options: [
+                { label:'A', text:'Một thư viện UI của JavaScript', correct: true },
+                { label:'B', text:'Một hệ điều hành', correct: false },
+                { label:'C', text:'Một ngôn ngữ backend', correct: false },
+                { label:'D', text:'Một database', correct: false },
+              ]
+            },
+            {
+              id: 'q2',
+              course: 'IT004', courseName: 'Phát triển Web với React',
+              difficulty: 'Khó', type: 'essay',
+              content: 'Hãy giải thích cơ chế hoạt động của Virtual DOM trong React và tại sao nó lại giúp tăng hiệu suất render?',
+              options: []
+            },
+            {
+              id: 'q3',
+              course: 'DB001', courseName: 'Cơ sở dữ liệu PostgreSQL',
+              difficulty: 'Trung bình', type: 'multiple_choice',
+              content: 'Lệnh nào dùng để xóa toàn bộ dữ liệu trong bảng mà không ghi log từng dòng?',
+              options: [
+                { label:'A', text:'DELETE FROM table', correct: false },
+                { label:'B', text:'TRUNCATE TABLE table', correct: true },
+                { label:'C', text:'DROP TABLE table', correct: false },
+                { label:'D', text:'REMOVE FROM table', correct: false },
+              ]
+            },
+            {
+              id: 'q4',
+              course: 'IT007', courseName: 'Kiến trúc Microservices',
+              difficulty: 'Trung bình', type: 'multiple_choice',
+              content: 'Pattern nào giúp các microservice giao tiếp bất đồng bộ?',
+              options: [
+                { label:'A', text:'REST API', correct: false },
+                { label:'B', text:'gRPC', correct: false },
+                { label:'C', text:'Message Queue (Kafka, RabbitMQ)', correct: true },
+                { label:'D', text:'GraphQL', correct: false },
+              ]
+            },
+            {
+              id: 'q5',
+              course: 'IT004', courseName: 'Phát triển Web với React',
+              difficulty: 'Dễ', type: 'multiple_choice',
+              content: 'Hook nào dùng để quản lý state trong React Functional Component?',
+              options: [
+                { label:'A', text:'useEffect', correct: false },
+                { label:'B', text:'useState', correct: true },
+                { label:'C', text:'useContext', correct: false },
+                { label:'D', text:'useRef', correct: false },
+              ]
+            },
+          ];
+          %>
+
+          <% questions.forEach(function(q){ %>
+          <div class="q-card" data-course="<%= q.course %>" data-diff="<%= q.difficulty %>" data-content="<%= q.content.toLowerCase() %>">
+            <!-- Header row -->
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:.75rem;">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                <span style="font-size:.72rem;font-family:monospace;background:rgba(35,134,54,.12);color:#3fb950;border:1px solid rgba(35,134,54,.25);padding:2px 8px;border-radius:4px;"><%= q.course %></span>
+                <span style="font-size:.78rem;color:var(--text-muted);"><%= q.courseName %></span>
+                <span class="badge badge-diff-<%= q.difficulty==='Dễ'?'easy':q.difficulty==='Khó'?'hard':'medium' %>" style="font-size:.68rem;padding:2px 8px;border-radius:4px;"><%= q.difficulty %></span>
+                <span style="font-size:.72rem;background:var(--bg-hover);color:var(--text-muted);border:1px solid var(--border);padding:2px 8px;border-radius:4px;">
+                  <%= q.type === 'multiple_choice' ? '● Trắc nghiệm' : '✎ Tự luận' %>
+                </span>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-ghost btn-sm" onclick="openEditQuestion('<%= q.id %>')">Sửa</button>
+                <button class="btn btn-red btn-sm" onclick="deleteQuestion('<%= q.id %>')">Xóa</button>
+              </div>
+            </div>
+
+            <!-- Question content -->
+            <p style="font-size:.95rem;font-weight:500;color:#fff;line-height:1.5;"><%= q.content %></p>
+
+            <!-- Options for multiple choice -->
+            <% if (q.type === 'multiple_choice') { %>
+            <div class="q-options">
+              <% q.options.forEach(function(opt){ %>
+              <div class="q-opt <%= opt.correct ? 'correct' : '' %>">
+                <%= opt.label %>. <%= opt.text %> <%= opt.correct ? '✓' : '' %>
+              </div>
+              <% }) %>
+            </div>
+            <% } else { %>
+            <div class="q-essay">📝 Câu hỏi tự luận — Giảng viên chấm thủ công</div>
+            <% } %>
+          </div>
+          <% }) %>
+
+          <!-- Empty state (shown when filter returns nothing) -->
+          <div id="q-empty" class="empty-state card" style="display:none;">
+            <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <p>Không tìm thấy câu hỏi nào phù hợp.</p>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+  <footer class="layout-footer">
+    <span>Copyright © 2026 TDTU. All rights reserved.</span>
+    <span>Portal Giảng Viên v2.1</span>
+  </footer>
+</div>
+
+<!-- Modal thêm câu hỏi -->
+<div id="modal-add-question" class="modal-overlay hidden">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <span class="modal-title">Thêm Câu hỏi mới</span>
+      <button class="modal-close" data-modal-close="modal-add-question">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Khóa học</label>
+        <select class="form-input form-select" id="new-q-course">
+          <option value="IT004">Phát triển Web với React</option>
+          <option value="DB001">Cơ sở dữ liệu PostgreSQL</option>
+          <option value="IT007">Kiến trúc Microservices</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:12px;">
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Độ khó</label>
+          <select class="form-input form-select" id="new-q-diff">
+            <option>Dễ</option><option>Trung bình</option><option>Khó</option>
+          </select>
+        </div>
+        <div class="form-group" style="flex:1;">
+          <label class="form-label">Loại câu hỏi</label>
+          <select class="form-input form-select" id="new-q-type" onchange="toggleEssayMode(this.value)">
+            <option value="multiple_choice">Trắc nghiệm</option>
+            <option value="essay">Tự luận</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nội dung câu hỏi</label>
+        <textarea class="form-input form-textarea" rows="3" id="new-q-content" placeholder="Nhập nội dung câu hỏi..."></textarea>
+      </div>
+      <div id="options-section">
+        <label class="form-label" style="margin-bottom:.5rem;display:block;">Các lựa chọn (đánh dấu đáp án đúng)</label>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <% ['A','B','C','D'].forEach(function(lbl){ %>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <input type="radio" name="correct-opt" value="<%= lbl %>" id="opt-radio-<%= lbl %>">
+            <label for="opt-radio-<%= lbl %>" style="font-weight:700;color:#fff;width:20px;"><%= lbl %>.</label>
+            <input type="text" class="form-input" id="opt-<%= lbl %>" placeholder="Lựa chọn <%= lbl %>..." style="flex:1;">
+          </div>
+          <% }) %>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-modal-close="modal-add-question">Hủy</button>
+      <button class="btn btn-green" onclick="saveQuestion()">Lưu câu hỏi</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+function filterQuestions() {
+  const search = document.getElementById('q-search').value.toLowerCase();
+  const course = document.getElementById('q-filter-course').value;
+  const diff   = document.getElementById('q-filter-diff').value;
+  let visible  = 0;
+  document.querySelectorAll('#q-list .q-card').forEach(el => {
+    const matchSearch = !search || el.dataset.content.includes(search);
+    const matchCourse = !course || el.dataset.course === course;
+    const matchDiff   = !diff   || el.dataset.diff === diff;
+    const show = matchSearch && matchCourse && matchDiff;
+    el.style.display = show ? '' : 'none';
+    if (show) visible++;
+  });
+  document.getElementById('q-empty').style.display = visible === 0 ? 'flex' : 'none';
+}
+function toggleEssayMode(type) {
+  document.getElementById('options-section').style.display = type === 'essay' ? 'none' : '';
+}
+function deleteQuestion(id) {
+  if (confirm('Xóa câu hỏi này?')) showToast('Đã xóa câu hỏi!');
+}
+function openEditQuestion(id) { showToast('Tính năng chỉnh sửa đang phát triển!'); }
+function saveQuestion() {
+  const content = document.getElementById('new-q-content').value.trim();
+  if (!content) { showToast('Vui lòng nhập nội dung câu hỏi!', 'error'); return; }
+  showToast('Đã thêm câu hỏi mới!');
+  closeModal('modal-add-question');
+}
+</script>
+</body>
+</html>

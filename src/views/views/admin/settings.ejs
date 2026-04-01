@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>LMS Admin — Cài đặt hệ thống</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { background: #0f172a; }
+    .settings-layout { display:flex;gap:2rem; }
+    .settings-sidebar { width:240px;flex-shrink:0; }
+    .settings-sidebar-card { background:#1e293b;border:1px solid #1e293b;border-radius:12px;overflow:hidden; }
+    .settings-tab-btn {
+      display:block;width:100%;text-align:left;padding:1rem 1.25rem;font-size:.875rem;font-weight:500;
+      border:none;cursor:pointer;background:none;color:#94a3b8;transition:all .15s;
+      border-left:2px solid transparent;
+    }
+    .settings-tab-btn:hover { background:rgba(255,255,255,.05);color:#e2e8f0; }
+    .settings-tab-btn.active-settings { background:rgba(59,130,246,.1);color:#93c5fd;border-left-color:#3b82f6; }
+    .settings-main { flex:1;background:#1e293b;border:1px solid #1e293b;border-radius:12px;padding:2rem; }
+    .settings-content { display:none; }
+    .settings-content.show { display:block; }
+    .section-title { font-size:1.25rem;font-weight:600;color:#fff;padding-bottom:1rem;margin-bottom:1.5rem;border-bottom:1px solid #0f172a; }
+    .form-input-dark {
+      width:100%;background:#0f172a;border:1px solid #374151;border-radius:8px;padding:.625rem 1rem;
+      color:#fff;font-size:.875rem;outline:none;
+    }
+    .form-input-dark:focus { border-color:#3b82f6; }
+    .form-label-gray { font-size:.875rem;font-weight:500;color:#94a3b8;margin-bottom:6px;display:block; }
+    .form-hint { font-size:.75rem;color:#64748b;margin-top:6px; }
+    .grid-2-settings { display:grid;grid-template-columns:1fr 1fr;gap:1.5rem; }
+    @media(max-width:640px){ .grid-2-settings{grid-template-columns:1fr;} .settings-layout{flex-direction:column;} .settings-sidebar{width:100%;} }
+  </style>
+</head>
+<body>
+<div class="layout" style="background:#0f172a;">
+  <%- include('../partials/admin-topbar') %>
+  <div class="layout-body">
+    <%- include('../partials/admin-sidebar', { activeMenu: 'settings' }) %>
+
+    <main class="layout-main" style="background:#0f172a;">
+      <div class="max-content" style="max-width:1100px;">
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;">
+          <div>
+            <h1 style="font-size:1.75rem;font-weight:700;color:#fff;">Cài đặt hệ thống</h1>
+            <p style="color:#64748b;font-size:.875rem;margin-top:6px;">Quản lý cấu hình toàn cục của hệ thống Microservices LMS</p>
+          </div>
+          <button class="btn btn-primary" onclick="saveSettings()">Lưu thay đổi</button>
+        </div>
+
+        <div class="settings-layout">
+          <!-- Tab sidebar -->
+          <div class="settings-sidebar">
+            <div class="settings-sidebar-card">
+              <button class="settings-tab-btn active-settings" data-settings-tab="general" onclick="showSettingsTab('general')">⚙️ Cài đặt chung</button>
+              <button class="settings-tab-btn" data-settings-tab="security" onclick="showSettingsTab('security')">🛡️ Bảo mật & Truy cập</button>
+              <button class="settings-tab-btn" data-settings-tab="email" onclick="showSettingsTab('email')">📧 Cấu hình SMTP (Email)</button>
+            </div>
+          </div>
+
+          <!-- Tab content -->
+          <div class="settings-main">
+
+            <!-- General tab -->
+            <div id="settings-general" class="settings-content show">
+              <h2 class="section-title">Cài đặt chung</h2>
+
+              <div class="form-group">
+                <label class="form-label-gray">Tên Website / Hệ thống</label>
+                <input type="text" class="form-input-dark" id="siteName" value="LMS Center">
+              </div>
+
+              <div class="form-group" style="margin-bottom:1.5rem;">
+                <label class="form-label-gray">Giới hạn dung lượng upload file (MB)</label>
+                <input type="number" class="form-input-dark" id="maxUploadSize" value="50" style="max-width:200px;">
+                <p class="form-hint">Áp dụng cho báo cáo của sinh viên và tài liệu của giảng viên.</p>
+              </div>
+
+              <div style="padding-top:1rem;border-top:1px solid #0f172a;">
+                <h3 style="font-size:.9rem;font-weight:500;color:#e2e8f0;margin-bottom:1rem;">Trạng thái hệ thống</h3>
+                <div class="toggle-wrap">
+                  <div>
+                    <div class="toggle-label">Chế độ bảo trì (Maintenance Mode)</div>
+                    <div class="toggle-desc">Bật tính năng này sẽ chặn tất cả sinh viên và giảng viên đăng nhập, chỉ Admin có thể truy cập.</div>
+                  </div>
+                  <label class="toggle">
+                    <input type="checkbox" id="maintenanceMode">
+                    <span class="toggle-slider"></span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Security tab -->
+            <div id="settings-security" class="settings-content">
+              <h2 class="section-title">Bảo mật & Truy cập</h2>
+
+              <div class="toggle-wrap">
+                <div>
+                  <div class="toggle-label">Cho phép tự do đăng ký tài khoản</div>
+                  <div class="toggle-desc">Nếu tắt, sinh viên mới chỉ có thể được thêm thủ công bởi Admin.</div>
+                </div>
+                <label class="toggle">
+                  <input type="checkbox" id="allowRegistration" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid #0f172a;" class="form-group">
+                <label class="form-label-gray">Thời gian hết hạn phiên đăng nhập (Phút)</label>
+                <input type="number" class="form-input-dark" id="sessionTimeout" value="120" style="max-width:200px;">
+              </div>
+            </div>
+
+            <!-- Email tab -->
+            <div id="settings-email" class="settings-content">
+              <h2 class="section-title">Cấu hình Gửi Mail (SMTP)</h2>
+              <p style="font-size:.875rem;color:#94a3b8;margin-bottom:1.5rem;">Hệ thống sử dụng cấu hình này để gửi email xác thực, cấp lại mật khẩu và thông báo lớp học.</p>
+
+              <div class="grid-2-settings">
+                <div class="form-group">
+                  <label class="form-label-gray">SMTP Host</label>
+                  <input type="text" class="form-input-dark" id="smtpHost" value="smtp.gmail.com">
+                </div>
+                <div class="form-group">
+                  <label class="form-label-gray">SMTP Port</label>
+                  <input type="number" class="form-input-dark" id="smtpPort" value="587">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label-gray">Email tài khoản (SMTP Username)</label>
+                <input type="text" class="form-input-dark" id="smtpUser" value="admin@lms.com">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label-gray">Mật khẩu ứng dụng (App Password)</label>
+                <input type="password" class="form-input-dark" placeholder="••••••••••••">
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+function saveSettings() {
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = 'Đang lưu...';
+  setTimeout(() => {
+    showToast('Đã lưu cài đặt hệ thống thành công!');
+    btn.disabled = false;
+    btn.textContent = 'Lưu thay đổi';
+  }, 800);
+}
+</script>
+</body>
+</html>

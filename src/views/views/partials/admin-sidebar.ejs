@@ -1,0 +1,35 @@
+<%# Admin Sidebar partial — activeMenu variable controls highlight %>
+<%- include('../partials/icons') %>
+<aside class="sidebar">
+  <nav class="sidebar-nav">
+    <ul>
+      <li>
+        <a href="/admin/dashboard" class="<%= activeMenu === 'dashboard' ? 'active-blue' : '' %>">
+          <%- icon('dashboard','') %> Dashboard
+        </a>
+      </li>
+      <li>
+        <a href="/admin/users" class="<%= activeMenu === 'users' ? 'active-blue' : '' %>">
+          <%- icon('users','') %> Quản lý User
+        </a>
+      </li>
+      <li>
+        <a href="/admin/settings" class="<%= activeMenu === 'settings' ? 'active-blue' : '' %>">
+          <%- icon('settings','') %> Cài đặt hệ thống
+        </a>
+      </li>
+    </ul>
+  </nav>
+  <div class="sidebar-footer">
+    <div style="padding:0 8px 12px;font-size:.75rem;color:#8b949e;">
+      <div style="font-weight:600;color:#fff;">admin@lms.edu.vn</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:4px;">
+        <span class="badge-dot dot-green"></span>
+        <span style="text-transform:uppercase;letter-spacing:.05em;">ADMIN Mode</span>
+      </div>
+    </div>
+    <button class="sidebar-logout" onclick="window.location.href='/admin'">
+      <%- icon('logout','') %> Đăng xuất
+    </button>
+  </div>
+</aside>

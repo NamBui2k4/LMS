@@ -1,0 +1,33 @@
+<%# Student Sidebar partial %>
+<%- include('../partials/icons') %>
+<aside class="sidebar">
+  <nav class="sidebar-nav">
+    <ul>
+      <li>
+        <a href="/student/profile" class="<%= activeMenu === 'profile' ? 'active-blue' : '' %>">
+          <%- icon('user','') %> Hồ sơ cá nhân
+        </a>
+      </li>
+      <li>
+        <a href="/student/assignments" class="<%= activeMenu === 'assignments' ? 'active-blue' : '' %>">
+          <%- icon('clipboard','') %> Bài tập của tôi
+        </a>
+      </li>
+      <li>
+        <a href="/student/course" class="<%= activeMenu === 'course' ? 'active-blue' : '' %>">
+          <%- icon('book','') %> Khóa học
+        </a>
+      </li>
+      <li>
+        <a href="/student/attendance" class="<%= activeMenu === 'attendance' ? 'active-blue' : '' %>">
+          <%- icon('user_check','') %> Điểm danh
+        </a>
+      </li>
+    </ul>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="sidebar-logout" onclick="window.location.href='/login'">
+      <%- icon('logout','') %> Đăng xuất
+    </button>
+  </div>
+</aside>

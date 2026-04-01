@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>LMS — Khóa học</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .course-card { display:flex;flex-direction:column;height:100%; }
+    .course-card .card-foot { margin-top:auto;padding-top:1rem;border-top:1px solid var(--border); }
+    .credit-badge { font-size:.75rem;color:var(--text-muted);display:flex;align-items:center;gap:4px; }
+    .credit-badge svg { width:12px;height:12px; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <%- include('../partials/student-topbar') %>
+  <div class="layout-body">
+    <%- include('../partials/student-sidebar', { activeMenu: 'course' }) %>
+
+    <main class="layout-main">
+      <div class="max-content">
+
+        <div class="page-header">
+          <h1 class="page-title">Quản lý Khóa học</h1>
+        </div>
+
+        <!-- Registered courses -->
+        <div style="margin-bottom:2.5rem;">
+          <h2 style="font-size:1.125rem;font-weight:600;color:var(--text-primary);margin-bottom:1rem;display:flex;align-items:center;gap:8px;">
+            <svg width="18" height="18" fill="none" stroke="#3fb950" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+            Khóa học của tôi (Đã đăng ký)
+          </h2>
+          <div class="grid-3">
+            <% const registered = [
+              { id:'IT001', name:'Nhập môn Lập trình', teacher:'ThS. Nguyễn Văn A', credits:3 },
+              { id:'IT002', name:'Cấu trúc Dữ liệu & Giải thuật', teacher:'TS. Lê Thị B', credits:4 },
+            ]; %>
+            <% registered.forEach(function(c){ %>
+            <div class="card course-card" style="padding:1.25rem;">
+              <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:.75rem;">
+                <span style="padding:3px 8px;font-size:.75rem;font-weight:500;background:rgba(31,111,235,.15);color:#58a6ff;border-radius:4px;border:1px solid rgba(31,111,235,.25);">
+                  <%= c.id %>
+                </span>
+                <span class="credit-badge">
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <%= c.credits %> Tín chỉ
+                </span>
+              </div>
+              <h3 style="font-weight:700;font-size:1.05rem;color:#fff;margin-bottom:4px;"><%= c.name %></h3>
+              <p style="font-size:.875rem;color:var(--text-muted);margin-bottom:1rem;">GV: <%= c.teacher %></p>
+              <div class="card-foot">
+                <a href="/student/course/<%= c.id %>" class="btn btn-ghost btn-block" style="justify-content:center;">Vào lớp học</a>
+              </div>
+            </div>
+            <% }) %>
+          </div>
+        </div>
+
+        <!-- Available courses -->
+        <div>
+          <h2 style="font-size:1.125rem;font-weight:600;color:var(--text-primary);margin-bottom:1rem;display:flex;align-items:center;gap:8px;">
+            <svg width="18" height="18" fill="none" stroke="#58a6ff" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Khóa học đang mở đăng ký
+          </h2>
+          <div class="grid-3">
+            <% const available = [
+              { id:'IT003', name:'Trí tuệ Nhân tạo', teacher:'PGS. TS. Trần C', credits:3 },
+              { id:'IT004', name:'Phát triển Ứng dụng Web', teacher:'ThS. Phạm D', credits:3 },
+            ]; %>
+            <% available.forEach(function(c){ %>
+            <div class="card course-card" style="padding:1.25rem;background:var(--bg-base);opacity:.85;transition:opacity .2s;" onmouseenter="this.style.opacity='1'" onmouseleave="this.style.opacity='.85'">
+              <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:.75rem;">
+                <span style="padding:3px 8px;font-size:.75rem;font-weight:500;background:var(--bg-hover);color:var(--text-primary);border-radius:4px;border:1px solid var(--border);">
+                  <%= c.id %>
+                </span>
+                <span class="credit-badge">
+                  <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+                  <%= c.credits %> Tín chỉ
+                </span>
+              </div>
+              <h3 style="font-weight:700;font-size:1.05rem;color:var(--text-primary);margin-bottom:4px;"><%= c.name %></h3>
+              <p style="font-size:.875rem;color:var(--text-muted);margin-bottom:1rem;">GV: <%= c.teacher %></p>
+              <div class="card-foot">
+                <button class="btn btn-green btn-block" style="justify-content:center;" onclick="showToast('Đăng ký thành công!')">Đăng ký ngay</button>
+              </div>
+            </div>
+            <% }) %>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+<script src="/js/main.js"></script>
+</body>
+</html>

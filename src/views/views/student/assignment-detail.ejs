@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>LMS — Chi tiết bài tập</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="layout">
+  <%- include('../partials/student-topbar') %>
+  <div class="layout-body">
+    <%- include('../partials/student-sidebar', { activeMenu: 'assignments' }) %>
+    <main class="layout-main">
+      <div class="max-content">
+
+        <!-- Expired banner (hidden by default, shown by JS) -->
+        <div id="expired-banner" class="alert alert-red" style="display:none;margin-bottom:2rem;">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div>
+            <h4 style="font-weight:700;font-size:1rem;">Đã Hết Thời Gian Nộp Bài!</h4>
+            <p style="font-size:.8rem;margin-top:2px;">Bài tập này đã quá hạn. Hệ thống đã tự động khóa nộp bài.</p>
+          </div>
+        </div>
+
+        <!-- Header -->
+        <div class="page-header" style="display:flex;align-items:center;gap:12px;">
+          <a href="/student/assignments" class="btn btn-ghost btn-sm" style="padding:6px 8px;">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+          </a>
+          <div>
+            <p style="font-size:.8rem;font-family:monospace;background:var(--border);color:var(--text-primary);padding:3px 10px;border-radius:4px;display:inline-block;margin-bottom:6px;">IT004 - Phát triển Ứng dụng Web</p>
+            <h1 style="font-size:1.5rem;font-weight:700;color:#fff;">Báo cáo Giữa kỳ - Phát triển Ứng dụng Web</h1>
+          </div>
+        </div>
+
+        <div class="grid-2" style="grid-template-columns:2fr 1fr;align-items:start;gap:2rem;">
+          <!-- Description -->
+          <div class="card">
+            <div class="card-header" style="display:flex;align-items:center;gap:8px;">
+              <svg width="18" height="18" fill="none" stroke="#1f6feb" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              <h2 style="font-size:1rem;font-weight:600;color:#fff;">Mô tả & Yêu cầu bài tập</h2>
+            </div>
+            <div class="card-body" style="color:var(--text-primary);line-height:1.7;white-space:pre-line;font-size:.9rem;">Xây dựng một ứng dụng web Single Page Application (SPA) đơn giản sử dụng React.
+
+Các tính năng yêu cầu:
+1. Đăng nhập/Đăng ký.
+2. Quản lý danh sách (CRUD).
+3. Responsive design.
+4. Nộp link GitHub và Link Deployment.
+
+Tiêu chí chấm điểm:
+• Chức năng hoạt động đúng: 40%
+• Giao diện đẹp, responsive: 30%
+• Code sạch, có comment: 20%
+• Deploy thành công: 10%</div>
+          </div>
+
+          <!-- Countdown & Submit -->
+          <div style="display:flex;flex-direction:column;gap:1.5rem;">
+
+            <!-- Countdown -->
+            <div class="card">
+              <div class="card-header" style="display:flex;align-items:center;gap:8px;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <h2 id="countdown-title" style="font-size:1rem;font-weight:600;color:var(--text-primary);">Thời gian còn lại</h2>
+              </div>
+              <div class="card-body" id="countdown-container">
+                <div data-cd-live class="countdown-grid">
+                  <div class="countdown-unit"><div class="countdown-num" data-cd-days>00</div><div class="countdown-lbl">Ngày</div></div>
+                  <div class="countdown-unit"><div class="countdown-num" data-cd-hours>00</div><div class="countdown-lbl">Giờ</div></div>
+                  <div class="countdown-unit"><div class="countdown-num" data-cd-minutes>00</div><div class="countdown-lbl">Phút</div></div>
+                  <div class="countdown-unit"><div class="countdown-num" data-cd-seconds>00</div><div class="countdown-lbl">Giây</div></div>
+                </div>
+                <div data-cd-expired style="display:none;text-align:center;padding:1rem;background:var(--bg-hover);border-radius:6px;color:#f85149;font-weight:500;font-size:.875rem;">
+                  Đã quá hạn nộp bài
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit -->
+            <div class="card" id="submit-card">
+              <div class="card-header" style="display:flex;align-items:center;gap:8px;">
+                <svg width="18" height="18" fill="none" stroke="#1f6feb" stroke-width="2" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                <h2 style="font-size:1rem;font-weight:600;color:var(--text-primary);">Nộp bài tập</h2>
+              </div>
+              <div class="card-body" id="submit-body">
+                <div style="display:flex;flex-direction:column;gap:12px;">
+                  <input type="url" id="submission-link" class="form-input" placeholder="Dán link bài làm (VD: GitHub, deployment link)">
+                  <button id="submit-btn" class="btn btn-green btn-block" style="justify-content:center;" onclick="submitAssignment()">Nộp bài ngay</button>
+                </div>
+              </div>
+              <div class="card-body" id="locked-body" style="display:none;">
+                <div class="empty-state">
+                  <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <p style="font-size:.875rem;margin-top:.5rem;">Việc nộp bài đã được khóa.</p>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+<script src="/js/main.js"></script>
+<script>
+  // Deadline: set to 5 minutes from now for demo countdown
+  const deadline = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+
+  function submitAssignment() {
+    const link = document.getElementById('submission-link').value.trim();
+    if (!link) { showToast('Vui lòng nhập link bài làm!', 'error'); return; }
+    showToast('Nộp bài thành công!', 'success');
+    document.getElementById('submit-btn').textContent = '✓ Đã nộp';
+    document.getElementById('submit-btn').disabled = true;
+    document.getElementById('submission-link').disabled = true;
+  }
+
+  // Callback when timer expires
+  function onExpired() {
+    document.getElementById('expired-banner').style.display = 'flex';
+    document.getElementById('submit-body').style.display = 'none';
+    document.getElementById('locked-body').style.display = 'block';
+    document.getElementById('countdown-title').textContent = 'Hạn nộp bài';
+  }
+
+  // Start countdown
+  initCountdown(deadline, 'countdown-container');
+  // Monitor expiry
+  setInterval(() => {
+    const diff = new Date(deadline).getTime() - Date.now();
+    if (diff <= 0) onExpired();
+  }, 1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>LMS Staff — Chấm bài</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .grading-layout { display:flex;gap:1.5rem;flex:1;height:calc(100vh - 200px); }
+    .sub-list { width:280px;flex-shrink:0;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;overflow-y:auto; }
+    .sub-item { padding:1rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s; }
+    .sub-item:hover { background:var(--bg-hover); }
+    .sub-item.selected { background:rgba(31,111,235,.1);border-left:3px solid var(--blue); }
+    .grading-panel-wrap { flex:1;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;display:flex;flex-direction:column;overflow:hidden; }
+    .grade-placeholder { flex:1;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--text-muted);flex-direction:column;gap:12px; }
+    .grade-placeholder svg { opacity:.3; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <%- include('../partials/staff-topbar') %>
+  <div class="layout-body">
+    <%- include('../partials/staff-sidebar', { activeMenu: 'grading' }) %>
+    <main class="layout-main" style="display:flex;flex-direction:column;">
+      <div class="max-content" style="flex:1;display:flex;flex-direction:column;max-width:100%;">
+
+        <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h1 class="page-title">Chấm bài & Phản hồi</h1>
+            <p class="page-subtitle">Quản lý bài nộp của sinh viên và xử lý phúc khảo</p>
+          </div>
+          <select class="form-input form-select" id="filter-status" style="width:220px;" onchange="filterSubmissions(this.value)">
+            <option value="ALL">Tất cả bài nộp</option>
+            <option value="submitted">Cần chấm (Mới nộp)</option>
+            <option value="regrade_requested">Cần xử lý phúc khảo</option>
+            <option value="graded">Đã chấm xong</option>
+          </select>
+        </div>
+
+        <%
+        const submissions = [
+          { id:'sub-1', studentName:'Nguyễn Văn A', quizTitle:'Báo cáo Đồ án giữa kỳ', status:'submitted', submittedAt:'2026-03-29 14:30', score:null, fileUrl:'https://example.com/bao-cao.pdf', feedback:'' },
+          { id:'sub-2', studentName:'Trần Thị B', quizTitle:'Bài tập Thực hành React', status:'regrade_requested', submittedAt:'2026-03-28 09:15', score:7.5, fileUrl:null, feedback:'Code chạy ổn nhưng chưa tối ưu Component.\n\n[Yêu cầu chấm lại]: Thầy xem lại giúp em.' },
+          { id:'sub-3', studentName:'Lê Hoàng C', quizTitle:'Báo cáo Đồ án giữa kỳ', status:'graded', submittedAt:'2026-03-27 16:45', score:9.0, fileUrl:'https://example.com/source-code.zip', feedback:'Làm bài rất xuất sắc, giao diện đẹp!' },
+        ];
+        %>
+
+        <div class="grading-layout">
+          <!-- Left: submission list -->
+          <div class="sub-list">
+            <% submissions.forEach(function(sub,i){ %>
+            <div class="sub-item <%= i===0?'selected':'' %>" id="sub-item-<%= sub.id %>" data-status="<%= sub.status %>" onclick="selectSub('<%= sub.id %>')">
+              <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">
+                <span style="font-weight:600;color:#fff;font-size:.9rem;"><%= sub.studentName %></span>
+                <% if(sub.status==='submitted'){ %>
+                  <span class="badge badge-yellow" style="font-size:.65rem;">Chờ chấm</span>
+                <% } else if(sub.status==='regrade_requested'){ %>
+                  <span class="badge badge-red" style="font-size:.65rem;animation:pulse 2s infinite;">Phúc khảo</span>
+                <% } else { %>
+                  <span class="badge badge-green" style="font-size:.65rem;">Đã chấm</span>
+                <% } %>
+              </div>
+              <p style="font-size:.75rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><%= sub.quizTitle %></p>
+              <p style="font-size:.7rem;color:var(--text-muted);margin-top:4px;">Nộp lúc: <%= sub.submittedAt %></p>
+            </div>
+            <% }) %>
+          </div>
+
+          <!-- Right: grading panel -->
+          <div class="grading-panel-wrap">
+            <!-- Default empty state -->
+            <div id="grading-empty" class="grade-placeholder">
+              <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="m9 15 2 2 4-4"/></svg>
+              <p>Chọn một bài nộp từ danh sách bên trái để bắt đầu chấm điểm.</p>
+            </div>
+
+            <!-- Sub panels per submission -->
+            <% submissions.forEach(function(sub,i){ %>
+            <div id="panel-<%= sub.id %>" class="grading-panel" style="display:<%= i===0?'flex':'none' %>;flex-direction:column;flex:1;overflow:hidden;">
+              <!-- Info -->
+              <div style="padding:1.25rem;border-bottom:1px solid var(--border);background:rgba(13,17,23,.4);">
+                <h2 style="font-size:1.1rem;font-weight:700;color:#fff;">Bài làm của: <%= sub.studentName %></h2>
+                <p style="color:#818cf8;margin-top:2px;font-size:.875rem;"><%= sub.quizTitle %></p>
+                <!-- Submission content -->
+                <div style="background:var(--bg-base);padding:.75rem;border-radius:6px;margin-top:.75rem;">
+                  <h4 style="font-size:.75rem;font-weight:600;color:var(--text-muted);margin-bottom:8px;">Nội dung nộp:</h4>
+                  <% if(sub.fileUrl){ %>
+                    <a href="<%= sub.fileUrl %>" target="_blank" style="display:flex;align-items:center;gap:8px;color:#58a6ff;font-size:.875rem;text-decoration:none;">
+                      📄 <span>Tải xuống tệp đính kèm (Báo cáo / Source code)</span>
+                    </a>
+                  <% } else { %>
+                    <code style="font-size:.75rem;color:var(--text-primary);">{ "question_1": "A", "question_2": "C" }</code>
+                  <% } %>
+                </div>
+                <!-- Regrade note -->
+                <% if(sub.status==='regrade_requested'){ %>
+                  <div class="alert alert-red" style="margin-top:.75rem;">
+                    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/></svg>
+                    <div>
+                      <strong>Sinh viên yêu cầu chấm lại:</strong>
+                      <p style="font-size:.8rem;margin-top:4px;white-space:pre-line;"><%= sub.feedback %></p>
+                    </div>
+                  </div>
+                <% } %>
+              </div>
+
+              <!-- Grade form -->
+              <form style="padding:1.25rem;display:flex;flex-direction:column;flex:1;gap:1rem;" onsubmit="submitGrade(event,'<%= sub.id %>')">
+                <div>
+                  <label class="form-label" style="font-size:.8rem;">Điểm số (Hệ 10)</label>
+                  <input type="number" step="0.1" min="0" max="10" required class="form-input" id="score-<%= sub.id %>" value="<%= sub.score || '' %>" style="max-width:150px;font-size:1.25rem;font-weight:700;" placeholder="0.0">
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;">
+                  <label class="form-label" style="font-size:.8rem;">
+                    <%= sub.status==='regrade_requested' ? 'Phản hồi phúc khảo cho sinh viên' : 'Nhận xét / Góp ý' %>
+                  </label>
+                  <textarea class="form-input form-textarea" id="feedback-<%= sub.id %>" style="flex:1;min-height:100px;resize:vertical;" placeholder="Nhập nhận xét của giảng viên..."><%= sub.status!=='regrade_requested' ? (sub.feedback||'') : '' %></textarea>
+                </div>
+                <div style="display:flex;justify-content:flex-end;gap:12px;padding-top:1rem;border-top:1px solid var(--border);">
+                  <button type="button" class="btn btn-ghost" onclick="document.getElementById('grading-empty').style.display='flex';this.closest('.grading-panel').style.display='none';">Hủy</button>
+                  <button type="submit" class="btn btn-primary">
+                    <%= sub.status==='regrade_requested' ? 'Cập nhật điểm & Phản hồi' : 'Lưu Điểm' %>
+                  </button>
+                </div>
+              </form>
+            </div>
+            <% }) %>
+
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+  <footer class="layout-footer">
+    <span>Copyright © 2026 TDTU. All rights reserved.</span>
+    <span>Portal Giảng Viên v2.1</span>
+  </footer>
+</div>
+<script src="/js/main.js"></script>
+<script>
+const submissions = <%- JSON.stringify(submissions) %>;
+
+function selectSub(id) {
+  document.querySelectorAll('.sub-item').forEach(el => el.classList.remove('selected'));
+  document.getElementById('sub-item-' + id)?.classList.add('selected');
+  document.getElementById('grading-empty').style.display = 'none';
+  document.querySelectorAll('.grading-panel').forEach(p => p.style.display = 'none');
+  const panel = document.getElementById('panel-' + id);
+  if (panel) panel.style.display = 'flex';
+}
+
+function filterSubmissions(status) {
+  document.querySelectorAll('.sub-item').forEach(el => {
+    el.style.display = (status === 'ALL' || el.dataset.status === status) ? '' : 'none';
+  });
+}
+
+function submitGrade(e, id) {
+  e.preventDefault();
+  const score = document.getElementById('score-' + id).value;
+  showToast('Đã lưu điểm ' + score + ' thành công!');
+}
+</script>
+</body>
+</html>

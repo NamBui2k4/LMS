@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>LMS Staff — Quản lý khóa học</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="layout">
+  <%- include('../partials/staff-topbar') %>
+  <div class="layout-body">
+    <%- include('../partials/staff-sidebar', { activeMenu: 'classes' }) %>
+    <main class="layout-main">
+      <div class="max-content">
+
+        <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h1 class="page-title">Quản lý Khóa học / Lớp học</h1>
+            <p class="page-subtitle">Vai trò hiện tại: <strong style="color:#fff;">Trưởng bộ môn</strong></p>
+          </div>
+          <button class="btn btn-green" data-modal-open="modal-create-course">+ Tạo khóa học mới</button>
+        </div>
+
+        <%
+        const courses = [
+          { id:'c1', title:'Phát triển Ứng dụng Web với React', status:'PENDING_HEAD_APPROVAL', votes:0, role:'instructor' },
+          { id:'c2', title:'Kiến trúc Microservices cơ bản', status:'PENDING_VOTE', votes:2, role:'head' },
+          { id:'c3', title:'Cơ sở dữ liệu PostgreSQL', status:'APPROVED', votes:3, role:'head' },
+        ];
+        %>
+
+        <div class="grid-3">
+          <% courses.forEach(function(c){ %>
+          <div class="card" style="display:flex;flex-direction:column;padding:1.25rem;">
+            <h3 style="font-size:1rem;font-weight:600;color:#fff;line-height:1.4;margin-bottom:1rem;"><%= c.title %></h3>
+
+            <div style="margin-bottom:.75rem;">
+              <% if (c.status === 'APPROVED') { %>
+                <span class="badge badge-green">Đang hoạt động</span>
+              <% } else if (c.status === 'PENDING_HEAD_APPROVAL') { %>
+                <span class="badge badge-yellow">Dự kiến mở (Chờ duyệt)</span>
+              <% } else { %>
+                <span class="badge badge-blue">Đang lấy ý kiến (Chờ Vote)</span>
+              <% } %>
+
+              <% if (c.status === 'PENDING_VOTE') { %>
+                <p style="font-size:.75rem;color:var(--text-muted);margin-top:6px;">Số phiếu hiện tại: <%= c.votes %>/3</p>
+              <% } %>
+            </div>
+
+            <div style="margin-top:auto;padding-top:1rem;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">
+              <!-- HEAD approves INSTRUCTOR's course -->
+              <% if (c.status === 'PENDING_HEAD_APPROVAL') { %>
+                <button class="btn btn-green btn-block" style="justify-content:center;" onclick="approveCourse('<%= c.id %>')">✓ Phê duyệt mở lớp</button>
+              <% } %>
+              <!-- INSTRUCTOR votes for HEAD's course -->
+              <% if (c.status === 'PENDING_VOTE') { %>
+                <button class="btn btn-primary btn-block" style="justify-content:center;" onclick="voteForCourse('<%= c.id %>')">👍 Bỏ phiếu ủng hộ</button>
+              <% } %>
+              <div style="display:flex;gap:8px;">
+                <a href="/staff/course/<%= c.id %>" class="btn btn-ghost" style="flex:1;justify-content:center;">Chỉnh sửa</a>
+                <button class="btn btn-red btn-sm" onclick="deleteCourse('<%= c.id %>')">Xóa</button>
+              </div>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+
+      </div>
+    </main>
+  </div>
+  <footer class="layout-footer">
+    <span>Copyright © 2026 TDTU. All rights reserved.</span>
+    <span>Portal Giảng Viên v2.1</span>
+  </footer>
+</div>
+
+<!-- Modal create course -->
+<div id="modal-create-course" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Tạo khóa học mới</span>
+      <button class="modal-close" data-modal-close="modal-create-course">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Tên khóa học</label>
+        <input type="text" class="form-input" id="new-course-name" placeholder="Nhập tên khóa học...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Danh mục</label>
+        <select class="form-input form-select" id="new-course-cat">
+          <option>Công nghệ thông tin</option>
+          <option>Ngoại ngữ</option>
+          <option>Kinh tế - Quản trị</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mô tả ngắn</label>
+        <textarea class="form-input form-textarea" rows="3" placeholder="Mô tả khóa học..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-modal-close="modal-create-course">Hủy</button>
+      <button class="btn btn-green" onclick="createCourse()">Tạo khóa học</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+function approveCourse(id) { showToast('Đã phê duyệt khóa học!'); }
+function voteForCourse(id) { showToast('Đã bỏ phiếu ủng hộ!'); }
+function deleteCourse(id) { if(confirm('Bạn có chắc muốn xóa khóa học này?')) showToast('Đã xóa khóa học!'); }
+function createCourse() { showToast('Đã tạo khóa học mới!'); closeModal('modal-create-course'); }
+</script>
+</body>
+</html>

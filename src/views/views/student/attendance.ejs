@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>LMS — Điểm danh</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="layout">
+  <%- include('../partials/student-topbar') %>
+  <div class="layout-body">
+    <%- include('../partials/student-sidebar', { activeMenu: 'attendance' }) %>
+
+    <main class="layout-main">
+      <div class="max-content">
+
+        <div class="page-header">
+          <h1 class="page-title">
+            <svg width="24" height="24" fill="none" stroke="#238636" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+            Điểm danh học kỳ hiện tại
+          </h1>
+        </div>
+
+        <!-- KPI summary -->
+        <div class="grid-3 mb-8">
+          <div class="stat-card" style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div class="stat-label">Tổng số buổi có mặt</div>
+              <div class="stat-value" style="color:var(--text-primary);">39</div>
+            </div>
+            <div style="padding:10px;background:rgba(35,134,54,.1);border-radius:50%;">
+              <svg width="24" height="24" fill="none" stroke="#3fb950" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+            </div>
+          </div>
+          <div class="stat-card" style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div class="stat-label">Tổng số buổi vắng</div>
+              <div class="stat-value text-red">5</div>
+            </div>
+            <div style="padding:10px;background:rgba(218,54,51,.1);border-radius:50%;">
+              <svg width="24" height="24" fill="none" stroke="#f85149" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+          </div>
+          <div class="stat-card" style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div class="stat-label">Tổng số buổi trễ</div>
+              <div class="stat-value text-yellow">1</div>
+            </div>
+            <div style="padding:10px;background:rgba(234,179,8,.1);border-radius:50%;">
+              <svg width="24" height="24" fill="none" stroke="#eab308" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Detail table -->
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Môn học</th>
+                  <th style="text-align:center;">Tổng số buổi</th>
+                  <th style="text-align:center;color:#3fb950;">Có mặt</th>
+                  <th style="text-align:center;color:#f85149;">Vắng mặt</th>
+                  <th style="text-align:center;color:#eab308;">Đi trễ</th>
+                  <th style="text-align:center;">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% const attendanceData = [
+                  { course:'IT001 - Nhập môn Lập trình', total:15, present:14, absent:1, late:0, status:'good' },
+                  { course:'IT002 - Cấu trúc Dữ liệu', total:15, present:10, absent:4, late:1, status:'warning' },
+                  { course:'IT003 - Trí tuệ Nhân tạo', total:15, present:15, absent:0, late:0, status:'excellent' },
+                ]; %>
+                <% attendanceData.forEach(function(row){ %>
+                <tr>
+                  <td style="font-weight:500;color:#fff;"><%= row.course %></td>
+                  <td style="text-align:center;"><%= row.total %></td>
+                  <td style="text-align:center;"><%= row.present %></td>
+                  <td style="text-align:center;"><%= row.absent %></td>
+                  <td style="text-align:center;"><%= row.late %></td>
+                  <td style="text-align:center;">
+                    <% if (row.status === 'warning') { %>
+                      <span class="badge badge-red">
+                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                        Nguy cơ
+                      </span>
+                    <% } else { %>
+                      <span class="badge badge-green">
+                        <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>
+                        An toàn
+                      </span>
+                    <% } %>
+                  </td>
+                </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+<script src="/js/main.js"></script>
+</body>
+</html>

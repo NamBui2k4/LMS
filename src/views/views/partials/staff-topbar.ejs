@@ -1,0 +1,23 @@
+<%# Staff Topbar partial %>
+<%- include('../partials/icons') %>
+<header class="topbar">
+  <div class="topbar-logo">
+    <img src="/images/logo.png" alt="LMS" onerror="this.style.display='none'">
+    <div>
+      <div class="topbar-title">LMS System</div>
+      <div class="topbar-badge">Cổng Giảng Viên</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <button class="topbar-semester">HK2 2526 <%- icon('chevron_down','') %></button>
+    <div class="topbar-divider"></div>
+    <div style="display:flex;align-items:center;gap:10px;color:#8b949e;">
+      <button class="topbar-icon-btn"><%- icon('message','') %></button>
+      <button class="topbar-icon-btn">
+        <%- icon('bell','') %>
+        <span class="badge-count">2</span>
+      </button>
+    </div>
+    <div class="avatar-circle" style="background:#7c3aed;">GV</div>
+  </div>
+</header>

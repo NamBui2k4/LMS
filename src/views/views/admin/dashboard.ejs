@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>LMS Admin — Dashboard</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .activity-dot { width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:6px; }
+    .health-pulse { width:16px;height:16px;border-radius:50%;background:var(--green);animation:pulse 2s infinite; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <%- include('../partials/admin-topbar') %>
+  <div class="layout-body">
+    <%- include('../partials/admin-sidebar', { activeMenu: 'dashboard' }) %>
+
+    <main class="layout-main">
+      <div class="max-content" style="max-width:1280px;">
+
+        <!-- Welcome -->
+        <div class="page-header">
+          <h1 class="page-title">Dashboard Quản trị</h1>
+          <p class="page-subtitle">
+            Chào mừng, <span style="color:#58a6ff;font-weight:600;">admin@lms.edu.vn</span>.
+            Bạn đang quản trị hệ thống với quyền
+            <span style="padding:2px 8px;background:rgba(139,92,246,.15);color:#a5a0ff;border:1px solid rgba(139,92,246,.3);border-radius:4px;font-size:.8rem;">ADMIN</span>
+          </p>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="grid-4 mb-8">
+          <div class="stat-card">
+            <div class="stat-label">Tổng người dùng</div>
+            <div class="stat-value text-blue" id="stat-total">—</div>
+            <div class="stat-detail">Toàn hệ thống</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Tổng số Học viên</div>
+            <div class="stat-value text-green" id="stat-students">—</div>
+            <div class="stat-detail">Tài khoản Student</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Tổng số Giảng viên</div>
+            <div class="stat-value text-orange" id="stat-lecturers">—</div>
+            <div class="stat-detail">Tài khoản Lecturer</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Phòng ban / Khoa</div>
+            <div class="stat-value text-purple" id="stat-depts">—</div>
+            <div class="stat-detail">Cơ cấu tổ chức</div>
+          </div>
+        </div>
+
+        <!-- Detail sections -->
+        <div class="grid-2">
+          <!-- Recent activity -->
+          <div class="card">
+            <div class="card-header">
+              <h3 style="font-weight:600;color:#fff;">Hoạt động gần đây</h3>
+            </div>
+            <div class="card-body">
+              <ul style="display:flex;flex-direction:column;gap:16px;">
+                <li style="display:flex;align-items:flex-start;gap:12px;font-size:.875rem;">
+                  <div class="activity-dot" style="background:#58a6ff;box-shadow:0 0 8px rgba(88,166,255,.5);"></div>
+                  <div>
+                    <p style="color:var(--text-primary);">Admin tạo khóa học mới: <em style="color:#58a6ff;">"React Advanced"</em></p>
+                    <span style="font-size:.75rem;color:var(--text-muted);">2 giờ trước</span>
+                  </div>
+                </li>
+                <li style="display:flex;align-items:flex-start;gap:12px;font-size:.875rem;padding-top:16px;border-top:1px solid rgba(48,54,61,.5);">
+                  <div class="activity-dot" style="background:#3fb950;box-shadow:0 0 8px rgba(63,185,80,.5);"></div>
+                  <div>
+                    <p style="color:var(--text-primary);">Người dùng mới đăng ký hệ thống</p>
+                    <span style="font-size:.75rem;color:var(--text-muted);">3 giờ trước</span>
+                  </div>
+                </li>
+                <li style="display:flex;align-items:flex-start;gap:12px;font-size:.875rem;padding-top:16px;border-top:1px solid rgba(48,54,61,.5);">
+                  <div class="activity-dot" style="background:#f97316;box-shadow:0 0 8px rgba(249,115,22,.5);"></div>
+                  <div>
+                    <p style="color:var(--text-primary);">Giảng viên gửi yêu cầu phê duyệt khóa học</p>
+                    <span style="font-size:.75rem;color:var(--text-muted);">5 giờ trước</span>
+                  </div>
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- System health -->
+          <div class="card" style="display:flex;align-items:center;justify-content:center;text-align:center;">
+            <div class="card-body">
+              <div style="width:64px;height:64px;border-radius:50%;background:rgba(35,134,54,.15);border:1px solid rgba(35,134,54,.3);display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+                <div class="health-pulse"></div>
+              </div>
+              <h3 style="font-size:1.125rem;font-weight:600;color:#fff;">Hệ thống ổn định</h3>
+              <p style="color:var(--text-muted);font-size:.875rem;margin-top:8px;max-width:240px;margin-left:auto;margin-right:auto;">
+                Tất cả các Microservices (Account, Academic) đang hoạt động bình thường qua Gateway 8080.
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+  // Fetch stats from API and update cards
+  async function loadStats() {
+    const ids = ['stat-total','stat-students','stat-lecturers','stat-depts'];
+    ids.forEach(id => {
+      document.getElementById(id).innerHTML = '<span class="skeleton" style="display:inline-block;width:60px;height:2rem;border-radius:4px;"></span>';
+    });
+    try {
+      const res = await fetch('/api/v1/admin/stats', { headers: { Authorization: 'Bearer ' + (localStorage.getItem('access_token')||'') } });
+      const data = await res.json();
+      const d = data.data || {};
+      document.getElementById('stat-total').textContent     = d.totalUsers       || '—';
+      document.getElementById('stat-students').textContent  = d.totalStudents    || '—';
+      document.getElementById('stat-lecturers').textContent = d.totalLecturers   || '—';
+      document.getElementById('stat-depts').textContent     = d.totalDepartments || '—';
+    } catch {
+      // Fallback demo values
+      document.getElementById('stat-total').textContent     = '1,245';
+      document.getElementById('stat-students').textContent  = '1,100';
+      document.getElementById('stat-lecturers').textContent = '42';
+      document.getElementById('stat-depts').textContent     = '8';
+    }
+  }
+  loadStats();
+</script>
+</body>
+</html>

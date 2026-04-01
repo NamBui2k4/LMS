@@ -1,0 +1,23 @@
+<%# Student Topbar partial %>
+<%- include('../partials/icons') %>
+<header class="topbar">
+  <div class="topbar-logo">
+    <img src="/images/logo.png" alt="TDTU" onerror="this.style.display='none'">
+    <div class="topbar-title">TDTU LMS</div>
+  </div>
+  <div class="topbar-right">
+    <button class="topbar-semester">HK2 2526 <%- icon('chevron_down','') %></button>
+    <div class="topbar-divider"></div>
+    <div style="display:flex;align-items:center;gap:10px;color:#8b949e;">
+      <button class="topbar-icon-btn">
+        <%- icon('message','') %>
+        <span class="badge-count">0</span>
+      </button>
+      <button class="topbar-icon-btn">
+        <%- icon('bell','') %>
+        <span class="badge-count badge-yellow" style="background:#eab308;color:#000;">6</span>
+      </button>
+    </div>
+    <div class="avatar-circle" style="background:#065f46;">B</div>
+  </div>
+</header>

@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>LMS Admin — Quản lý User</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .filter-bar { display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:1.5rem; }
+    .role-pill { padding:2px 10px;border-radius:4px;font-size:.7rem;font-weight:600;font-family:monospace;border:1px solid var(--border);background:var(--bg-hover);color:var(--text-primary); }
+    .actions-cell { position:relative;text-align:right; }
+    .more-btn { background:var(--bg-card);border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:4px;display:inline-flex; }
+    .more-btn:hover { background:var(--bg-hover);color:#fff; }
+    .more-btn svg { width:16px;height:16px; }
+    /* Thêm vào thẻ <style> của bạn */
+.card {
+    display: flex;
+    flex-direction: column;
+    min-height: 450px; /* Đảm bảo khung bảng có độ cao cố định dù ít dữ liệu */
+}
+
+.table-wrap {
+    flex-grow: 1; /* Đẩy thanh phân trang xuống đáy card */
+    overflow-x: auto;
+}
+
+.user-pagination-bar {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    padding: 1rem 1.5rem;
+    z-index: 10;
+}
+  </style>
+</head>
+<body>
+<div class="layout">
+  <%- include('../partials/admin-topbar') %>
+  <div class="layout-body">
+    <%- include('../partials/admin-sidebar', { activeMenu: 'users' }) %>
+
+    <main class="layout-main">
+      <div class="max-content" style="max-width:1280px;">
+        <div class="page-header flex justify-between items-center" style="display:flex;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h1 class="page-title">Quản lý người dùng</h1>
+            <p class="page-subtitle">Xem, phân quyền và quản lý tài khoản trong hệ thống</p>
+          </div>
+          <button class="btn btn-primary" data-modal-open="modal-add-user">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Tạo tài khoản
+          </button>
+        </div>
+
+        <!-- Filter bar -->
+        <div class="filter-bar">
+          <div class="search-wrap" style="flex:1;min-width:220px;max-width:300px;">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="user-search" class="form-input search-input" placeholder="Tìm theo email...">
+          </div>
+          <select class="form-input form-select" id="filter-role" style="width:160px;" onchange="applyFilters()">
+            <option value="ALL">Tất cả vai trò</option>
+            <option value="STUDENT">Student</option>
+            <option value="LECTURER">Lecturer</option>
+            <option value="ADMIN">Admin</option>
+          </select>
+          <select class="form-input form-select" id="filter-status" style="width:160px;" onchange="applyFilters()">
+            <option value="ALL">Tất cả trạng thái</option>
+            <option value="ACTIVE">Active</option>
+            <option value="INACTIVE">Inactive</option>
+          </select>
+        </div>
+
+        <!-- Table -->
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Email / Người dùng</th>
+                  <th>Vai trò</th>
+                  <th>Trạng thái</th>
+                  <th>Ngày tạo</th>
+                  <th style="text-align:right;">Hành động</th>
+                </tr>
+              </thead>
+              <tbody id="user-table-body">
+                <!-- Demo rows — in real use these come from server -->
+                <% const demoUsers = [
+                  { id:'u1', email:'student01@tdtu.edu.vn', role:'STUDENT', status:'ACTIVE', createdAt:'2025-09-01' },
+                  { id:'u2', email:'lecturer.nguyena@tdtu.edu.vn', role:'LECTURER', status:'ACTIVE', createdAt:'2025-08-15' },
+                  { id:'u3', email:'head.tran@tdtu.edu.vn', role:'LECTURER', status:'ACTIVE', createdAt:'2025-08-10' },
+                  { id:'u4', email:'student02@tdtu.edu.vn', role:'STUDENT', status:'INACTIVE', createdAt:'2025-09-05' },
+                  { id:'u5', email:'admin@lms.edu.vn', role:'ADMIN', status:'ACTIVE', createdAt:'2025-01-01' },
+                  { id:'u6', email:'student03@tdtu.edu.vn', role:'STUDENT', status:'ACTIVE', createdAt:'2025-09-10' },
+                  { id:'u7', email:'lecturer.le@tdtu.edu.vn', role:'LECTURER', status:'ACTIVE', createdAt:'2025-08-20' },
+                ]; %>
+                <% demoUsers.forEach(function(u) { %>
+                <tr data-role="<%= u.role %>" data-status="<%= u.status %>">
+                  <td>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                      <div style="width:32px;height:32px;border-radius:50%;background:var(--border);display:flex;align-items:center;justify-content:center;">
+                        <svg width="16" height="16" fill="none" stroke="#8b949e" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                      </div>
+                      <span style="color:#fff;font-weight:500;"><%= u.email %></span>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="role-pill"><%= u.role %></span>
+                  </td>
+                  <td>
+                    <span class="badge <%= u.status === 'ACTIVE' ? 'badge-green' : 'badge-red' %>">
+                      <span class="badge-dot <%= u.status === 'ACTIVE' ? 'dot-green' : 'dot-red' %>"></span>
+                      <%= u.status %>
+                    </span>
+                  </td>
+                  <td style="color:var(--text-muted)"><%= u.createdAt %></td>
+                  <td class="actions-cell">
+                    <button class="more-btn" data-dropdown-toggle="dd-<%= u.id %>">
+                      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg>
+                    </button>
+                    <div id="dd-<%= u.id %>" class="dropdown-menu hidden">
+                      <button class="dropdown-item" onclick="prepareRoleModal('<%= u.id %>','<%= u.role %>')">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        Phân quyền
+                      </button>
+                      <button class="dropdown-item <%= u.status === 'ACTIVE' ? 'warn' : 'success' %>" onclick="prepareStatusModal('<%= u.id %>','<%= u.status %>','<%= u.email %>')">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+                        <%= u.status === 'ACTIVE' ? 'Khóa tài khoản' : 'Mở khóa' %>
+                      </button>
+                      <button class="dropdown-item danger" onclick="prepareDeleteModal('<%= u.id %>','<%= u.email %>')">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                        Xóa tài khoản
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <style>
+            .user-pagination-bar {
+              position: sticky;
+              bottom: 0;
+              left: 0;
+              right: 0;
+              background: var(--bg-card, #161b22);
+              z-index: 2;
+              padding: 1rem 1.5rem;
+              border-top: 1px solid var(--border);
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              font-size: .875rem;
+              color: var(--text-muted);
+            }
+          </style>
+          <div class="user-pagination-bar">
+    <div>Tổng <span style="color:#fff;font-weight:600;" id="user-count">7</span> người dùng</div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span>Trang <span id="user-table-body-page-info">1 / 1</span></span>
+      <div style="display:flex;gap:8px;">
+        <button id="user-table-body-prev" class="btn btn-ghost btn-sm" disabled>
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg> Trước
+        </button>
+        <button id="user-table-body-next" class="btn btn-ghost btn-sm">
+          Sau <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+      </div>
+    </div>
+</div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ── Modal: Change Role ── -->
+<div id="modal-role" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" style="display:flex;align-items:center;gap:8px;">
+        <svg width="18" height="18" fill="none" stroke="#58a6ff" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Cập nhật quyền
+      </span>
+      <button class="modal-close" data-modal-close="modal-role">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="role-user-id">
+      <p style="font-size:.875rem;color:var(--text-muted);margin-bottom:1rem;">Chọn vai trò mới cho người dùng này:</p>
+      <select id="role-select" class="form-input form-select">
+        <option value="STUDENT">Học viên (Student)</option>
+        <option value="LECTURER">Giảng viên (Lecturer)</option>
+        <option value="ADMIN">Quản trị viên (Admin)</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-modal-close="modal-role">Hủy</button>
+      <button class="btn btn-primary" onclick="submitRoleChange()">Lưu thay đổi</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Toggle Status ── -->
+<div id="modal-status" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="status-modal-title">Xác nhận thay đổi trạng thái</span>
+      <button class="modal-close" data-modal-close="modal-status">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="status-user-id">
+      <p style="font-size:.875rem;color:var(--text-primary);">
+        Bạn có chắc muốn <strong id="status-action-label">khóa</strong> tài khoản
+        <strong style="color:#fff;" id="status-email-display"></strong>?
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-modal-close="modal-status">Hủy</button>
+      <button class="btn btn-red" id="status-btn" onclick="submitStatusChange()">Xác nhận</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Delete ── -->
+<div id="modal-delete" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header" style="border-color:rgba(218,54,51,.3);">
+      <span class="modal-title" style="color:#f85149;">⚠ Cảnh báo nguy hiểm</span>
+      <button class="modal-close" data-modal-close="modal-delete">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="delete-user-id">
+      <p style="font-size:.875rem;color:var(--text-primary);">
+        Bạn có chắc chắn muốn xóa tài khoản <strong style="color:#fff;" id="delete-email-display"></strong>?
+        Hành động này <strong style="color:#f85149;">không thể hoàn tác</strong>!
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-modal-close="modal-delete">Hủy</button>
+      <button class="btn" style="background:#da3633;color:#fff;" onclick="submitDelete()">Có, xóa ngay</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Modal: Add User ── -->
+<div id="modal-add-user" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Tạo tài khoản mới</span>
+      <button class="modal-close" data-modal-close="modal-add-user">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" class="form-input" id="new-email" placeholder="email@tdtu.edu.vn">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Vai trò</label>
+        <select class="form-input form-select" id="new-role">
+          <option value="STUDENT">Student</option>
+          <option value="LECTURER">Lecturer</option>
+          <option value="ADMIN">Admin</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Mật khẩu tạm thời</label>
+        <input type="password" class="form-input" id="new-password" placeholder="••••••••">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" data-modal-close="modal-add-user">Hủy</button>
+      <button class="btn btn-green" onclick="submitAddUser()">Tạo tài khoản</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+function applyFilters() {
+  const role   = document.getElementById('filter-role').value;
+  const status = document.getElementById('filter-status').value;
+  const search = document.getElementById('user-search').value.toLowerCase();
+  let visible  = 0;
+  document.querySelectorAll('#user-table-body tr').forEach(row => {
+    const rowRole   = row.dataset.role || '';
+    const rowStatus = row.dataset.status || '';
+    const rowEmail  = row.querySelector('td') ? row.querySelector('td').textContent.toLowerCase() : '';
+    const match = (role === 'ALL' || rowRole === role)
+               && (status === 'ALL' || rowStatus === status)
+               && rowEmail.includes(search);
+    row.style.display = match ? '' : 'none';
+    if (match) visible++;
+  });
+  document.getElementById('user-count').textContent = visible;
+}
+document.getElementById('user-search').addEventListener('input', applyFilters);
+
+function submitRoleChange() {
+  const uid = document.getElementById('role-user-id').value;
+  const role = document.getElementById('role-select').value;
+  // Call: PATCH /api/v1/admin/list_users/:id/role
+  fetch('/api/v1/admin/list_users/' + uid + '/role', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ role })
+  }).then(() => { showToast('Đã cập nhật phân quyền!'); closeModal('modal-role'); location.reload(); })
+    .catch(() => { showToast('Cập nhật quyền thành công! (demo)', 'success'); closeModal('modal-role'); });
+}
+function submitStatusChange() {
+  const uid = document.getElementById('status-user-id').value;
+  fetch('/api/v1/admin/' + uid + '/disable', { method: 'PATCH' })
+    .then(() => { showToast('Đã cập nhật trạng thái!'); closeModal('modal-status'); location.reload(); })
+    .catch(() => { showToast('Đã cập nhật trạng thái! (demo)'); closeModal('modal-status'); });
+}
+function submitDelete() {
+  const uid = document.getElementById('delete-user-id').value;
+  fetch('/api/v1/admin/' + uid, { method: 'DELETE' })
+    .then(() => { showToast('Đã xóa tài khoản!'); closeModal('modal-delete'); location.reload(); })
+    .catch(() => { showToast('Đã xóa tài khoản! (demo)'); closeModal('modal-delete'); });
+}
+function submitAddUser() {
+  showToast('Đã tạo tài khoản thành công!'); closeModal('modal-add-user');
+}
+
+let currentPage = 1;
+const itemsPerPage = 5;
+
+function applyFilters() {
+    const role = document.getElementById('filter-role').value;
+    const status = document.getElementById('filter-status').value;
+    const search = document.getElementById('user-search').value.toLowerCase();
+    
+    // 1. Lấy tất cả các hàng
+    const allRows = Array.from(document.querySelectorAll('#user-table-body tr'));
+    
+    // 2. Lọc danh sách thỏa mãn điều kiện
+    const filteredRows = allRows.filter(row => {
+        const rowRole = row.dataset.role || '';
+        const rowStatus = row.dataset.status || '';
+        const rowEmail = row.querySelector('td span') ? row.querySelector('td span').textContent.toLowerCase() : '';
+        
+        const isMatch = (role === 'ALL' || rowRole === role)
+                     && (status === 'ALL' || rowStatus === status)
+                     && rowEmail.includes(search);
+        
+        // Tạm thời ẩn tất cả
+        row.style.display = 'none';
+        return isMatch;
+    });
+
+    // 3. Tính toán phân trang
+    const totalItems = filteredRows.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+    
+    // Đảm bảo trang hiện tại không vượt quá tổng số trang sau khi lọc
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    // 4. Hiển thị các hàng thuộc trang hiện tại
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    
+    filteredRows.slice(start, end).forEach(row => {
+        row.style.display = '';
+    });
+
+    // 5. Cập nhật giao diện (Số lượng, số trang, trạng thái nút)
+    document.getElementById('user-count').textContent = totalItems;
+    document.getElementById('user-table-body-page-info').textContent = `${currentPage} / ${totalPages}`;
+    
+    document.getElementById('user-table-body-prev').disabled = (currentPage === 1);
+    document.getElementById('user-table-body-next').disabled = (currentPage === totalPages);
+}
+
+// Điều hướng trang
+document.getElementById('user-table-body-prev').addEventListener('click', () => {
+    if (currentPage > 1) {
+        currentPage--;
+        applyFilters();
+    }
+});
+
+document.getElementById('user-table-body-next').addEventListener('click', () => {
+    const totalItems = parseInt(document.getElementById('user-count').textContent);
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    if (currentPage < totalPages) {
+        currentPage++;
+        applyFilters();
+    }
+});
+
+// Reset về trang 1 khi người dùng thay đổi bộ lọc hoặc tìm kiếm
+document.getElementById('filter-role').addEventListener('change', () => { currentPage = 1; applyFilters(); });
+document.getElementById('filter-status').addEventListener('change', () => { currentPage = 1; applyFilters(); });
+document.getElementById('user-search').addEventListener('input', () => { currentPage = 1; applyFilters(); });
+
+// Khởi tạo lần đầu
+window.onload = applyFilters;
+</script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<%# Staff Sidebar partial %>
+<%- include('../partials/icons') %>
+<aside class="sidebar">
+  <nav class="sidebar-nav">
+    <ul>
+      <li>
+        <a href="/staff" class="<%= activeMenu === 'profile' ? 'active-green' : '' %>">
+          <%- icon('user','') %> Hồ sơ cá nhân
+        </a>
+      </li>
+      <li>
+        <a href="/staff/course" class="<%= activeMenu === 'classes' ? 'active-green' : '' %>">
+          <%- icon('users','') %> Quản lý lớp học
+        </a>
+      </li>
+      <li>
+        <a href="/staff/grading" class="<%= activeMenu === 'grading' ? 'active-green' : '' %>">
+          <%- icon('file_check','') %> Chấm điểm & Đánh giá
+        </a>
+      </li>
+      <li>
+        <a href="/staff/question-bank" class="<%= activeMenu === 'qbank' ? 'active-green' : '' %>">
+          <%- icon('database','') %> Ngân hàng câu hỏi
+        </a>
+      </li>
+      <li>
+        <a href="/staff/reports" class="<%= activeMenu === 'reports' ? 'active-green' : '' %>">
+          <%- icon('bar_chart','') %> Thống kê báo cáo
+        </a>
+      </li>
+    </ul>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="sidebar-logout" onclick="window.location.href='/login'">
+      <%- icon('logout','') %> Đăng xuất
+    </button>
+  </div>
+</aside>

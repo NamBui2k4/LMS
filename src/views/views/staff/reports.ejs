@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>LMS Staff — Thống kê Báo cáo</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* KPI cards */
+    .kpi-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem; }
+    @media(max-width:900px){ .kpi-grid { grid-template-columns:repeat(2,1fr); } }
+    .kpi-card { background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:1.25rem; }
+    .kpi-label { font-size:.75rem;color:var(--text-muted);margin-bottom:.5rem; }
+    .kpi-value { font-size:2rem;font-weight:800;line-height:1; }
+    .kpi-sub { font-size:.72rem;margin-top:.4rem; }
+    /* Charts layout */
+    .charts-row { display:grid;grid-template-columns:1fr 1fr;gap:1.5rem; }
+    @media(max-width:800px){ .charts-row { grid-template-columns:1fr; } }
+    /* Bar chart */
+    .bar-row { display:flex;align-items:center;gap:12px;margin-bottom:.85rem; }
+    .bar-label { font-size:.8rem;color:var(--text-primary);width:90px;flex-shrink:0; }
+    .bar-track { flex:1;background:var(--bg-hover);border-radius:4px;height:10px;overflow:hidden; }
+    .bar-fill { height:100%;border-radius:4px;transition:width 1s ease; }
+    .bar-pct { font-size:.78rem;color:var(--text-muted);width:34px;text-align:right;flex-shrink:0; }
+    /* Course progress rows */
+    .prog-row { padding:.85rem 0;border-bottom:1px solid var(--border); }
+    .prog-row:last-child { border-bottom:none; }
+    .prog-header { display:flex;justify-content:space-between;align-items:center;margin-bottom:6px; }
+    .prog-name { font-size:.875rem;font-weight:600;color:#fff; }
+    .prog-pct-label { font-size:.875rem;font-weight:700; }
+    .prog-meta { font-size:.72rem;color:var(--text-muted);margin-bottom:6px; }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <%- include('../partials/staff-topbar') %>
+  <div class="layout-body">
+    <%- include('../partials/staff-sidebar', { activeMenu: 'reports' }) %>
+    <main class="layout-main">
+      <div class="max-content">
+
+        <!-- Header -->
+        <div class="page-header" style="display:flex;align-items:flex-end;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h1 class="page-title">Báo cáo &amp; Thống kê học tập</h1>
+            <p class="page-subtitle">Theo dõi tiến độ và chất lượng đào tạo của các khóa học</p>
+          </div>
+          <select class="form-input form-select" style="width:160px;" onchange="showToast('Đang lọc theo: '+this.options[this.selectedIndex].text)">
+            <option>Học kỳ này</option>
+            <option>Học kỳ trước</option>
+            <option>Năm học 2025-2026</option>
+          </select>
+        </div>
+
+        <!-- KPI Cards -->
+        <%
+        const kpis = [
+          { label:'Tổng Sinh Viên',   value:'1,245', sub:'+1.12% so với kỳ trước', subColor:'#3fb950', color:'#fff' },
+          { label:'Điểm Trung Bình',  value:'7.8 / 10', sub:'+0.4 điểm',           subColor:'#1f6feb', color:'#1f6feb' },
+          { label:'Tỉ Lệ Hoàn Thành', value:'85%',   sub:'Đạt chỉ tiêu đề ra',    subColor:'#3fb950', color:'#3fb950' },
+          { label:'Khóa Học Đang Mở', value:'12',    sub:'Đang hoạt động',          subColor:'#f0b429', color:'#f0b429' },
+        ];
+        %>
+        <div class="kpi-grid">
+          <% kpis.forEach(function(k){ %>
+          <div class="kpi-card">
+            <div class="kpi-label"><%= k.label %></div>
+            <div class="kpi-value" style="color:<%= k.color %>"><%= k.value %></div>
+            <div class="kpi-sub" style="color:<%= k.subColor %>"><%= k.sub %></div>
+          </div>
+          <% }) %>
+        </div>
+
+        <!-- Charts row -->
+        <div class="charts-row">
+
+          <!-- Left: Score distribution bar chart -->
+          <div class="card">
+            <div class="card-header">
+              <h3 style="font-weight:600;color:#fff;">Phân bố Điểm số</h3>
+            </div>
+            <div class="card-body">
+              <%
+              const bars = [
+                { label:'0 - 4 (Yếu)',  pct: 5,  color:'#f85149' },
+                { label:'4 - 6 (TB)',   pct:15,  color:'#f0b429' },
+                { label:'6 - 8 (Khá)',  pct:45,  color:'#1f6feb' },
+                { label:'8 - 10 (Giỏi)',pct:35,  color:'#3fb950' },
+              ];
+              %>
+              <% bars.forEach(function(b){ %>
+              <div class="bar-row">
+                <div class="bar-label"><%= b.label %></div>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width:<%= b.pct %>%;background:<%= b.color %>;"></div>
+                </div>
+                <div class="bar-pct"><%= b.pct %>%</div>
+              </div>
+              <% }) %>
+            </div>
+          </div>
+
+          <!-- Right: Course progress list -->
+          <div class="card">
+            <div class="card-header">
+              <h3 style="font-weight:600;color:#fff;">Tiến độ Khóa học nổi bật</h3>
+            </div>
+            <div class="card-body" style="padding-top:0;">
+              <%
+              const courses = [
+                { name:'Phát triển Web với React', students:450, avg:8.2, pct:90, color:'#3fb950' },
+                { name:'Cơ sở dữ liệu PostgreSQL', students:320, avg:7.5, pct:75, color:'#1f6feb' },
+                { name:'Kiến trúc Microservices',  students:150, avg:6.8, pct:60, color:'#f0b429' },
+              ];
+              %>
+              <% courses.forEach(function(c){ %>
+              <div class="prog-row">
+                <div class="prog-header">
+                  <span class="prog-name"><%= c.name %></span>
+                  <span class="prog-pct-label" style="color:<%= c.color %>"><%= c.pct %>%</span>
+                </div>
+                <div class="prog-meta"><%= c.students %> học viên • Điểm TB: <%= c.avg %></div>
+                <div class="bar-track" style="height:8px;">
+                  <div class="bar-fill" style="width:<%= c.pct %>%;background:<%= c.color %>;"></div>
+                </div>
+              </div>
+              <% }) %>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </main>
+  </div>
+  <footer class="layout-footer">
+    <span>Copyright © 2026 TDTU. All rights reserved.</span>
+    <span>Portal Giảng Viên v2.1</span>
+  </footer>
+</div>
+<script src="/js/main.js"></script>
+<script>
+  // Animate bars on load
+  window.addEventListener('load', () => {
+    document.querySelectorAll('.bar-fill').forEach(el => {
+      const w = el.style.width;
+      el.style.width = '0';
+      setTimeout(() => el.style.width = w, 100);
+    });
+  });
+</script>
+</body>
+</html>
