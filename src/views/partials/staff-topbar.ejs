@@ -1,5 +1,4 @@
 <%# Staff Topbar partial %>
-<%- include('../partials/icons') %>
 <header class="topbar">
   <div class="topbar-logo">
     <img src="/images/logo.png" alt="LMS" onerror="this.style.display='none'">
@@ -9,12 +8,12 @@
     </div>
   </div>
   <div class="topbar-right">
-    <button class="topbar-semester">HK2 2526 <%- icon('chevron_down','') %></button>
+    <button class="topbar-semester">HK2 2526 <%- icon('chevron_down', 'w-4 h-4') %></button>
     <div class="topbar-divider"></div>
     <div style="display:flex;align-items:center;gap:10px;color:#8b949e;">
-      <button class="topbar-icon-btn"><%- icon('message','') %></button>
+      <button class="topbar-icon-btn"><%- icon('message', 'w-5 h-5') %></button>
       <button class="topbar-icon-btn">
-        <%- icon('bell','') %>
+        <%- icon('bell', 'w-5 h-5') %>
         <span class="badge-count">2</span>
       </button>
     </div>

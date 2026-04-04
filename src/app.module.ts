@@ -69,6 +69,8 @@ import { MaterialController } from './controller/material.controller';
 import { EnrollmentController } from './controller/enrollment.controller';
 import { QuizController } from './controller/quiz.controller';
 import { SubmissionController } from './controller/submissions.controller';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 // ── All entities array (dùng cho TypeORM) ───────────────────
 const allEntities = [
@@ -152,6 +154,7 @@ const allEntities = [
   // ── Controllers ─────────────────────────────────────────────
   // Thêm controller mới vào đây sau khi tạo file tương ứng
   controllers: [
+    AppController,
     UserController,
     AuthController,
     StudentController,
@@ -168,6 +171,7 @@ const allEntities = [
   // ── Providers ───────────────────────────────────────────────
   // Thêm service + repository mới vào đây sau khi tạo file tương ứng
   providers: [
+    AppService,
     // Auth
     JwtAuthGuard,
     RolesGuard,

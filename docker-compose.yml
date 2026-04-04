@@ -5,7 +5,7 @@ services:
     build: .
     container_name: lms_backend
     ports:
-      - "3000:3000"
+      - "3001:3001"
 
     environment:
       DB_HOST: host.docker.internal

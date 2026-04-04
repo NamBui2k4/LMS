@@ -1,21 +1,20 @@
 <%# Admin Sidebar partial — activeMenu variable controls highlight %>
-<%- include('../partials/icons') %>
 <aside class="sidebar">
   <nav class="sidebar-nav">
     <ul>
       <li>
         <a href="/admin/dashboard" class="<%= activeMenu === 'dashboard' ? 'active-blue' : '' %>">
-          <%- icon('dashboard','') %> Dashboard
+          <%- icon('dashboard', 'w-5 h-5') %> Dashboard
         </a>
       </li>
       <li>
         <a href="/admin/users" class="<%= activeMenu === 'users' ? 'active-blue' : '' %>">
-          <%- icon('users','') %> Quản lý User
+          <%- icon('users', 'w-5 h-5') %> Quản lý User
         </a>
       </li>
       <li>
         <a href="/admin/settings" class="<%= activeMenu === 'settings' ? 'active-blue' : '' %>">
-          <%- icon('settings','') %> Cài đặt hệ thống
+          <%- icon('settings', 'w-5 h-5') %> Cài đặt hệ thống
         </a>
       </li>
     </ul>
@@ -29,7 +28,7 @@
       </div>
     </div>
     <button class="sidebar-logout" onclick="window.location.href='/admin'">
-      <%- icon('logout','') %> Đăng xuất
+      <%- icon('logout', 'w-5 h-5') %> Đăng xuất
     </button>
   </div>
 </aside>

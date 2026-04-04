@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LMS Admin — Đăng nhập</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { background: #030712; }
+    .admin-login-page {
+      min-height: 100vh; background: #030712;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 1.5rem;
+    }
+    .admin-login-heading { text-align: center; margin-bottom: 2.5rem; }
+    .admin-login-heading h1 { font-size: 3rem; font-weight: 900; color: #fff; letter-spacing: -.02em; }
+    .admin-login-heading p { color: #6b7280; font-size: 1.125rem; margin-top: 8px; }
+    .admin-card {
+      width: 100%; max-width: 480px;
+      background: rgba(17,24,39,.9); border: 1px solid #1f2937;
+      border-radius: 18px; padding: 2.5rem;
+      box-shadow: 0 30px 80px rgba(0,0,0,.6);
+      backdrop-filter: blur(10px);
+    }
+    .admin-error {
+      background: rgba(127,29,29,.3); border: 1px solid #7f1d1d;
+      color: #fca5a5; border-radius: 8px; padding: .75rem 1rem;
+      margin-bottom: 1.5rem; text-align: center; font-size: 0.875rem;
+    }
+    .admin-footer { margin-top: 2.5rem; text-align: center; font-size: .8rem; color: #4b5563; }
+    .input-icon { position: relative; }
+    .input-icon .pre { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #4b5563; pointer-events: none; }
+    .input-icon .pre svg { width: 18px; height: 18px; }
+    .input-icon input {
+      width: 100%; padding: .75rem 1rem .75rem 2.5rem;
+      background: #111827; border: 1px solid #374151; border-radius: 8px;
+      color: #fff; font-size: .875rem; outline: none;
+    }
+    .input-icon input::placeholder { color: #6b7280; }
+    .input-icon input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.15); }
+    .input-icon input:disabled { opacity: .5; }
+    .admin-submit {
+      width: 100%; padding: .75rem;
+      background: #1f2937; border: 1px solid #374151; border-radius: 8px;
+      color: #fff; font-size: .875rem; font-weight: 500; cursor: pointer;
+      transition: all .2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .admin-submit:hover { background: #374151; }
+    .admin-submit:disabled { opacity: .6; cursor: not-allowed; }
+    .spin { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,.3); border-top-color: #fff; border-radius: 50%; animation: spin 1s linear infinite; }
+    /* Localhost warning shown if not localhost */
+    #not-local { display: none; }
+  </style>
+</head>
+<body>
+<div id="admin-login-page" class="admin-login-page">
+  <div class="admin-login-heading">
+    <h1>LMS Admin</h1>
+    <p>Đăng nhập để quản lý hệ thống</p>
+  </div>
+
+  <div class="admin-card">
+    <div id="admin-error" class="admin-error hidden"></div>
+
+    <form id="admin-form" onsubmit="handleAdminLogin(event)">
+      <div class="form-group">
+        <label class="form-label" style="color:#d1d5db;font-size:.875rem;">Email</label>
+        <div class="input-icon">
+          <span class="pre"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span>
+          <input type="email" id="admin-email" placeholder="admin@lms.com" required autocomplete="email">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" style="color:#d1d5db;font-size:.875rem;">Mật khẩu</label>
+        <div class="input-icon">
+          <span class="pre"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <input type="password" id="admin-password" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+      </div>
+
+      <button type="submit" class="admin-submit" id="admin-btn">
+        <span id="admin-btn-txt">Đăng nhập</span>
+        <span id="admin-spin" class="spin hidden"></span>
+      </button>
+    </form>
+
+    <div class="admin-footer">Hệ thống quản lý học tập • <%= new Date().getFullYear() %></div>
+  </div>
+</div>
+
+<!-- Not localhost warning -->
+<div id="not-local" style="display:none;min-height:100vh;background:#030712;align-items:center;justify-content:center;color:#ef4444;text-align:center;padding:2rem;">
+  <div>
+    <div style="font-size:4rem;margin-bottom:1rem;">🔒</div>
+    <h1 style="font-size:1.5rem;font-weight:700;">403 — Forbidden</h1>
+    <p style="color:#6b7280;margin-top:.5rem;">Admin portal chỉ được phép truy cập từ localhost.</p>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+  // Localhost guard
+  (function() {
+    const h = window.location.hostname;
+    const isLocal = h === 'localhost' || h === '127.0.0.1' || h === '::1';
+    if (!isLocal) {
+      document.getElementById('admin-login-page').style.display = 'none';
+      const notLocal = document.getElementById('not-local');
+      notLocal.style.display = 'flex';
+    }
+  })();
+
+  function handleAdminLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('admin-btn');
+    const txt = document.getElementById('admin-btn-txt');
+    const spin = document.getElementById('admin-spin');
+    const errEl = document.getElementById('admin-error');
+
+    btn.disabled = true;
+    txt.classList.add('hidden');
+    spin.classList.remove('hidden');
+    errEl.classList.add('hidden');
+
+    // Simulate API call — in real use this POST to backend
+    setTimeout(() => {
+      const email = document.getElementById('admin-email').value;
+      const pass  = document.getElementById('admin-password').value;
+
+      // Demo: any non-empty credentials succeed
+      if (email && pass) {
+        window.location.href = '/admin/dashboard';
+      } else {
+        errEl.textContent = 'Sai email hoặc mật khẩu. Vui lòng thử lại.';
+        errEl.classList.remove('hidden');
+        btn.disabled = false;
+        txt.classList.remove('hidden');
+        spin.classList.add('hidden');
+      }
+    }, 1000);
+  }
+</script>
+</body>
+</html>

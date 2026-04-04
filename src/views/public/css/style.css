@@ -323,3 +323,35 @@ tbody tr:last-child td { border-bottom: none; }
 /* ── Inline SVG icons helper (reused in JS) ── */
 .icon-sm svg { width: 16px; height: 16px; }
 .icon-md svg { width: 20px; height: 20px; }
+
+/* =========================================================
+   PATCH: sidebar-logout icon size fix
+   Thêm vào cuối file: src/views/public/css/style.css
+   ========================================================= */
+
+.sidebar-logout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--red, #f85149);
+  border-radius: 6px;
+  transition: background 0.15s;
+  line-height: 1;
+}
+
+.sidebar-logout:hover {
+  background: rgba(248, 81, 73, 0.1);
+}
+
+/* Giới hạn size SVG trong logout button */
+.sidebar-logout svg {
+  width: 20px !important;
+  height: 20px !important;
+  flex-shrink: 0;
+}
