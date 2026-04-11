@@ -34,7 +34,6 @@ export class StudentRepository {
   constructor(
     @InjectRepository(Student)
     private readonly studentRepo: Repository<Student>,
-
     private readonly dataSource: DataSource,
   ) {}
 

@@ -30,11 +30,11 @@ import { CourseStatus } from '../common/enums/course-status.enum';
 export class Courses {
   // DB: id BIGSERIAL PRIMARY KEY
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   // DB: title VARCHAR(255) NOT NULL
   @Column({ length: 255 })
-  title: string;
+  title!: string;
 
   // DB: description TEXT (nullable)
   @Column({ type: 'text', nullable: true })
@@ -43,16 +43,16 @@ export class Courses {
   // DB: category_id INT NOT NULL → FK → categories(id)
   @ManyToOne(() => Category, (category) => category.courses, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'category_id' })
-  category: Category;
+  category!: Category;
 
   // DB: status course_status NOT NULL DEFAULT 'draft'
-  @Column({ type: 'enum', enum: CourseStatus, default: CourseStatus.DRAFT })
-  status: CourseStatus;
+  @Column({ type: 'enum', enum: CourseStatus, default: CourseStatus.DRAFT, enumName: 'course_status' })
+  status!: CourseStatus;
 
   // DB: created_by BIGINT NOT NULL → FK → lecturers(user_id)
   @ManyToOne(() => Lecturer, (lecturer) => lecturer.createdCourses, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'created_by', referencedColumnName: 'userId' })
-  createdBy: Lecturer;
+  createdBy!: Lecturer;
 
   // DB: review_note TEXT (nullable) — ghi chú từ Trưởng bộ môn khi từ chối
   @Column({ type: 'text', nullable: true, name: 'review_note' })
@@ -68,21 +68,21 @@ export class Courses {
   reviewedAt?: Date;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 
   // ── Quan hệ 1-n xuống các bảng phụ thuộc ────────────────────────────
   @OneToMany(() => Lesson, (lesson) => lesson.course, { cascade: true })
-  lessons: Lesson[];
+  lessons!: Lesson[];
 
   @OneToMany(() => Quiz, (quiz) => quiz.course, { cascade: true })
-  quizzes: Quiz[];
+  quizzes!: Quiz[];
 
   @OneToMany(() => Enrollment, (enrollment) => enrollment.course)
-  enrollments: Enrollment[];
+  enrollments!: Enrollment[];
 
   @OneToMany(() => AssignedLecturers, (al) => al.course)
-  assignedLecturers: AssignedLecturers[];
+  assignedLecturers!: AssignedLecturers[];
 }

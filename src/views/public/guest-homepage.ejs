@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TDTU LMS - Guest Homepage</title>
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/guest-homepage.css" />
+  <script src="https://cdn.jsdelivr.net/npm/lucide@latest" defer></script>
+</head>
+<body>
+  <div class="container-layout">
+    <!-- ========================================== -->
+    <!-- TOP BAR -->
+    <!-- ========================================== -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="logo-text">
+          <span class="logo-highlight">TDTU</span> LMS
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <span class="topbar-text hidden-mobile">Người dùng khách - guest</span>
+        <svg class="topbar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h.5A2.5 2.5 0 0016 5.5V3.935m0 2v5m0 0a2 2 0 012 2v3a2 2 0 11-4 0v-3a2 2 0 012-2z"></path>
+        </svg>
+        <span class="topbar-text hidden-lg">Bạn đang truy cập với tư cách khách vãng lai</span>
+        <span class="topbar-divider">
+          (
+          <a href="/login" class="topbar-link">Đăng nhập</a>
+          )
+        </span>
+      </div>
+    </header>
+
+    <!-- ========================================== -->
+    <!-- MAIN LAYOUT -->
+    <!-- ========================================== -->
+    <div class="main-layout">
+      
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <nav class="sidebar-nav">
+          <!-- Nút Trang chủ -->
+          <button 
+            class="nav-button nav-button-active" 
+            data-tab="home"
+            onclick="switchTab('home')"
+          >
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-3m0 0l7-4 7 4M5 9v10a1 1 0 001 1h3m10-11l2 3m-2-3V9m0 11V9m0 0L9 5m11 6v10a1 1 0 01-1 1h-3"></path>
+            </svg>
+            Trang chủ
+          </button>
+
+          <!-- Nút Lịch -->
+          <button 
+            class="nav-button" 
+            data-tab="calendar"
+            onclick="switchTab('calendar')"
+          >
+            <svg class="nav-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+            </svg>
+            Lịch
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <a href="https://www.tdtu.edu.vn/" target="_blank" rel="noreferrer" class="footer-link">
+            <svg class="footer-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h.5A2.5 2.5 0 0016 5.5V3.935m0 2v5m0 0a2 2 0 012 2v3a2 2 0 11-4 0v-3a2 2 0 012-2z"></path>
+            </svg>
+            https://www.tdtu.edu.vn/
+          </a>
+          <div class="footer-info">
+            <svg class="footer-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
+            </svg>
+            (028) 37 755 035
+          </div>
+        </div>
+      </aside>
+
+      <!-- CONTENT AREA -->
+      <main class="content-main">
+        <div class="content-wrapper">
+          
+          <!-- ================================================= -->
+          <!-- TAB 1: TRANG CHỦ -->
+          <!-- ================================================= -->
+          <div id="tab-home" class="tab-content tab-active">
+            
+            <!-- Banner & Giới thiệu -->
+            <div class="card card-banner">
+              <div class="card-banner-header">
+                <h1 class="banner-title">ĐẠI HỌC TÔN ĐỨC THẮNG</h1>
+                <p class="banner-subtitle">Ton Duc Thang University (TDTU)</p>
+              </div>
+              
+              <div class="card-content">
+                <h3 class="card-heading">Giới thiệu hệ thống E-Learning</h3>
+                <p class="card-text">
+                  Chào mừng quý khách đến với Hệ thống Quản lý học tập (LMS) chính thức của Đại học Tôn Đức Thắng. 
+                  Đây là nền tảng trực tuyến hỗ trợ công tác giảng dạy, học tập và chia sẻ tài nguyên cho toàn thể giảng viên và sinh viên nhà trường.
+                </p>
+                <p class="card-text-muted">
+                  * Với tư cách khách vãng lai, bạn có thể xem các tin tức chung và lịch sự kiện công khai. Vui lòng đăng nhập để truy cập đầy đủ các khóa học và tài nguyên.
+                </p>
+              </div>
+            </div>
+
+            <!-- Tin tức chung -->
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title">Tin tức chung</h2>
+                <button class="card-link">Đăng ký tới diễn đàn này</button>
+              </div>
+
+              <div class="card-empty">
+                (Chưa có chủ đề thảo luận nào trong diễn đàn này)
+              </div>
+
+              <div class="card-footer">
+                <label class="search-label">Tìm kiếm khoá học</label>
+                <div class="search-group">
+                  <input 
+                    type="text" 
+                    class="search-input" 
+                    placeholder="Nhập từ khóa..."
+                  />
+                  <button class="search-button">Xem</button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+
+          <!-- ================================================= -->
+          <!-- TAB 2: LỊCH -->
+          <!-- ================================================= -->
+          <div id="tab-calendar" class="tab-content">
+            <div class="calendar-layout">
+              
+              <!-- Lịch chính (Trái) -->
+              <div class="calendar-main">
+                <h2 class="calendar-title">Lịch</h2>
+                <p class="calendar-notice">
+                  Sinh viên xem hướng dẫn sử dụng My course tại đây (Chọn Courses/Các thao tác đến Course/2. Ở phần My courses...)
+                </p>
+                
+                <!-- Điều khiển lịch -->
+                <div class="calendar-controls">
+                  <button class="calendar-button">Tháng</button>
+                  <div class="calendar-nav">
+                    <button class="calendar-nav-button">◄ March 2026</button>
+                    <h3 class="calendar-month">April 2026</h3>
+                    <button class="calendar-nav-button">May 2026 ►</button>
+                  </div>
+                </div>
+
+                <!-- Lưới lịch -->
+                <div class="calendar-grid">
+                  <div class="calendar-header">T2</div>
+                  <div class="calendar-header">T3</div>
+                  <div class="calendar-header">T4</div>
+                  <div class="calendar-header">T5</div>
+                  <div class="calendar-header">T6</div>
+                  <div class="calendar-header">T7</div>
+                  <div class="calendar-header">CN</div>
+
+                  <% for (let i = 1; i <= 30; i++) { %>
+                    <div class="calendar-day">
+                      <%= i %>
+                    </div>
+                  <% } %>
+                </div>
+              </div>
+
+              <!-- Sidebar Lịch (Phải) -->
+              <div class="calendar-sidebar">
+                <!-- Khóa sự kiện -->
+                <div class="card">
+                  <h3 class="card-title">Khóa sự kiện</h3>
+                  <ul class="event-list">
+                    <li class="event-item">
+                      <svg class="event-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                      </svg>
+                      <span>Hide trang events</span>
+                    </li>
+                    <li class="event-item">
+                      <svg class="event-icon event-icon-pink" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                      </svg>
+                      <span>Hide category events</span>
+                    </li>
+                    <li class="event-item">
+                      <svg class="event-icon event-icon-yellow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                      </svg>
+                      <span>Hide course events</span>
+                    </li>
+                    <li class="event-item">
+                      <svg class="event-icon event-icon-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                      </svg>
+                      <span>Hide group events</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Xem theo tháng -->
+                <div class="card">
+                  <h3 class="card-title text-center">Xem theo tháng</h3>
+                  <div class="month-view">
+                    <div class="month-view-title">March 2026</div>
+                    <div class="month-view-grid">
+                      <span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </main>
+
+    </div>
+  </div>
+
+  <script>
+    function switchTab(tabName) {
+      // Ẩn tất cả tabs
+      document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('tab-active');
+      });
+      
+      // Bỏ active class từ tất cả buttons
+      document.querySelectorAll('.nav-button').forEach(btn => {
+        btn.classList.remove('nav-button-active');
+      });
+      
+      // Hiển thị tab được chọn
+      document.getElementById('tab-' + tabName).classList.add('tab-active');
+      
+      // Thêm active class vào button được chọn
+      document.querySelector('[data-tab="' + tabName + '"]').classList.add('nav-button-active');
+    }
+  </script>
+</body>
+</html>

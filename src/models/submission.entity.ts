@@ -14,19 +14,19 @@ import { Lecturer } from './lecturers.entity';
 @Entity('submissions')
 export class Submission {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   // DB: quiz_id → quizzes(id) CASCADE
   @ManyToOne(() => Quiz, (quiz) => quiz.submissions, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'quiz_id' })
-  quiz: Quiz;
+  quiz!: Quiz;
 
   // DB: student_id → students(user_id) CASCADE
   // ✅ FIX: Thêm @JoinColumn với referencedColumnName: 'userId'
   //         Student PK là userId (bigint), TypeORM cần biết join đúng cột nào
   @ManyToOne(() => Student, (student) => student.submissions, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'student_id', referencedColumnName: 'userId' })
-  student: Student;
+  student!: Student;
 
   /**
    * Dữ liệu câu trả lời của học viên (JSONB)
@@ -39,11 +39,11 @@ export class Submission {
   @Column({ type: 'numeric', precision: 6, scale: 2, nullable: true })
   score?: number;
 
-  @Column({ type: 'enum', enum: SubmissionStatus, default: SubmissionStatus.SUBMITTED })
-  status: SubmissionStatus;
+  @Column({ type: 'enum', enum: SubmissionStatus, default: SubmissionStatus.SUBMITTED, enumName: 'submission_status' })
+  status!: SubmissionStatus;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'submitted_at' })
-  submittedAt: Date;
+  submittedAt!: Date;
 
   @Column({ type: 'timestamptz', nullable: true, name: 'graded_at' })
   gradedAt?: Date;
@@ -56,7 +56,7 @@ export class Submission {
   gradedBy?: Lecturer;
 
   @Column({ type: 'boolean', default: false, name: 'regrade_requested' })
-  regradeRequested: boolean;
+  regradeRequested!: boolean;
 
   @Column({ type: 'text', nullable: true, name: 'regrade_note' })
   regradeNote?: string;

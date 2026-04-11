@@ -6,17 +6,50 @@ services:
     container_name: lms_backend
     ports:
       - "3001:3001"
-
     environment:
-      DB_HOST: host.docker.internal
+      FORCE_COLOR: "1"
+      NODE_ENV: development
+      DB_HOST: monolithic-posrgre_lms-1
       DB_PORT: 5432
       DB_USERNAME: postgres
       DB_PASSWORD: quanminh08
       DB_NAME: LMS-monolithic
       JWT_SECRET: supersecretkey
-
     volumes:
       - .:/app
       - /app/node_modules
-
     command: npm run start:dev
+    networks:
+      - lms-network
+    depends_on:
+      monolithic-posrgre_lms-1:
+        condition: service_healthy
+    restart: unless-stopped   # ← thêm
+
+  monolithic-posrgre_lms-1:
+    image: postgres:15-alpine
+    container_name: monolithic-posrgre_lms-1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: quanminh08
+      POSTGRES_DB: LMS-monolithic
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./01-init.sh:/docker-entrypoint-initdb.d/01-init.sh
+    networks:
+      - lms-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d LMS-monolithic"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped   # ← thêm
+
+networks:
+  lms-network:
+    driver: bridge
+
+volumes:
+  pgdata:

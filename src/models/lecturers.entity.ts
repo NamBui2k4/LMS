@@ -32,7 +32,7 @@ export class Lecturer {
    * user_id: vừa là PK vừa là FK → users(id).
    */
   @PrimaryColumn({ type: 'bigint', name: 'user_id' })
-  userId: number;
+  userId!: number;
 
   /**
    * Quan hệ 1-1 với User (entity cha).
@@ -41,15 +41,15 @@ export class Lecturer {
    */
   @OneToOne(() => User, (user) => user.lecturer, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user!: User;
 
   // DB: fullname VARCHAR(150) NOT NULL
   @Column({ length: 150, name: 'fullname' })
-  fullname: string;
+  fullname!: string;
 
   // DB: email VARCHAR(255) NOT NULL UNIQUE
   @Column({ length: 255, unique: true })
-  email: string;
+  email!: string;
 
   // DB: phone VARCHAR(20)
   @Column({ length: 20, nullable: true })
@@ -83,15 +83,19 @@ export class Lecturer {
   @Column({ length: 255, nullable: true, unique: true, name: 'google_id' })
   googleId?: string;
 
-  // DB: status account_status NOT NULL DEFAULT 'active'
-  @Column({ type: 'enum', enum: AccountStatus, default: AccountStatus.ACTIVE })
-  status: AccountStatus;
+  @Column({
+    type: 'enum',
+    enum: AccountStatus,
+    enumName: 'account_status', // ← FIX quan trọng nhất
+    default: AccountStatus.ACTIVE
+  })
+  status!: AccountStatus;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 
   // ── Quan hệ IS-A xuống department_heads ──────────────────────────────
   // Một Lecturer CÓ THỂ là DepartmentHead (nullable)
@@ -101,8 +105,8 @@ export class Lecturer {
   // ── Quan hệ xuống các bảng phụ thuộc ─────────────────────────────────
   // ✅ FIX: Course → Courses (đúng class name được export từ courses.entity.ts)
   @OneToMany(() => Courses, (course) => course.createdBy)
-  createdCourses: Courses[];
+  createdCourses!: Courses[];
 
   @OneToMany(() => AssignedLecturers, (ci) => ci.instructor)
-  assignedCourses: AssignedLecturers[];
+  assignedCourses!: AssignedLecturers[];
 }

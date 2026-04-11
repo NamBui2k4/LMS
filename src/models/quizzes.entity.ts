@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
   ManyToOne,
   OneToMany,
+  JoinColumn,
 } from 'typeorm';
 
 import { QuizType } from '../common/enums/quiz-type.enum';
@@ -22,23 +23,26 @@ import { Submission } from './submission.entity';
 @Entity('quizzes')
 export class Quiz {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @ManyToOne(() => Courses, (course) => course.quizzes, { onDelete: 'CASCADE' })
-  course: Courses;
+  @JoinColumn({ name: 'course_id' }) // ← FIX
+  course!: Courses;
 
   @Column({ length: 255 })
-  title: string;
+  title!: string;
 
   @Column({
     type: 'enum',
     enum: QuizType,
+    enumName: 'quiz_type', // ← FIX quan trọng
     default: QuizType.MULTIPLE_CHOICE,
+    name: 'quiz_type'
   })
-  quizType: QuizType;
+  quizType!: QuizType;
 
   @Column({ type: 'numeric', precision: 6, scale: 2, default: 100.00 })
-  maxScore: number;
+  maxScore!: number;
 
   @Column({ type: 'numeric', precision: 6, scale: 2, nullable: true })
   passScore?: number;
@@ -47,19 +51,19 @@ export class Quiz {
   durationMin?: number;
 
   @ManyToOne(() => Lecturer, { nullable: false, onDelete: 'RESTRICT' })
-  createdBy: Lecturer;
+  createdBy!: Lecturer;
 
   @CreateDateColumn({ type: 'timestamptz' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ type: 'timestamptz' })
-  updatedAt: Date;
+  updatedAt!: Date;
 
   // Quan hệ 1-n: Một quiz có nhiều câu hỏi
   @OneToMany(() => QuizQuestion, (question) => question.quiz, { cascade: true })
-  questions: QuizQuestion[];
+  questions!: QuizQuestion[];
 
   // Quan hệ 1-n: Một quiz có nhiều bài nộp từ học viên
   @OneToMany(() => Submission, (submission) => submission.quiz)
-  submissions: Submission[];
+  submissions!: Submission[];
 }

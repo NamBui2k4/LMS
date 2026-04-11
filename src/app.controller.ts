@@ -3,19 +3,22 @@ import { AppService } from './app.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly appService: AppService) { }
 
   // ====================== ROOT & LOGIN ======================
 
   @Get('')
-  @Redirect('/login', 302)
-  root() {}
+  @Render('public/guest-homepage')
+  root() {
+    return { 
+      title: 'TDTU LMS - Guest Homepage'
+    }; }
 
   // Trang chọn vai trò (Student hoặc Giảng viên)
   @Get('login')
   @Render('login-role')
   loginChoice() {
-    return { 
+    return {
       roleType: null,
       title: 'LMS — Đăng nhập'
     };
@@ -32,7 +35,7 @@ export class AppController {
       displayRole = 'staff';
     }
 
-    return { 
+    return {
       roleType: displayRole,
       title: `Đăng nhập ${displayRole === 'student' ? 'Người học' : 'Giảng viên'}`
     };

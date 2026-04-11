@@ -31,7 +31,7 @@ export class Student {
    * KHÔNG dùng @PrimaryGeneratedColumn — giá trị đến từ users.id.
    */
   @PrimaryColumn({ type: 'bigint', name: 'user_id' })
-  userId: number;
+  userId!: number;
 
   /**
    * Quan hệ 1-1 với User (entity cha).
@@ -40,16 +40,16 @@ export class Student {
    */
   @OneToOne(() => User, (user) => user.student, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
-  user: User;
+  user!: User;
 
   // DB: fullname VARCHAR(150) NOT NULL
   @Column({ length: 150, name: 'fullname' })
-  fullname: string;
+  fullname!: string;
 
   // DB: email VARCHAR(255) NOT NULL UNIQUE
   // Denormalize để tìm kiếm nhanh, không cần JOIN users
   @Column({ length: 255, unique: true })
-  email: string;
+  email!: string;
 
   // DB: phone VARCHAR(20)
   @Column({ length: 20, nullable: true })
@@ -64,19 +64,24 @@ export class Student {
   googleId?: string;
 
   // DB: status account_status NOT NULL DEFAULT 'active'
-  @Column({ type: 'enum', enum: AccountStatus, default: AccountStatus.ACTIVE })
-  status: AccountStatus;
+  @Column({
+    type: 'enum',
+    enum: AccountStatus,
+    enumName: 'account_status', // ← FIX quan trọng nhất
+    default: AccountStatus.ACTIVE
+  })
+  status!: AccountStatus;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 
   // ── Quan hệ xuống bảng phụ thuộc ──────────────────────────────────────
   @OneToMany(() => Enrollment, (enrollment) => enrollment.student)
-  enrollments: Enrollment[];
+  enrollments!: Enrollment[];
 
   @OneToMany(() => Submission, (submission) => submission.student)
-  submissions: Submission[];
+  submissions!: Submission[];
 }

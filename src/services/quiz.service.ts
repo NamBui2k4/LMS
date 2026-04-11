@@ -4,6 +4,7 @@ import { CourseRepository } from '../repository/course.repository';
 import { Quiz } from '../models/quizzes.entity';
 import { QuizType } from '../common/enums/quiz-type.enum';
 import { IsString, IsEnum, IsOptional, IsNumber, IsNotEmpty, Min } from 'class-validator';
+import { InjectRepository } from '@nestjs/typeorm';
 
 /**
  * ✅ FIX: QuizType chỉ còn MULTIPLE_CHOICE | ESSAY (bỏ MIXED)

@@ -25,11 +25,11 @@ import { Admin } from './admins.entity';
 export class User {
   // DB: id BIGSERIAL PRIMARY KEY
   @PrimaryGeneratedColumn({ type: 'bigint' })
-  id: number;
+  id!: number;
 
   // DB: email VARCHAR(255) NOT NULL UNIQUE
   @Column({ type: 'varchar', length: 255, unique: true })
-  email: string;
+  email!: string;
 
   // DB: password_hash VARCHAR(255)
   @Column({ type: 'varchar', length: 255, nullable: true, name: 'password_hash' })
@@ -41,11 +41,11 @@ export class User {
 
   // DB: role VARCHAR(50) CHECK ('STUDENT','LECTURER','HEAD_OF_DEPARTMENT','ADMIN')
   @Column({ type: 'enum', enum: UserRole })
-  role: UserRole;
+  role!: UserRole;
 
   // DB: is_active BOOLEAN NOT NULL DEFAULT true
   @Column({ type: 'boolean', default: true, name: 'is_active' })
-  isActive: boolean;
+  isActive!: boolean;
 
   // DB: last_login_at TIMESTAMPTZ
   @Column({ type: 'timestamptz', nullable: true, name: 'last_login_at' })
@@ -53,17 +53,17 @@ export class User {
 
   // DB: failed_login_attempts INT DEFAULT 0
   @Column({ type: 'int', default: 0, name: 'failed_login_attempts' })
-  failedLoginAttempts: number;
+  failedLoginAttempts!: number;
 
   // DB: locked_until TIMESTAMPTZ
   @Column({ type: 'timestamptz', nullable: true, name: 'locked_until' })
   lockedUntil?: Date;
 
   @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
-  updatedAt: Date;
+  updatedAt!: Date;
 
   // ── Quan hệ IS-A xuống các bảng con ─────────────────────────────────────
   // mappedBy trỏ đến property 'user' trong entity con

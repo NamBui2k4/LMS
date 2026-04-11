@@ -6,14 +6,22 @@ import cookieParser from 'cookie-parser';
 import { Logger } from 'nestjs-pino';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
+import chalk from 'chalk';
 
-import { icon } from './views/helpers/icon';   // ← quan trọng: phải khớp tên file
+import { icon } from './views/helpers/icon';
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
+    bufferLogs: true,
+  });
+
+  const logger = app.get(Logger);
+  app.useLogger(logger);        // ← Kích hoạt Pino logger
 
   const isProd = process.env.NODE_ENV === 'production';
+  const port = process.env.PORT || 3001;
 
+  // Cấu hình Assets & Views
   const viewsPath = isProd
     ? join(process.cwd(), 'dist', 'views')
     : join(process.cwd(), 'src', 'views');
@@ -26,14 +34,12 @@ async function bootstrap() {
   app.setBaseViewsDir(viewsPath);
   app.setViewEngine('ejs');
 
-  // ✅ Đăng ký icon helper globally cho tất cả EJS
   app.use((req, res, next) => {
     res.locals.icon = icon;
     next();
   });
 
   app.use(cookieParser());
-  app.useLogger(app.get(Logger));
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -43,8 +49,23 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(3001, '0.0.0.0');
-  console.log(`🚀 Application is running on: http://localhost:3001`);
+  await app.listen(port, '0.0.0.0');
+
+
+  // ====================== LOG KHỞI ĐỘNG ĐẸP ======================
+  logger.log(`🚀 LMS MONOLITHIC SERVICE IS RUNNING on http://localhost:${port}`);
+
+  console.log(`
+${chalk.cyan('##########################################################')}
+${chalk.cyan('#')}
+${chalk.cyan('#')}  🚀 ${chalk.yellowBright('LMS MONOLITHIC SERVICE IS RUNNING')}
+${chalk.cyan('#')}
+${chalk.cyan('#')}  📂 ${chalk.white('Environment:')}  ${chalk.magentaBright(process.env.NODE_ENV || 'development')}
+${chalk.cyan('#')}  🔗 ${chalk.white('Local URL:')}    ${chalk.blueBright(`http://localhost:${port}`)}
+${chalk.cyan('#')}  🏠 ${chalk.white('Views Path:')}   ${chalk.gray(viewsPath)}
+${chalk.cyan('#')}
+${chalk.cyan('##########################################################')}
+  `);
 }
 
 bootstrap();

@@ -5,6 +5,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 
 import { Quiz } from './quizzes.entity';
@@ -17,13 +18,14 @@ import { Quiz } from './quizzes.entity';
 @Entity('quiz_questions')
 export class QuizQuestion {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @ManyToOne(() => Quiz, (quiz) => quiz.questions, { onDelete: 'CASCADE' })
-  quiz: Quiz;
+  @JoinColumn({ name: 'quiz_id' }) // ← BẮT BUỘC
+  quiz!: Quiz;
 
-  @Column({ type: 'text' })
-  questionText: string;
+  @Column({ type: 'text', name: 'question_text' }) // ← FIX
+  questionText!: string;
 
   /**
    * JSONB lưu mảng lựa chọn cho câu trắc nghiệm
@@ -48,8 +50,8 @@ export class QuizQuestion {
   correctAnswer?: string;
 
   @Column({ type: 'numeric', precision: 5, scale: 2, default: 1.00 })
-  scoreWeight: number;
+  scoreWeight!: number;
 
   @Column({ default: 0 })
-  orderIndex: number;
+  orderIndex!: number;
 }

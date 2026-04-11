@@ -11,6 +11,8 @@ import { StudentRepository } from '../repository/student.repository';
 import { UserRepository } from '../repository/user.repository';
 import { Enrollment } from '../models/enrollment.entity';
 import { Submission } from '../models/submission.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from 'src/models/user.entity';
 
 @Injectable()
 export class StudentService {
