@@ -51,8 +51,6 @@ pids
 *.pid
 *.seed
 *.pid.lock
-01-init.sh
-schema_lms_db.sql
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
