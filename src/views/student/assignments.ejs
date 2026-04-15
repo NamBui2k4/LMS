@@ -24,16 +24,18 @@
           </h1>
         </div>
 
-        <%
-        const allAssignments = [
-          { id:1, course:'IT001', courseName:'Nhập môn Lập trình', title:'Bài tập tuần 1: Biến và Kiểu dữ liệu', deadline:'2026-04-05 23:59', status:'pending' },
-          { id:2, course:'IT002', courseName:'Cấu trúc Dữ liệu', title:'Cài đặt DSLK Đơn', deadline:'2026-04-10 23:59', status:'pending' },
-          { id:3, course:'IT001', courseName:'Nhập môn Lập trình', title:'Báo cáo giữa kỳ', deadline:'2026-03-20 23:59', status:'submitted' },
-          { id:4, course:'IT003', courseName:'Trí tuệ Nhân tạo', title:'Tìm kiếm A*', deadline:'2026-03-15 23:59', status:'overdue' },
-        ];
-        const pending   = allAssignments.filter(a => a.status === 'pending');
+        <% 
+        const allAssignments = (submissions || []).map((s) => ({
+          id: s.id,
+          course: s.quiz?.course?.id || '',
+          courseName: s.quiz?.course?.title || 'Chưa có môn học',
+          title: s.quiz?.title || `Bài nộp #${s.id}`,
+          deadline: s.submittedAt,
+          status: s.status === 'graded' || s.status === 'under_review' || s.status === 'submitted' ? 'submitted' : 'pending'
+        }));
+        const pending = allAssignments.filter(a => a.status === 'pending');
         const submitted = allAssignments.filter(a => a.status === 'submitted');
-        const overdue   = allAssignments.filter(a => a.status === 'overdue');
+        const overdue = [];
         %>
 
         <!-- Tabs -->

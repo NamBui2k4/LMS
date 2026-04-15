@@ -42,9 +42,9 @@
           </div>
           <select class="form-input form-select" id="q-filter-course" style="min-width:180px;" onchange="filterQuestions()">
             <option value="">Mọi thể loại</option>
-            <option value="IT004">Phát triển Web với React</option>
-            <option value="DB001">Cơ sở dữ liệu PostgreSQL</option>
-            <option value="IT007">Kiến trúc Microservices</option>
+            <% courses.forEach(function(c){ %>
+              <option value="<%= c.id %>"><%= c.title %></option>
+            <% }) %>
           </select>
           <select class="form-input form-select" id="q-filter-diff" style="min-width:140px;" onchange="filterQuestions()">
             <option value="">Mọi độ khó</option>
@@ -56,101 +56,45 @@
 
         <!-- Question list -->
         <div id="q-list">
-          <%
-          const questions = [
-            {
-              id: 'q1',
-              course: 'IT004', courseName: 'Phát triển Web với React',
-              difficulty: 'Dễ', type: 'multiple_choice',
-              content: 'React là gì?',
-              options: [
-                { label:'A', text:'Một thư viện UI của JavaScript', correct: true },
-                { label:'B', text:'Một hệ điều hành', correct: false },
-                { label:'C', text:'Một ngôn ngữ backend', correct: false },
-                { label:'D', text:'Một database', correct: false },
-              ]
-            },
-            {
-              id: 'q2',
-              course: 'IT004', courseName: 'Phát triển Web với React',
-              difficulty: 'Khó', type: 'essay',
-              content: 'Hãy giải thích cơ chế hoạt động của Virtual DOM trong React và tại sao nó lại giúp tăng hiệu suất render?',
-              options: []
-            },
-            {
-              id: 'q3',
-              course: 'DB001', courseName: 'Cơ sở dữ liệu PostgreSQL',
-              difficulty: 'Trung bình', type: 'multiple_choice',
-              content: 'Lệnh nào dùng để xóa toàn bộ dữ liệu trong bảng mà không ghi log từng dòng?',
-              options: [
-                { label:'A', text:'DELETE FROM table', correct: false },
-                { label:'B', text:'TRUNCATE TABLE table', correct: true },
-                { label:'C', text:'DROP TABLE table', correct: false },
-                { label:'D', text:'REMOVE FROM table', correct: false },
-              ]
-            },
-            {
-              id: 'q4',
-              course: 'IT007', courseName: 'Kiến trúc Microservices',
-              difficulty: 'Trung bình', type: 'multiple_choice',
-              content: 'Pattern nào giúp các microservice giao tiếp bất đồng bộ?',
-              options: [
-                { label:'A', text:'REST API', correct: false },
-                { label:'B', text:'gRPC', correct: false },
-                { label:'C', text:'Message Queue (Kafka, RabbitMQ)', correct: true },
-                { label:'D', text:'GraphQL', correct: false },
-              ]
-            },
-            {
-              id: 'q5',
-              course: 'IT004', courseName: 'Phát triển Web với React',
-              difficulty: 'Dễ', type: 'multiple_choice',
-              content: 'Hook nào dùng để quản lý state trong React Functional Component?',
-              options: [
-                { label:'A', text:'useEffect', correct: false },
-                { label:'B', text:'useState', correct: true },
-                { label:'C', text:'useContext', correct: false },
-                { label:'D', text:'useRef', correct: false },
-              ]
-            },
-          ];
-          %>
+          <% if (!questions || questions.length === 0) { %>
+            <p style="color:var(--text-muted); padding:2rem; text-align:center;">Chưa có câu hỏi nào trong ngân hàng.</p>
+          <% } else { %>
+            <% questions.forEach(function(q){ %>
+            <div class="q-card" data-course="<%= q.course %>" data-diff="<%= q.difficulty %>" data-content="<%= q.content.toLowerCase() %>">
+              <!-- Header row -->
+              <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:.75rem;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span style="font-size:.72rem;font-family:monospace;background:rgba(35,134,54,.12);color:#3fb950;border:1px solid rgba(35,134,54,.25);padding:2px 8px;border-radius:4px;"><%= q.course %></span>
+                  <span style="font-size:.78rem;color:var(--text-muted); text-transform: uppercase;"><%= q.courseName %></span>
+                  <span class="badge badge-diff-<%= q.difficulty==='Dễ'?'easy':q.difficulty==='Khó'?'hard':'medium' %>" style="font-size:.68rem;padding:2px 8px;border-radius:4px;"><%= q.difficulty %></span>
+                  <span style="font-size:.72rem;background:var(--bg-hover);color:var(--text-muted);border:1px solid var(--border);padding:2px 8px;border-radius:4px;">
+                    <%= q.type === 'multiple_choice' ? '● Trắc nghiệm' : '✎ Tự luận' %>
+                  </span>
+                </div>
+                <div style="display:flex;gap:8px;">
+                  <button class="btn btn-ghost btn-sm" onclick="openEditQuestion('<%= q.id %>')">Sửa</button>
+                  <button class="btn btn-red btn-sm" onclick="deleteQuestion('<%= q.id %>')">Xóa</button>
+                </div>
+              </div>
 
-          <% questions.forEach(function(q){ %>
-          <div class="q-card" data-course="<%= q.course %>" data-diff="<%= q.difficulty %>" data-content="<%= q.content.toLowerCase() %>">
-            <!-- Header row -->
-            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:.75rem;">
-              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                <span style="font-size:.72rem;font-family:monospace;background:rgba(35,134,54,.12);color:#3fb950;border:1px solid rgba(35,134,54,.25);padding:2px 8px;border-radius:4px;"><%= q.course %></span>
-                <span style="font-size:.78rem;color:var(--text-muted);"><%= q.courseName %></span>
-                <span class="badge badge-diff-<%= q.difficulty==='Dễ'?'easy':q.difficulty==='Khó'?'hard':'medium' %>" style="font-size:.68rem;padding:2px 8px;border-radius:4px;"><%= q.difficulty %></span>
-                <span style="font-size:.72rem;background:var(--bg-hover);color:var(--text-muted);border:1px solid var(--border);padding:2px 8px;border-radius:4px;">
-                  <%= q.type === 'multiple_choice' ? '● Trắc nghiệm' : '✎ Tự luận' %>
-                </span>
+              <!-- Question content -->
+              <p style="font-size:.95rem;font-weight:500;color:#fff;line-height:1.5;"><%= q.content %></p>
+
+              <!-- Options for multiple choice -->
+              <% if (q.type === 'multiple_choice' && q.options && q.options.length > 0) { %>
+              <div class="q-options">
+                <% q.options.forEach(function(opt){ %>
+                <div class="q-opt <%= opt.correct ? 'correct' : '' %>">
+                  <%= opt.label %>. <%= opt.text %> <%= opt.correct ? '✓' : '' %>
+                </div>
+                <% }) %>
               </div>
-              <div style="display:flex;gap:8px;">
-                <button class="btn btn-ghost btn-sm" onclick="openEditQuestion('<%= q.id %>')">Sửa</button>
-                <button class="btn btn-red btn-sm" onclick="deleteQuestion('<%= q.id %>')">Xóa</button>
-              </div>
+              <% } else if (q.type === 'essay') { %>
+              <div class="q-essay">📝 Câu hỏi tự luận — Giảng viên chấm thủ công</div>
+              <% } %>
             </div>
-
-            <!-- Question content -->
-            <p style="font-size:.95rem;font-weight:500;color:#fff;line-height:1.5;"><%= q.content %></p>
-
-            <!-- Options for multiple choice -->
-            <% if (q.type === 'multiple_choice') { %>
-            <div class="q-options">
-              <% q.options.forEach(function(opt){ %>
-              <div class="q-opt <%= opt.correct ? 'correct' : '' %>">
-                <%= opt.label %>. <%= opt.text %> <%= opt.correct ? '✓' : '' %>
-              </div>
-              <% }) %>
-            </div>
-            <% } else { %>
-            <div class="q-essay">📝 Câu hỏi tự luận — Giảng viên chấm thủ công</div>
-            <% } %>
-          </div>
-          <% }) %>
+            <% }) %>
+          <% } %>
 
           <!-- Empty state (shown when filter returns nothing) -->
           <div id="q-empty" class="empty-state card" style="display:none;">
@@ -179,9 +123,9 @@
       <div class="form-group">
         <label class="form-label">Khóa học</label>
         <select class="form-input form-select" id="new-q-course">
-          <option value="IT004">Phát triển Web với React</option>
-          <option value="DB001">Cơ sở dữ liệu PostgreSQL</option>
-          <option value="IT007">Kiến trúc Microservices</option>
+          <% courses.forEach(function(c){ %>
+            <option value="<%= c.id %>"><%= c.title %></option>
+          <% }) %>
         </select>
       </div>
       <div style="display:flex;gap:12px;">

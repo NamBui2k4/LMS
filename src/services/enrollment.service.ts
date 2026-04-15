@@ -112,4 +112,9 @@ export class EnrollmentService {
     const updated = await this.enrollmentRepo.updateProgress(id, progressPct);
     return updated!;
   }
+
+  async findAllForLecturer(lecturerId: number, role: string): Promise<Enrollment[]> {
+    const isHoD = role === 'HEAD_OF_DEPARTMENT';
+    return this.enrollmentRepo.findAllForLecturer(lecturerId, isHoD);
+  }
 }

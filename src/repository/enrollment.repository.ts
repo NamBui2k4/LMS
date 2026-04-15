@@ -91,4 +91,25 @@ export class EnrollmentRepository {
       course: { id: courseId },
     } as any);
   }
+
+  /**
+   * [MỚI] Lấy tất cả ghi danh liên quan đến giảng viên (Tạo bởi hoặc được Phân công)
+   */
+  async findAllForLecturer(lecturerId: number, isHoD: boolean): Promise<Enrollment[]> {
+    const qb = this.enrollmentRepo.createQueryBuilder('en')
+      .leftJoinAndSelect('en.student', 'student')
+      .leftJoinAndSelect('en.course', 'course')
+      .leftJoinAndSelect('course.createdBy', 'courseOwner');
+
+    if (!isHoD) {
+      qb.andWhere(
+        '(courseOwner.userId = :lecturerId OR EXISTS (' +
+          'SELECT 1 FROM course_instructors ci WHERE ci.course_id = course.id AND ci.instructor_id = :lecturerId' +
+        '))',
+        { lecturerId },
+      );
+    }
+
+    return qb.orderBy('en.enrolledAt', 'DESC').getMany();
+  }
 }

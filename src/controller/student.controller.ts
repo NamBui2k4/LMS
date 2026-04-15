@@ -7,6 +7,8 @@ import {
   Body,
   Query,
   Request,
+  Req,
+  Res,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -22,7 +24,7 @@ import { UpdateStudentDto } from '../dto/student.dto';
 import { AccountStatus } from '../common/enums/account-status.enum';
 
 export class UpdateAccountStatusDto {
-  status: AccountStatus;
+  status!: AccountStatus;
   reason?: string;
 }
 
@@ -30,6 +32,37 @@ export class UpdateAccountStatusDto {
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class StudentController {
   constructor(private readonly studentService: StudentService) {}
+
+  // Route trả về trang hồ sơ cá nhân student (EJS)
+  @Get('/profile')
+  async renderProfile(@Req() req: any, @Res() res: any) {
+    const userId = Number(req.userPayload?.sub);
+    if (!userId) return res.redirect('/login/student');
+    const user = await this.studentService.getProfileByUserId(userId);
+    return res.render('student/profile', { user });
+  }
+
+  // Route trả về trang bài tập student (EJS)
+  @Get('/assignments')
+  async renderAssignments(@Req() req: any, @Res() res: any) {
+    const userId = Number(req.userPayload?.sub);
+    if (!userId) return res.redirect('/login/student');
+    // Lấy submissions (bài tập đã nộp) và enrollments (để lấy các bài tập cần làm)
+    const submissions = await this.studentService.getSubmissions(userId);
+    const enrollments = await this.studentService.getEnrollments(userId);
+    // TODO: Xử lý mapping assignment thực tế nếu có bảng assignment riêng
+    return res.render('student/assignments', { submissions, enrollments });
+  }
+
+  // Route trả về trang điểm danh student (EJS)
+  @Get('/attendance')
+  async renderAttendance(@Req() req: any, @Res() res: any) {
+    const userId = Number(req.userPayload?.sub);
+    if (!userId) return res.redirect('/login/student');
+    const enrollments = await this.studentService.getEnrollments(userId);
+    // TODO: Nếu có bảng điểm danh riêng, lấy dữ liệu điểm danh thực tế
+    return res.render('student/attendance', { enrollments });
+  }
 
   @Get()
   @Roles(UserRole.LECTURER, UserRole.HEAD_OF_DEPARTMENT)

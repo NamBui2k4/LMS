@@ -39,13 +39,25 @@
           <!-- Avatar card -->
           <div class="card" style="text-align:center;padding:2rem;">
             <div class="avatar-wrap">
-              <img src="https://github.com/identicons/jasonlong.png" alt="Avatar" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Crect width=\'100\' height=\'100\' fill=\'%2321262d\'/%3E%3Ctext x=\'50\' y=\'60\' font-size=\'40\' text-anchor=\'middle\' fill=\'%238b949e\'%3E👤%3C/text%3E%3C/svg%3E'">
+              <img src="<%= user?.avatarUrl || 'https://github.com/identicons/default.png' %>" alt="Avatar" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Crect width=\'100\' height=\'100\' fill=\'%2321262d\'/%3E%3Ctext x=\'50\' y=\'60\' font-size=\'40\' text-anchor=\'middle\' fill=\'%238b949e\'%3E👤%3C/text%3E%3C/svg%3E'">
             </div>
-            <h2 style="font-size:1.25rem;font-weight:700;color:#fff;margin-bottom:6px;">Nguyễn Văn A</h2>
-            <p style="font-family:monospace;background:var(--bg-hover);color:var(--text-primary);padding:4px 12px;border-radius:9999px;font-size:.875rem;display:inline-block;margin-bottom:1rem;">MSSV: 52100888</p>
+            <h2 style="font-size:1.25rem;font-weight:700;color:#fff;margin-bottom:6px;"><%= user?.fullname || 'Chưa có thông tin' %></h2>
+            <p style="font-family:monospace;background:var(--bg-hover);color:var(--text-primary);padding:4px 12px;border-radius:9999px;font-size:.875rem;display:inline-block;margin-bottom:1rem;">
+              MSSV: <%= user?.mssv || (user?.email ? user.email.split('@')[0] : 'N/A') %>
+            </p>
             <div class="badge badge-green" style="display:inline-flex;gap:6px;">
               <span class="badge-dot dot-green"></span>
-              Trạng thái: Đang học
+              <%
+                const rawStatus = String(user?.status || '').toLowerCase();
+                const readableStatus = rawStatus === 'active'
+                  ? 'Đang học'
+                  : rawStatus === 'inactive'
+                    ? 'Tạm ngưng'
+                    : rawStatus === 'banned'
+                      ? 'Bị khóa'
+                      : 'Không rõ';
+              %>
+              Trạng thái: <%= readableStatus %>
             </div>
           </div>
 
@@ -61,35 +73,35 @@
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
                     Khoa chủ quản
                   </div>
-                  <div class="info-value">Khoa Công nghệ Thông tin</div>
+                  <div class="info-value"><%= user?.khoa || 'Chưa cập nhật' %></div>
                 </div>
                 <div>
                   <div class="info-label">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
                     Ngành học
                   </div>
-                  <div class="info-value">Kỹ thuật Phần mềm (Khóa 25)</div>
+                  <div class="info-value"><%= user?.nganh || 'Chưa cập nhật' %></div>
                 </div>
                 <div>
                   <div class="info-label">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                     Email sinh viên
                   </div>
-                  <div class="info-value">52100888@student.tdtu.edu.vn</div>
+                  <div class="info-value"><%= user?.email || 'Chưa cập nhật' %></div>
                 </div>
                 <div>
                   <div class="info-label">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.56 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                     Số điện thoại
                   </div>
-                  <div class="info-value">0909 123 456</div>
+                  <div class="info-value"><%= user?.phone || 'Chưa cập nhật' %></div>
                 </div>
                 <div style="grid-column:1/-1;">
                   <div class="info-label">
                     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
                     Địa chỉ liên hệ
                   </div>
-                  <div class="info-value">Quận 7, TP. Hồ Chí Minh</div>
+                  <div class="info-value"><%= user?.diaChi || 'Chưa cập nhật' %></div>
                 </div>
               </div>
             </div>

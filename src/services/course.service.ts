@@ -32,6 +32,14 @@ export class CourseService {
     return this.courseRepo.findAllForUser(userId, isDepartmentHead);
   }
 
+  async findAllPublished(): Promise<Courses[]> {
+    return this.courseRepo.find({
+      where: { status: CourseStatus.PUBLISHED },
+      relations: ['createdBy', 'category'],
+      order: { createdAt: 'DESC' }
+    });
+  }
+
   async findOne(courseId: number, userId: number, role: UserRole): Promise<Courses> {
     const course = await this.courseRepo.findByIdDetailed(courseId);
     if (!course) throw new NotFoundException('Không tìm thấy khóa học.');

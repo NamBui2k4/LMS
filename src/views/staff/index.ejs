@@ -23,60 +23,62 @@
         <div class="grid-3 mb-8">
           <div class="stat-card">
             <div class="stat-label">Lớp học đang phụ trách</div>
-            <div class="stat-value text-white">4</div>
+            <div class="stat-value text-white"><%= courses.length %></div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Bài tập cần chấm</div>
-            <div class="stat-value text-orange">128</div>
+            <div class="stat-value text-orange"><%= pendingCount %></div>
           </div>
           <div class="stat-card">
             <div class="stat-label">Tin nhắn chưa đọc</div>
-            <div class="stat-value text-blue">5</div>
+            <div class="stat-value text-blue">0</div>
           </div>
         </div>
 
         <!-- Quick links -->
         <div class="grid-2">
           <div class="card">
-            <div class="card-header"><h3 style="font-weight:600;color:#fff;">Lớp học sắp tới</h3></div>
+            <div class="card-header"><h3 style="font-weight:600;color:#fff;">Lớp học đang quản lý</h3></div>
             <div class="card-body">
-              <% const upcoming = [
-                { course:'IT001', name:'Nhập môn Lập trình', time:'Thứ 2, 07:00 - 09:00', room:'B1-301' },
-                { course:'IT004', name:'Phát triển Ứng dụng Web', time:'Thứ 4, 13:00 - 15:00', room:'B2-201' },
-              ]; %>
-              <% upcoming.forEach(function(cls){ %>
-              <div style="display:flex;align-items:center;gap:12px;padding:.75rem 0;border-bottom:1px solid var(--border);">
-                <div style="width:40px;height:40px;border-radius:8px;background:rgba(35,134,54,.15);border:1px solid rgba(35,134,54,.3);display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:#3fb950;font-family:monospace;"><%= cls.course %></div>
-                <div>
-                  <div style="font-weight:500;color:#fff;font-size:.875rem;"><%= cls.name %></div>
-                  <div style="font-size:.75rem;color:var(--text-muted);"><%= cls.time %> • Phòng: <%= cls.room %></div>
+              <% if (courses && courses.length > 0) { %>
+                <% courses.slice(0, 5).forEach(function(cls){ %>
+                <div style="display:flex;align-items:center;gap:12px;padding:.75rem 0;border-bottom:1px solid var(--border);">
+                  <div style="width:40px;height:40px;border-radius:8px;background:rgba(35,134,54,.15);border:1px solid rgba(35,134,54,.3);display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:#3fb950;font-family:monospace;">ID:<%= cls.id %></div>
+                  <div>
+                    <div style="font-weight:500;color:#fff;font-size:.875rem;"><%= cls.title %></div>
+                    <div style="font-size:.75rem;color:var(--text-muted);">Trạng thái: <%= cls.status %></div>
+                  </div>
                 </div>
-              </div>
-              <% }) %>
+                <% }) %>
+              <% } else { %>
+                <p style="color:var(--text-muted); padding:1rem 0;">Chưa có lớp học nào.</p>
+              <% } %>
             </div>
           </div>
 
           <div class="card">
             <div class="card-header"><h3 style="font-weight:600;color:#fff;">Bài cần chấm gần đây</h3></div>
             <div class="card-body">
-              <% const toGrade = [
-                { student:'Nguyễn Văn A', quiz:'Báo cáo Đồ án giữa kỳ', time:'29/03/2026 14:30' },
-                { student:'Trần Thị B', quiz:'Bài tập Thực hành React', time:'28/03/2026 09:15', flag:'regrade' },
-              ]; %>
-              <% toGrade.forEach(function(item){ %>
-              <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:.75rem 0;border-bottom:1px solid var(--border);">
-                <div>
-                  <div style="font-weight:500;color:#fff;font-size:.875rem;"><%= item.student %></div>
-                  <div style="font-size:.75rem;color:var(--text-muted);margin-top:2px;"><%= item.quiz %></div>
-                  <div style="font-size:.7rem;color:var(--text-muted);">Nộp: <%= item.time %></div>
+              <% if (recentSubmissions && recentSubmissions.length > 0) { %>
+                <% recentSubmissions.forEach(function(item){ %>
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;padding:.75rem 0;border-bottom:1px solid var(--border);">
+                  <div>
+                    <div style="font-weight:500;color:#fff;font-size:.875rem;"><%= item.student?.fullname || 'Ẩn danh' %></div>
+                    <div style="font-size:.75rem;color:var(--text-muted);margin-top:2px;">Bài: <%= item.quiz?.title || 'N/A' %></div>
+                    <div style="font-size:.7rem;color:var(--text-muted);">Nộp: <%= item.submittedAt ? new Date(item.submittedAt).toLocaleString('vi-VN') : 'N/A' %></div>
+                  </div>
+                  <% if (item.regradeRequested || item.status === 'under_review') { %>
+                    <span class="badge badge-red" style="font-size:.65rem;">Phúc khảo</span>
+                  <% } else if (item.status === 'submitted') { %>
+                    <span class="badge badge-yellow">Chờ chấm</span>
+                  <% } else { %>
+                    <span class="badge badge-green">Đã chấm</span>
+                  <% } %>
                 </div>
-                <% if (item.flag === 'regrade') { %>
-                  <span class="badge badge-red" style="font-size:.65rem;animation:pulse 2s infinite;">Phúc khảo</span>
-                <% } else { %>
-                  <span class="badge badge-yellow">Chờ chấm</span>
-                <% } %>
-              </div>
-              <% }) %>
+                <% }) %>
+              <% } else { %>
+                <p style="color:var(--text-muted); padding:1rem 0;">Chưa có bài nộp nào mới.</p>
+              <% } %>
               <div style="margin-top:1rem;">
                 <a href="/staff/grading" class="btn btn-ghost btn-sm btn-block" style="justify-content:center;">Xem tất cả bài nộp</a>
               </div>

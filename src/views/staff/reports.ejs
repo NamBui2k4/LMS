@@ -54,10 +54,10 @@
         <!-- KPI Cards -->
         <%
         const kpis = [
-          { label:'Tổng Sinh Viên',   value:'1,245', sub:'+1.12% so với kỳ trước', subColor:'#3fb950', color:'#fff' },
-          { label:'Điểm Trung Bình',  value:'7.8 / 10', sub:'+0.4 điểm',           subColor:'#1f6feb', color:'#1f6feb' },
-          { label:'Tỉ Lệ Hoàn Thành', value:'85%',   sub:'Đạt chỉ tiêu đề ra',    subColor:'#3fb950', color:'#3fb950' },
-          { label:'Khóa Học Đang Mở', value:'12',    sub:'Đang hoạt động',          subColor:'#f0b429', color:'#f0b429' },
+          { label:'Tổng Sinh Viên',   value: stats.totalStudents.toLocaleString('vi-VN'), sub:'Đã ghi danh', subColor:'#3fb950', color:'#fff' },
+          { label:'Điểm Trung Bình',  value: stats.avgGrade + ' / 10', sub:'Trung bình bài tập',           subColor:'#1f6feb', color:'#1f6feb' },
+          { label:'Tỉ Lệ Hoàn Thành', value: stats.completionRate + '%',   sub:'Tiến độ trung bình',    subColor:'#3fb950', color:'#3fb950' },
+          { label:'Khóa Học Đang Mở', value: stats.openCoursesCount,    sub:'Đang hoạt động',          subColor:'#f0b429', color:'#f0b429' },
         ];
         %>
         <div class="kpi-grid">
@@ -81,10 +81,10 @@
             <div class="card-body">
               <%
               const bars = [
-                { label:'0 - 4 (Yếu)',  pct: 5,  color:'#f85149' },
-                { label:'4 - 6 (TB)',   pct:15,  color:'#f0b429' },
-                { label:'6 - 8 (Khá)',  pct:45,  color:'#1f6feb' },
-                { label:'8 - 10 (Giỏi)',pct:35,  color:'#3fb950' },
+                { label:'0 - 4 (Yếu)',  pct: distributionPct.yếu,  color:'#f85149' },
+                { label:'4 - 6 (TB)',   pct: distributionPct.tb,   color:'#f0b429' },
+                { label:'6 - 8 (Khá)',  pct: distributionPct.khá,  color:'#1f6feb' },
+                { label:'8 - 10 (Giỏi)',pct: distributionPct.giỏi,  color:'#3fb950' },
               ];
               %>
               <% bars.forEach(function(b){ %>
@@ -106,13 +106,15 @@
             </div>
             <div class="card-body" style="padding-top:0;">
               <%
-              const courses = [
-                { name:'Phát triển Web với React', students:450, avg:8.2, pct:90, color:'#3fb950' },
-                { name:'Cơ sở dữ liệu PostgreSQL', students:320, avg:7.5, pct:75, color:'#1f6feb' },
-                { name:'Kiến trúc Microservices',  students:150, avg:6.8, pct:60, color:'#f0b429' },
-              ];
+              const coursesList = (featuredCourses || []).map(c => ({
+                name: c.title,
+                students: c.students,
+                avg: c.avgScore,
+                pct: c.avgProgress,
+                color: c.avgProgress >= 80 ? '#3fb950' : (c.avgProgress >= 40 ? '#1f6feb' : '#f0b429')
+              }));
               %>
-              <% courses.forEach(function(c){ %>
+              <% coursesList.forEach(function(c){ %>
               <div class="prog-row">
                 <div class="prog-header">
                   <span class="prog-name"><%= c.name %></span>

@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
   HttpCode,
   HttpStatus,
@@ -84,17 +85,42 @@ export class AuthController {
     @Body() loginDto: any,
     @Res({ passthrough: true }) response: Response,
   ) {
+    // Bước 0: Validate Domain Email theo Portal
+    if (loginDto.portal === 'student' && !loginDto.email.endsWith('@student.tdtu.edu.vn') && !loginDto.email.endsWith('@gmail.com')) {
+      throw new BadRequestException('Email không thuộc tên miền người học (@student.tdtu.edu.vn hoặc @gmail.com).');
+    }
+    if ((loginDto.portal === 'staff' || loginDto.portal === 'lecturer') && !loginDto.email.endsWith('@lecturer.tdtu.edu.vn') && !loginDto.email.endsWith('@gmail.com')) {
+      throw new BadRequestException('Email không thuộc tên miền giảng viên (@lecturer.tdtu.edu.vn hoặc @gmail.com).');
+    }
+
     // Bước 1: validate credentials → trả về full User entity
     const user = await this.authService.validateUser(
       loginDto.email,
       loginDto.password,
     );
 
-    // Bước 2: build response đầy đủ (query thêm student.status bên trong)
+    // Bước 2: Kiểm tra role phù hợp với portal đang đăng nhập
+    const isStudentPortal = loginDto.portal === 'student';
+    const isStaffPortal   = loginDto.portal === 'staff' || loginDto.portal === 'lecturer';
+    const isStudentRole   = user.role === 'STUDENT';
+    const isStaffRole     = ['LECTURER', 'HEAD_OF_DEPARTMENT', 'ADMIN'].includes(user.role);
+
+    if (isStudentPortal && !isStudentRole) {
+      throw new BadRequestException(
+        'Tài khoản này không phải Người học. Vui lòng đăng nhập đúng cổng.',
+      );
+    }
+    if (isStaffPortal && !isStaffRole) {
+      throw new BadRequestException(
+        'Tài khoản này không phải Giảng viên - Viên chức. Vui lòng đăng nhập đúng cổng.',
+      );
+    }
+
+    // Bước 3: build response đầy đủ (query thêm student.status bên trong)
     const { accessToken, refreshToken, message, data } =
       await this.authService.loginAndBuildResponse(user);
 
-    // Bước 3: set refreshToken vào httpOnly cookie
+    // Bước 4: set refreshToken vào httpOnly cookie (middleware dùng để xác thực trang UI)
     response.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -102,7 +128,10 @@ export class AuthController {
       maxAge: 30 * 24 * 60 * 60 * 1000,
     });
 
-    return { accessToken, message, data };
+    // Bước 5: Xác định URL redirect dựa trên role thực tế từ DB (không hardcode theo form)
+    const redirectUrl = isStudentRole ? '/student/profile' : '/staff';
+
+    return { accessToken, message, data, redirectUrl };
   }
 
   /**
@@ -116,5 +145,22 @@ export class AuthController {
     }
     const refreshToken = authHeader.split(' ')[1];
     return this.authService.refresh(refreshToken);
+  }
+
+  /**
+   * GET /api/v1/auth/logout
+   * Xóa refreshToken cookie → người dùng sẽ bị đá ra khỏi trang nội bộ
+   */
+  @Get('logout')
+  logout(@Res() response: Response) {
+    // Xóa cookie refreshToken
+    (response as any).clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+    });
+    
+    // Redirect về trang gốc (http://localhost:3001/)
+    return (response as any).redirect('/');
   }
 }

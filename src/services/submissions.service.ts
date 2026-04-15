@@ -44,6 +44,11 @@ export class SubmissionService {
     return this.submissionRepo.findByQuiz(quizId);
   }
 
+  async findAllByLecturer(lecturerId: number, role: string): Promise<Submission[]> {
+    const isHoD = role === 'HEAD_OF_DEPARTMENT';
+    return this.submissionRepo.findAllForLecturer(lecturerId, isHoD);
+  }
+
   // ✅ FIX: studentId là number (userId), không phải string
   async findByStudent(studentId: number): Promise<Submission[]> {
     return this.submissionRepo.findByStudent(studentId);

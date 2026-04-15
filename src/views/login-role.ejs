@@ -98,7 +98,7 @@
                       <% } %>
                 </span>
                 <input type="text" required
-                  placeholder="<%= roleType === 'student' ? 'Ví dụ: 52100...' : 'Ví dụ: nguyenvan@tdtu.edu.vn' %>"
+                  placeholder="<%= roleType === 'student' ? 'Ví dụ: mssv@student.tdtu.edu.vn' : 'Ví dụ: ten@lecturer.tdtu.edu.vn' %>"
                   class="form-input" id="login-username">
               </div>
             </div>
@@ -152,22 +152,66 @@
 
   <script src="/js/main.js"></script>
   <script>
-    function handleLogin(e, role) {
+    async function handleLogin(e, role) {
       e.preventDefault();
       const btn = document.getElementById('login-btn');
       const txt = document.getElementById('login-btn-text');
       const spin = document.getElementById('login-spinner');
+      const email = document.getElementById('login-username').value;
+      const password = document.getElementById('login-password').value;
+
+      // Xóa thông báo lỗi cũ nếu có
+      const existingAlert = document.getElementById('login-error-alert');
+      if (existingAlert) {
+        existingAlert.remove();
+      }
+
       btn.disabled = true;
       txt.classList.add('hidden');
       spin.classList.remove('hidden');
 
-      setTimeout(() => {
-        if (role === 'student') {
-          window.location.href = '/student/profile';
-        } else {
-          window.location.href = '/staff';
+      try {
+        const response = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password, portal: role })
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+          // Khôi phục trạng thái form nêú thất bại
+          btn.disabled = false;
+          txt.classList.remove('hidden');
+          spin.classList.add('hidden');
+          
+          // Tạo thông báo lỗi
+          const errorAlert = document.createElement('div');
+          errorAlert.id = 'login-error-alert';
+          errorAlert.style.color = '#ff4d4f';
+          errorAlert.style.backgroundColor = '#fff2f0';
+          errorAlert.style.border = '1px solid #ffccc7';
+          errorAlert.style.padding = '10px';
+          errorAlert.style.borderRadius = '4px';
+          errorAlert.style.marginBottom = '15px';
+          errorAlert.style.fontSize = '0.9rem';
+          errorAlert.innerText = Array.isArray(result.message) ? result.message[0] : (result.message || 'Đăng nhập thất bại');
+          
+          const form = document.getElementById('login-form');
+          form.insertBefore(errorAlert, form.firstChild);
+          return;
         }
-      }, 1200);
+
+        // Đăng nhập thành công → dùng redirectUrl từ server (dựa trên role thực tế trong DB)
+        const destination = result.redirectUrl || (role === 'student' ? '/student/profile' : '/staff');
+        setTimeout(() => {
+          window.location.href = destination;
+        }, 600);
+      } catch (err) {
+        btn.disabled = false;
+        txt.classList.remove('hidden');
+        spin.classList.add('hidden');
+        alert('Có lỗi xảy ra kết nối từ máy chủ. Vui lòng thử lại sau.');
+      }
     }
   </script>
 </body>

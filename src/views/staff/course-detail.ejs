@@ -34,24 +34,37 @@
               <button class="btn btn-green btn-sm" data-modal-open="modal-add-lesson">+ Thêm bài giảng</button>
             </div>
             <div style="display:flex;flex-direction:column;gap:.75rem;">
-              <% const lessons = [
-                { id:1, title:'Giới thiệu React & JSX', summary:'Tổng quan về React ecosystem', order:1 },
-                { id:2, title:'Component & Props', summary:'Cách tạo và tái sử dụng component', order:2 },
-                { id:3, title:'State & Lifecycle', summary:'Quản lý trạng thái trong React', order:3 },
-              ]; %>
-              <% lessons.forEach(function(lesson){ %>
-              <div class="card" style="padding:1rem;display:flex;align-items:center;gap:12px;">
-                <div style="width:32px;height:32px;border-radius:6px;background:rgba(35,134,54,.15);border:1px solid rgba(35,134,54,.3);display:flex;align-items:center;justify-content:center;font-weight:700;color:#3fb950;font-size:.875rem;flex-shrink:0;"><%= lesson.order %></div>
-                <div style="flex:1;">
-                  <div style="font-weight:500;color:#fff;font-size:.9rem;"><%= lesson.title %></div>
-                  <div style="font-size:.75rem;color:var(--text-muted);margin-top:2px;"><%= lesson.summary %></div>
+              <% if (!course.lessons || course.lessons.length === 0) { %>
+                <p style="color:var(--text-muted); text-align:center; padding: 2rem;">Chưa có bài giảng nào được thêm.</p>
+              <% } else { %>
+                <% course.lessons.sort((a,b) => a.orderIndex - b.orderIndex).forEach(function(lesson){ %>
+                <div class="card" style="padding:1rem;display:flex;flex-direction:column;gap:12px;">
+                  <div style="display:flex; align-items:center; gap:12px;">
+                    <div style="width:32px;height:32px;border-radius:6px;background:rgba(35,134,54,.15);border:1px solid rgba(35,134,54,.3);display:flex;align-items:center;justify-content:center;font-weight:700;color:#3fb950;font-size:.875rem;flex-shrink:0;"><%= lesson.orderIndex %></div>
+                    <div style="flex:1;">
+                      <div style="font-weight:500;color:#fff;font-size:1rem;"><%= lesson.title %></div>
+                      <div style="font-size:.8rem;color:var(--text-muted);margin-top:2px;"><%= lesson.summary %></div>
+                    </div>
+                    <div style="display:flex;gap:6px;">
+                      <button class="btn btn-ghost btn-sm">Sửa</button>
+                      <button class="btn btn-red btn-sm">Xóa</button>
+                    </div>
+                  </div>
+
+                  <!-- Materials -->
+                  <% if (lesson.materials && lesson.materials.length > 0) { %>
+                    <div style="padding-left:44px; display:flex; flex-direction:column; gap:6px;">
+                      <% lesson.materials.forEach(mat => { %>
+                        <a href="<%= mat.fileUrl %>" target="_blank" style="font-size:0.75rem; color:#58a6ff; text-decoration:none; display:flex; align-items:center; gap:6px;">
+                          <span><%= mat.fileType === 'video' ? '🎬' : '📄' %></span>
+                          <span><%= mat.fileName %></span>
+                        </a>
+                      <% }) %>
+                    </div>
+                  <% } %>
                 </div>
-                <div style="display:flex;gap:6px;">
-                  <button class="btn btn-ghost btn-sm">Sửa</button>
-                  <button class="btn btn-red btn-sm">Xóa</button>
-                </div>
-              </div>
-              <% }) %>
+                <% }) %>
+              <% } %>
             </div>
           </div>
 
@@ -59,25 +72,25 @@
           <div>
             <h2 style="font-size:1.1rem;font-weight:600;color:#fff;margin-bottom:1rem;">Sinh viên ghi danh</h2>
             <div class="card" style="padding:.5rem;">
-              <% const students = [
-                { name:'Nguyễn Văn A', id:'52100001', progress:75 },
-                { name:'Trần Thị B', id:'52100002', progress:60 },
-                { name:'Lê Hoàng C', id:'52100003', progress:90 },
-              ]; %>
-              <% students.forEach(function(s){ %>
-              <div style="padding:.75rem;border-radius:6px;border-bottom:1px solid var(--border);">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                  <div>
-                    <div style="font-size:.875rem;font-weight:500;color:#fff;"><%= s.name %></div>
-                    <div style="font-size:.7rem;color:var(--text-muted);font-family:monospace;"><%= s.id %></div>
+              <% if (!course.enrollments || course.enrollments.length === 0) { %>
+                <p style="color:var(--text-muted); text-align:center; padding: 1.5rem; font-size:0.875rem;">Chưa có sinh viên đăng ký.</p>
+              <% } else { %>
+                <% course.enrollments.forEach(function(enroll){ %>
+                <% const s = enroll.student; %>
+                <div style="padding:.75rem;border-radius:6px;border-bottom:1px solid var(--border);">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <div>
+                      <div style="font-size:.875rem;font-weight:500;color:#fff;"><%= s.fullname %></div>
+                      <div style="font-size:.7rem;color:var(--text-muted);font-family:monospace;"><%= s.email %></div>
+                    </div>
+                    <span style="font-size:.75rem;font-weight:700;color:var(--text-primary);"><%= enroll.progressPct %>%</span>
                   </div>
-                  <span style="font-size:.75rem;font-weight:700;color:var(--text-primary);"><%= s.progress %>%</span>
+                  <div class="progress-bar progress-sm">
+                    <div class="progress-bar-fill" style="background:<%= enroll.progressPct>=80?'#3fb950':enroll.progressPct>=50?'#1f6feb':'#f85149' %>;width:<%= enroll.progressPct %>%;"></div>
+                  </div>
                 </div>
-                <div class="progress-bar progress-sm">
-                  <div class="progress-bar-fill" style="background:<%= s.progress>=80?'#3fb950':s.progress>=50?'#1f6feb':'#f85149' %>;width:<%= s.progress %>%;"></div>
-                </div>
-              </div>
-              <% }) %>
+                <% }) %>
+              <% } %>
               <div style="padding:.75rem;text-align:center;">
                 <button class="btn btn-ghost btn-sm" onclick="showToast('Tính năng đang phát triển!')">Xem tất cả sinh viên</button>
               </div>

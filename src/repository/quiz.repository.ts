@@ -19,6 +19,25 @@ export class QuizRepository {
     });
   }
 
+  async findAllForLecturer(lecturerId: number, isHoD: boolean): Promise<Quiz[]> {
+    const qb = this.quizRepo.createQueryBuilder('quiz')
+      .leftJoinAndSelect('quiz.course', 'course')
+      .leftJoinAndSelect('quiz.createdBy', 'createdBy')
+      .leftJoinAndSelect('quiz.questions', 'questions');
+
+    if (!isHoD) {
+      // ✅ Cho phép xem quiz nếu là người tạo HOẶC là giảng viên được phân công vào khóa học đó
+      qb.andWhere(
+        '(createdBy.userId = :lecturerId OR EXISTS (' +
+          'SELECT 1 FROM course_instructors ci WHERE ci.course_id = course.id AND ci.instructor_id = :lecturerId' +
+        '))',
+        { lecturerId },
+      );
+    }
+
+    return qb.orderBy('quiz.createdAt', 'DESC').getMany();
+  }
+
   async findById(id: number): Promise<Quiz | null> {
     return this.quizRepo.findOne({
       where: { id },

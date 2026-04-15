@@ -16,46 +16,45 @@
         <div class="page-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
           <div>
             <h1 class="page-title">Quản lý Khóa học / Lớp học</h1>
-            <p class="page-subtitle">Vai trò hiện tại: <strong style="color:#fff;">Trưởng bộ môn</strong></p>
+            <p class="page-subtitle">Vai trò hiện tại: <strong style="color:#fff;"><%= typeof userRole !== 'undefined' && userRole === 'HEAD_OF_DEPARTMENT' ? 'Trưởng bộ môn' : 'Giảng viên' %></strong></p>
           </div>
           <button class="btn btn-green" data-modal-open="modal-create-course">+ Tạo khóa học mới</button>
         </div>
 
-        <%
-        const courses = [
-          { id:'c1', title:'Phát triển Ứng dụng Web với React', status:'PENDING_HEAD_APPROVAL', votes:0, role:'instructor' },
-          { id:'c2', title:'Kiến trúc Microservices cơ bản', status:'PENDING_VOTE', votes:2, role:'head' },
-          { id:'c3', title:'Cơ sở dữ liệu PostgreSQL', status:'APPROVED', votes:3, role:'head' },
-        ];
-        %>
-
+        <% if (!courses || courses.length === 0) { %>
+          <div style="text-align:center;color:#8b949e;padding:3rem 0;">
+            <p>Chưa có khóa học nào.</p>
+          </div>
+        <% } else { %>
         <div class="grid-3">
           <% courses.forEach(function(c){ %>
           <div class="card" style="display:flex;flex-direction:column;padding:1.25rem;">
             <h3 style="font-size:1rem;font-weight:600;color:#fff;line-height:1.4;margin-bottom:1rem;"><%= c.title %></h3>
 
             <div style="margin-bottom:.75rem;">
-              <% if (c.status === 'APPROVED') { %>
+              <% if (c.status === 'published' || c.status === 'PUBLISHED') { %>
                 <span class="badge badge-green">Đang hoạt động</span>
-              <% } else if (c.status === 'PENDING_HEAD_APPROVAL') { %>
+              <% } else if (c.status === 'pending' || c.status === 'PENDING') { %>
                 <span class="badge badge-yellow">Dự kiến mở (Chờ duyệt)</span>
+              <% } else if (c.status === 'closed' || c.status === 'CLOSED') { %>
+                <span class="badge badge-red">Đã đóng</span>
               <% } else { %>
-                <span class="badge badge-blue">Đang lấy ý kiến (Chờ Vote)</span>
-              <% } %>
-
-              <% if (c.status === 'PENDING_VOTE') { %>
-                <p style="font-size:.75rem;color:var(--text-muted);margin-top:6px;">Số phiếu hiện tại: <%= c.votes %>/3</p>
+                <span class="badge badge-blue">Bản nháp</span>
               <% } %>
             </div>
 
-            <div style="margin-top:auto;padding-top:1rem;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">
-              <!-- HEAD approves INSTRUCTOR's course -->
-              <% if (c.status === 'PENDING_HEAD_APPROVAL') { %>
-                <button class="btn btn-green btn-block" style="justify-content:center;" onclick="approveCourse('<%= c.id %>')">✓ Phê duyệt mở lớp</button>
+            <!-- Tên người tạo / Vai trò -->
+            <div style="margin-bottom:1rem; font-size:0.8rem; color:var(--text-muted);">
+              <% if (c.createdBy) { %>
+                <p>👤 Giảng viên: <%= c.createdBy.fullname || c.createdBy.email || 'N/A' %></p>
               <% } %>
-              <!-- INSTRUCTOR votes for HEAD's course -->
-              <% if (c.status === 'PENDING_VOTE') { %>
-                <button class="btn btn-primary btn-block" style="justify-content:center;" onclick="voteForCourse('<%= c.id %>')">👍 Bỏ phiếu ủng hộ</button>
+              <p>Trạng thái thực: <strong><%= c.status %></strong></p>
+            </div>
+
+            <div style="margin-top:auto;padding-top:1rem;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">
+              <!-- Nút phê duyệt dành cho Head of Dept -->
+              <% if ((c.status === 'pending' || c.status === 'PENDING') && user && user.account?.role === 'HEAD_OF_DEPARTMENT') { %>
+                <button class="btn btn-green btn-block" style="justify-content:center;" onclick="approveCourse('<%= c.id %>')">✓ Phê duyệt mở lớp</button>
               <% } %>
               <div style="display:flex;gap:8px;">
                 <a href="/staff/courses/<%= c.id %>" class="btn btn-ghost" style="flex:1;justify-content:center;">Chỉnh sửa</a>
@@ -65,6 +64,7 @@
           </div>
           <% }) %>
         </div>
+        <% } %>
 
       </div>
     </main>

@@ -51,6 +51,7 @@ export class Quiz {
   durationMin?: number;
 
   @ManyToOne(() => Lecturer, { nullable: false, onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'created_by', referencedColumnName: 'userId' })
   createdBy!: Lecturer;
 
   @CreateDateColumn({ type: 'timestamptz' })

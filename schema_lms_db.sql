@@ -357,3 +357,10 @@ INSERT INTO users (
 );
 
 INSERT INTO admins ( user_id, fullname, permissions) VALUES ( 1, 'Administrator', '["all"]');
+
+
+ALTER TABLE students 
+ADD COLUMN student_code VARCHAR(20) UNIQUE, -- MSSV
+ADD COLUMN faculty      VARCHAR(150),       -- Khoa chủ quản
+ADD COLUMN major        VARCHAR(150),       -- Ngành học
+ADD COLUMN address      TEXT;               -- Địa chỉ liên hệ

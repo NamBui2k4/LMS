@@ -52,18 +52,79 @@ export class StudentRepository {
   }
 
   async findById(userId: number): Promise<Student | null> {
-  return this.studentRepo.findOne({
-    where: { userId },
-    // Không cần load 'user' và 'enrollments' khi chỉ kiểm tra tồn tại + ghi danh
-    relations: [],   // hoặc chỉ cần những gì thật sự cần
-    select: {
-      userId: true,
-      fullname: true,
-      email: true,
-      status: true,
-    },
-  });
-}
+    return this.studentRepo.findOne({
+      where: { userId },
+      // Không cần load relation khi chỉ lấy profile cơ bản
+      relations: [],
+    });
+  }
+
+  async findProfileByUserId(userId: number): Promise<Record<string, any> | null> {
+    const columns: Array<{ column_name: string }> = await this.dataSource.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'students'`,
+    );
+
+    const set = new Set(columns.map((c) => c.column_name));
+
+    const col = (name: string, fallback = 'NULL') =>
+      set.has(name) ? `s.${name}` : fallback;
+
+    const mssvExpr = set.has('mssv')
+      ? 's.mssv'
+      : set.has('student_code')
+        ? 's.student_code'
+        : `split_part(s.email, '@', 1)`;
+
+    const khoaExpr = set.has('khoa')
+      ? 's.khoa'
+      : set.has('faculty')
+        ? 's.faculty'
+        : 'NULL';
+
+    const nganhExpr = set.has('nganh')
+      ? 's.nganh'
+      : set.has('major')
+        ? 's.major'
+        : 'NULL';
+
+    const diaChiExpr = set.has('dia_chi')
+      ? 's.dia_chi'
+      : set.has('address')
+        ? 's.address'
+        : 'NULL';
+
+    const statusExpr = set.has('status')
+      ? 's.status'
+      : set.has('tinh_trang')
+        ? 's.tinh_trang'
+        : "CASE WHEN u.is_active THEN 'active' ELSE 'inactive' END";
+
+    const rows: Array<Record<string, any>> = await this.dataSource.query(
+      `SELECT
+         s.user_id                        AS "userId",
+         u.email                          AS "loginEmail",
+         s.email                          AS "email",
+         s.fullname                       AS "fullname",
+         ${col('phone')}                  AS "phone",
+         ${col('avatar_url')}             AS "avatarUrl",
+         ${mssvExpr}                      AS "mssv",
+         ${khoaExpr}                      AS "khoa",
+         ${nganhExpr}                     AS "nganh",
+         ${diaChiExpr}                    AS "diaChi",
+         ${statusExpr}                    AS "status",
+         u.is_active                      AS "isActive",
+         ${col('created_at', 'u.created_at')} AS "createdAt"
+       FROM users u
+       JOIN students s ON u.id = s.user_id
+       WHERE s.user_id = $1
+       LIMIT 1`,
+      [userId],
+    );
+
+    return rows[0] ?? null;
+  }
 
   async findByIdWithRelations(userId: number): Promise<Student | null> {
     return this.studentRepo.findOne({

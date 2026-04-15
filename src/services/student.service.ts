@@ -25,6 +25,12 @@ export class StudentService {
     return this.studentRepo.findAllPaginated(page, limit);
   }
 
+  async getProfileByUserId(userId: number): Promise<Record<string, any>> {
+    const profile = await this.studentRepo.findProfileByUserId(userId);
+    if (!profile) throw new NotFoundException('Không tìm thấy học viên.');
+    return profile;
+  }
+
   // ✅ FIX: id là number (userId — PK bigint)
   async findOne(userId: number): Promise<Student> {
     const student = await this.studentRepo.findById(userId);

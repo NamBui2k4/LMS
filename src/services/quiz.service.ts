@@ -67,6 +67,11 @@ export class QuizService {
     return this.quizRepo.findByCourse(courseId);
   }
 
+  async findAllByLecturer(lecturerId: number, role: string): Promise<Quiz[]> {
+    const isHoD = role === 'HEAD_OF_DEPARTMENT';
+    return this.quizRepo.findAllForLecturer(lecturerId, isHoD);
+  }
+
   async findOne(id: number): Promise<Quiz> {
     const quiz = await this.quizRepo.findByIdWithQuestions(id);
     if (!quiz) throw new NotFoundException('Không tìm thấy bài kiểm tra.');

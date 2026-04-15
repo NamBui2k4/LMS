@@ -401,16 +401,31 @@ INSERT INTO users (
 
 INSERT INTO admins ( user_id, fullname, permissions) VALUES ( 1, 'Administrator', '["all"]');
 
--- Admin user
-INSERT INTO users (...) VALUES (...);
+-- ============================================================
+--  SEED: Users + Profile (Student & Lecturer)
+-- ============================================================
 
--- Student users
-INSERT INTO users (email, password_hash, role, is_active, created_at, updated_at) VALUES 
-('student1@lms.com', crypt('student123', gen_salt('bf')), 'STUDENT', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('student2@lms.com', crypt('student123', gen_salt('bf')), 'STUDENT', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('student3@lms.com', crypt('student123', gen_salt('bf')), 'STUDENT', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('student4@lms.com', crypt('student123', gen_salt('bf')), 'STUDENT', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-('student5@lms.com', crypt('student123', gen_salt('bf')), 'STUDENT', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+-- Lecturer users (email @lecturer.tdtu.edu.vn)
+INSERT INTO users (email, password_hash, role, is_active, created_at, updated_at) VALUES
+('nguyenvana@lecturer.tdtu.edu.vn', crypt('lecturer123', gen_salt('bf')), 'LECTURER', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('tranthib@lecturer.tdtu.edu.vn',   crypt('lecturer123', gen_salt('bf')), 'LECTURER', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Lecturer profiles
+INSERT INTO lecturers (user_id, fullname, email, phone, bio, academic_degree, subject, department, status) VALUES
+(2, 'TS. Nguyễn Văn An', 'nguyenvana@lecturer.tdtu.edu.vn', '0901111111', 'Giảng viên khoa CNTT', 'TS', 'Lập trình Web', 'Khoa Công nghệ Thông tin', 'active'),
+(3, 'ThS. Trần Thị Bích', 'tranthib@lecturer.tdtu.edu.vn', '0902222222', 'Giảng viên khoa Ngóại ngữ', 'ThS', 'Tiếng Anh Chuyên ngành', 'Khoa Ngoại ngữ', 'active');
+
+-- Student users (email @student.tdtu.edu.vn)
+INSERT INTO users (email, password_hash, role, is_active, created_at, updated_at) VALUES
+('52200001@student.tdtu.edu.vn', crypt('student123', gen_salt('bf')), 'STUDENT', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('52200002@student.tdtu.edu.vn', crypt('student123', gen_salt('bf')), 'STUDENT', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+('52200003@student.tdtu.edu.vn', crypt('student123', gen_salt('bf')), 'STUDENT', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+-- Student profiles
+INSERT INTO students (user_id, fullname, email, phone, status) VALUES
+(4, 'Nguyễn Minh Tuấn',   '52200001@student.tdtu.edu.vn', '0911000001', 'active'),
+(5, 'Trần Thị Lan Anh', '52200002@student.tdtu.edu.vn', '0911000002', 'active'),
+(6, 'Lê Quốc Hùng',     '52200003@student.tdtu.edu.vn', '0911000003', 'active');
 
 EOSQL
 

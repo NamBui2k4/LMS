@@ -59,6 +59,26 @@ export class SubmissionRepository {
     });
   }
 
+  async findAllForLecturer(lecturerId: number, isHoD: boolean): Promise<Submission[]> {
+    const qb = this.submissionRepo.createQueryBuilder('sub')
+      .leftJoinAndSelect('sub.quiz', 'quiz')
+      .leftJoinAndSelect('sub.student', 'student')
+      .leftJoinAndSelect('quiz.course', 'course')
+      .leftJoinAndSelect('course.createdBy', 'courseOwner');
+
+    if (!isHoD) {
+      // ✅ FIX: Một giảng viên có thể chấm bài nộp của khóa học họ TẠO hoặc họ được PHÂN CÔNG
+      qb.andWhere(
+        '(courseOwner.userId = :lecturerId OR EXISTS (' +
+          'SELECT 1 FROM course_instructors ci WHERE ci.course_id = course.id AND ci.instructor_id = :lecturerId' +
+        '))',
+        { lecturerId },
+      );
+    }
+
+    return qb.orderBy('sub.submittedAt', 'DESC').getMany();
+  }
+
   async create(data: Partial<Submission>): Promise<Submission> {
     const entity = this.submissionRepo.create(data);
     return this.submissionRepo.save(entity);

@@ -3,6 +3,7 @@ import {
   ConflictException,
   BadRequestException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { UserRepository } from '../repository/user.repository';
@@ -76,7 +77,9 @@ export class UserService {
   async findUserViaEmail(email: string): Promise<User> {
     const user = await this.userRepository.findByEmail(email);
     if (!user) {
-      throw new ConflictException(`Người dùng không tồn tại trong hệ thống.`);
+      // [FIX] Dùng UnauthorizedException (401) thay vì ConflictException (409)
+      // 409 Conflict không đúng ngữ cảnh — email không tồn tại khi đăng nhập là lỗi xác thực
+      throw new UnauthorizedException(`Email hoặc mật khẩu không chính xác.`);
     }
     return user;
   }

@@ -41,6 +41,10 @@ export class CourseRepository {
     return qb.orderBy('course.createdAt', 'DESC').getMany();
   }
 
+  async find(options: any): Promise<Courses[]> {
+    return this.courseRepo.find(options);
+  }
+
   /**
    * Tìm khóa học theo ID (kèm createdBy và category)
    * Dùng cho các thao tác cần kiểm tra quyền hoặc trạng thái nhanh
@@ -72,6 +76,7 @@ export class CourseRepository {
         'createdBy',
         'reviewedBy',
         'lessons',
+        'lessons.materials', // <--- [MỚI] Fetch data học liệu
         'quizzes',
         'enrollments',
         'assignedLecturers',
