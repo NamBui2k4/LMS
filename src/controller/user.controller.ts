@@ -80,6 +80,13 @@ export class UserController {
     return UserResponseDto.fromEntity(user);
   }
 
+  @Get('stats')
+  @HttpCode(HttpStatus.OK)
+  async getStats() {
+    const data = await this.userService.getSystemStats();
+    return { data };
+  }
+
   /**
    * 5. TÌM KIẾM THEO ID
    * GET /api/v1/users/{id}

@@ -31,7 +31,12 @@
           <div>
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
               <h2 style="font-size:1.1rem;font-weight:600;color:#fff;">Danh sách bài giảng</h2>
-              <button class="btn btn-green btn-sm" data-modal-open="modal-add-lesson">+ Thêm bài giảng</button>
+              <div style="display:flex;gap:8px;">
+                <% if (canManageAssignments) { %>
+                  <a class="btn btn-ghost btn-sm" href="/staff/courses/<%= courseId %>/assigned-lecturers">Phân công GV</a>
+                <% } %>
+                <button class="btn btn-green btn-sm" data-modal-open="modal-add-lesson">+ Thêm bài giảng</button>
+              </div>
             </div>
             <div style="display:flex;flex-direction:column;gap:.75rem;">
               <% if (!course.lessons || course.lessons.length === 0) { %>
@@ -47,18 +52,37 @@
                     </div>
                     <div style="display:flex;gap:6px;">
                       <button class="btn btn-ghost btn-sm">Sửa</button>
-                      <button class="btn btn-red btn-sm">Xóa</button>
+                      <form method="POST" action="/staff/courses/<%= courseId %>/lessons/<%= lesson.id %>/delete" style="display:inline;">
+                        <button class="btn btn-red btn-sm" type="submit">Xóa</button>
+                      </form>
                     </div>
                   </div>
+
+                  <form method="POST" action="/staff/lessons/<%= lesson.id %>/materials" style="display:flex;gap:8px;flex-wrap:wrap;padding-left:44px;">
+                    <input class="form-input" name="fileName" placeholder="Tên học liệu" style="flex:1;min-width:180px;" required />
+                    <input class="form-input" name="fileUrl" placeholder="URL học liệu" style="flex:1;min-width:220px;" required />
+                    <select class="form-input form-select" name="fileType" style="min-width:130px;">
+                      <option value="document">document</option>
+                      <option value="video">video</option>
+                      <option value="audio">audio</option>
+                      <option value="image">image</option>
+                    </select>
+                    <button type="submit" class="btn btn-ghost btn-sm">Thêm học liệu</button>
+                  </form>
 
                   <!-- Materials -->
                   <% if (lesson.materials && lesson.materials.length > 0) { %>
                     <div style="padding-left:44px; display:flex; flex-direction:column; gap:6px;">
                       <% lesson.materials.forEach(mat => { %>
-                        <a href="<%= mat.fileUrl %>" target="_blank" style="font-size:0.75rem; color:#58a6ff; text-decoration:none; display:flex; align-items:center; gap:6px;">
-                          <span><%= mat.fileType === 'video' ? '🎬' : '📄' %></span>
-                          <span><%= mat.fileName %></span>
-                        </a>
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+                          <a href="<%= mat.fileUrl %>" target="_blank" style="font-size:0.75rem; color:#58a6ff; text-decoration:none; display:flex; align-items:center; gap:6px;">
+                            <span><%= mat.fileType === 'video' ? '🎬' : '📄' %></span>
+                            <span><%= mat.fileName %></span>
+                          </a>
+                          <form method="POST" action="/staff/lessons/<%= lesson.id %>/materials/<%= mat.id %>/delete" style="margin:0;">
+                            <button type="submit" class="btn btn-red btn-sm">Xóa</button>
+                          </form>
+                        </div>
                       <% }) %>
                     </div>
                   <% } %>
@@ -85,8 +109,9 @@
                     </div>
                     <span style="font-size:.75rem;font-weight:700;color:var(--text-primary);"><%= enroll.progressPct %>%</span>
                   </div>
+                  <% const progressColor = enroll.progressPct >= 80 ? '#3fb950' : (enroll.progressPct >= 50 ? '#1f6feb' : '#f85149'); %>
                   <div class="progress-bar progress-sm">
-                    <div class="progress-bar-fill" style="background:<%= enroll.progressPct>=80?'#3fb950':enroll.progressPct>=50?'#1f6feb':'#f85149' %>;width:<%= enroll.progressPct %>%;"></div>
+                    <div class="progress-bar-fill js-progress-fill" data-width="<%= enroll.progressPct %>" data-color="<%= progressColor %>"></div>
                   </div>
                 </div>
                 <% }) %>
@@ -114,27 +139,37 @@
       <span class="modal-title">Thêm bài giảng mới</span>
       <button class="modal-close" data-modal-close="modal-add-lesson">&times;</button>
     </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label class="form-label">Tiêu đề bài giảng</label>
-        <input type="text" class="form-input" placeholder="Nhập tiêu đề...">
+    <form method="POST" action="/staff/courses/<%= courseId %>/lessons">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Tiêu đề bài giảng</label>
+          <input type="text" class="form-input" name="title" placeholder="Nhập tiêu đề..." required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tóm tắt</label>
+          <input type="text" class="form-input" name="summary" placeholder="Tóm tắt ngắn...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Nội dung chi tiết</label>
+          <textarea class="form-input form-textarea" rows="4" name="content" placeholder="Nội dung bài giảng..."></textarea>
+        </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">Tóm tắt</label>
-        <input type="text" class="form-input" placeholder="Tóm tắt ngắn...">
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-modal-close="modal-add-lesson">Hủy</button>
+        <button type="submit" class="btn btn-green">Lưu bài giảng</button>
       </div>
-      <div class="form-group">
-        <label class="form-label">Nội dung chi tiết</label>
-        <textarea class="form-input form-textarea" rows="4" placeholder="Nội dung bài giảng..."></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" data-modal-close="modal-add-lesson">Hủy</button>
-      <button class="btn btn-green" onclick="showToast('Đã thêm bài giảng!');closeModal('modal-add-lesson')">Lưu bài giảng</button>
-    </div>
+    </form>
   </div>
 </div>
 
 <script src="/js/main.js"></script>
+<script>
+document.querySelectorAll('.js-progress-fill').forEach((el) => {
+  const width = Number(el.getAttribute('data-width') || 0);
+  const color = el.getAttribute('data-color') || '#1f6feb';
+  el.style.width = width + '%';
+  el.style.background = color;
+});
+</script>
 </body>
 </html>

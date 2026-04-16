@@ -31,6 +31,8 @@
           courseName: s.quiz?.course?.title || 'Chưa có môn học',
           title: s.quiz?.title || `Bài nộp #${s.id}`,
           deadline: s.submittedAt,
+          rawStatus: s.status,
+          regradeRequested: !!s.regradeRequested,
           status: s.status === 'graded' || s.status === 'under_review' || s.status === 'submitted' ? 'submitted' : 'pending'
         }));
         const pending = allAssignments.filter(a => a.status === 'pending');
@@ -98,7 +100,15 @@
                   <h3 style="font-size:1rem;font-weight:500;color:#fff;margin-bottom:8px;"><%= item.title %></h3>
                   <p style="font-size:.8rem;color:var(--text-muted);">Hạn nộp: <%= item.deadline %></p>
                 </div>
-                <span class="badge badge-green" style="white-space:nowrap;">Đã hoàn thành</span>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <% if (item.rawStatus === 'graded' && !item.regradeRequested) { %>
+                    <button class="btn btn-ghost btn-sm" onclick="requestRegrade('<%= item.id %>')">Yêu cầu phúc khảo</button>
+                  <% } else if (item.regradeRequested || item.rawStatus === 'under_review') { %>
+                    <span class="badge badge-yellow" style="white-space:nowrap;">Đang phúc khảo</span>
+                  <% } else { %>
+                    <span class="badge badge-green" style="white-space:nowrap;">Đã hoàn thành</span>
+                  <% } %>
+                </div>
               </div>
               <% }) %>
             </div>
@@ -145,6 +155,24 @@ function switchTab(btn, panel) {
     const el = document.getElementById('panel-' + p);
     if (el) el.style.display = p === panel ? 'block' : 'none';
   });
+}
+
+function requestRegrade(submissionId) {
+  const note = prompt('Nhập lý do yêu cầu phúc khảo:');
+  if (!note || !note.trim()) return;
+
+  fetch('/api/v1/submissions/' + submissionId + '/regrade', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ note: note.trim() }),
+  })
+    .then(async (res) => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || 'Không thể gửi yêu cầu phúc khảo.');
+      showToast('Đã gửi yêu cầu phúc khảo!');
+      window.location.reload();
+    })
+    .catch((err) => showToast(err.message || 'Yêu cầu thất bại.', 'error'));
 }
 </script>
 </body>

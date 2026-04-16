@@ -143,4 +143,25 @@ export class UserRepository {
     // ✅ FIX: `as any` tại where clause
     return this.ormRepository.findOne({ where: { id: userId } as any });
   }
+
+  async getSystemStats(): Promise<{
+    totalUsers: number;
+    totalStudents: number;
+    totalLecturers: number;
+    totalDepartments: number;
+  }> {
+    const [totalUsers, totalStudents, totalLecturers, totalDepartments] = await Promise.all([
+      this.ormRepository.count(),
+      this.ormRepository.count({ where: { role: UserRole.STUDENT } }),
+      this.ormRepository.count({ where: { role: UserRole.LECTURER } }),
+      this.ormRepository.count({ where: { role: UserRole.HEAD_OF_DEPARTMENT } }),
+    ]);
+
+    return {
+      totalUsers,
+      totalStudents,
+      totalLecturers,
+      totalDepartments,
+    };
+  }
 }

@@ -44,6 +44,14 @@ export class AuthService {
     email: string;
     password: string;
     phone?: string;
+    mssv?: string;
+    khoa?: string;
+    nganh?: string;
+    diaChi?: string;
+    studentCode?: string;
+    faculty?: string;
+    major?: string;
+    address?: string;
   }) {
     // Kiểm tra email tồn tại
     const existing = await this.userService
@@ -66,6 +74,10 @@ export class AuthService {
       email: dto.email,
       passwordHash,
       phone: dto.phone,
+      mssv: dto.mssv ?? dto.studentCode,
+      khoa: dto.khoa ?? dto.faculty,
+      nganh: dto.nganh ?? dto.major,
+      diaChi: dto.diaChi ?? dto.address,
     });
 
     // Tạo token

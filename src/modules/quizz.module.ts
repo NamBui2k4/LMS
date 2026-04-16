@@ -11,12 +11,15 @@ import { Submission } from '../models/submission.entity';
 
 // Controllers
 import { QuizController } from '../controller/quiz.controller';
+import { QuizQuestionController } from '../controller/quiz-question.controller';
 
 // Services
 import { QuizService } from '../services/quiz.service';
+import { QuizQuestionService } from '../services/quiz-question.service';
 
 // Repositories
 import { QuizRepository } from '../repository/quiz.repository';
+import { QuizQuestionRepository } from '../repository/quiz-question.repository';
 import { CourseModule } from './course.module';
 
 @Module({
@@ -24,8 +27,8 @@ import { CourseModule } from './course.module';
     TypeOrmModule.forFeature([Quiz, QuizQuestion, Lesson, Submission]),
     CourseModule
   ],
-  controllers: [QuizController],
-  providers: [QuizService, QuizRepository],
-  exports: [QuizService, QuizRepository],
+  controllers: [QuizController, QuizQuestionController],
+  providers: [QuizService, QuizRepository, QuizQuestionService, QuizQuestionRepository],
+  exports: [QuizService, QuizRepository, QuizQuestionService, QuizQuestionRepository],
 })
 export class QuizModule {}

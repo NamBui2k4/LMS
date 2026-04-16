@@ -304,8 +304,7 @@ document.getElementById('user-search').addEventListener('input', applyFilters);
 function submitRoleChange() {
   const uid = document.getElementById('role-user-id').value;
   const role = document.getElementById('role-select').value;
-  // Call: PATCH /api/v1/admin/list_users/:id/role
-  fetch('/api/v1/admin/list_users/' + uid + '/role', {
+  fetch('/api/v1/users/' + uid + '/role', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ role })
@@ -314,15 +313,15 @@ function submitRoleChange() {
 }
 function submitStatusChange() {
   const uid = document.getElementById('status-user-id').value;
-  fetch('/api/v1/admin/' + uid + '/disable', { method: 'PATCH' })
+  fetch('/api/v1/users/' + uid + '/deactivate', { method: 'PATCH' })
     .then(() => { showToast('Đã cập nhật trạng thái!'); closeModal('modal-status'); location.reload(); })
     .catch(() => { showToast('Đã cập nhật trạng thái! (demo)'); closeModal('modal-status'); });
 }
 function submitDelete() {
   const uid = document.getElementById('delete-user-id').value;
-  fetch('/api/v1/admin/' + uid, { method: 'DELETE' })
-    .then(() => { showToast('Đã xóa tài khoản!'); closeModal('modal-delete'); location.reload(); })
-    .catch(() => { showToast('Đã xóa tài khoản! (demo)'); closeModal('modal-delete'); });
+  fetch('/api/v1/users/' + uid + '/deactivate', { method: 'PATCH' })
+    .then(() => { showToast('Đã vô hiệu hóa tài khoản!'); closeModal('modal-delete'); location.reload(); })
+    .catch(() => { showToast('Đã vô hiệu hóa tài khoản! (demo)'); closeModal('modal-delete'); });
 }
 function submitAddUser() {
   showToast('Đã tạo tài khoản thành công!'); closeModal('modal-add-user');

@@ -72,7 +72,7 @@
                   </span>
                 </div>
                 <div style="display:flex;gap:8px;">
-                  <button class="btn btn-ghost btn-sm" onclick="openEditQuestion('<%= q.id %>')">Sửa</button>
+                  <button class="btn btn-ghost btn-sm" onclick="openEditQuestion(this, '<%= q.id %>')">Sửa</button>
                   <button class="btn btn-red btn-sm" onclick="deleteQuestion('<%= q.id %>')">Xóa</button>
                 </div>
               </div>
@@ -121,10 +121,10 @@
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label class="form-label">Khóa học</label>
-        <select class="form-input form-select" id="new-q-course">
-          <% courses.forEach(function(c){ %>
-            <option value="<%= c.id %>"><%= c.title %></option>
+        <label class="form-label">Bài kiểm tra</label>
+        <select class="form-input form-select" id="new-q-quiz">
+          <% (quizzes || []).forEach(function(q){ %>
+            <option value="<%= q.id %>"><%= q.course?.title || 'Chưa rõ môn' %> - <%= q.title %></option>
           <% }) %>
         </select>
       </div>
@@ -188,14 +188,64 @@ function toggleEssayMode(type) {
   document.getElementById('options-section').style.display = type === 'essay' ? 'none' : '';
 }
 function deleteQuestion(id) {
-  if (confirm('Xóa câu hỏi này?')) showToast('Đã xóa câu hỏi!');
+  if (!confirm('Xóa câu hỏi này?')) return;
+  fetch('/staff/question-bank/' + id + '/delete', { method: 'POST' })
+    .then(async (res) => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || 'Không thể xóa câu hỏi.');
+      showToast('Đã xóa câu hỏi!');
+      window.location.reload();
+    })
+    .catch((err) => showToast(err.message || 'Xóa thất bại.', 'error'));
 }
-function openEditQuestion(id) { showToast('Tính năng chỉnh sửa đang phát triển!'); }
+function openEditQuestion(btn, id) {
+  const card = btn?.closest('.q-card');
+  const current = card?.querySelector('p')?.textContent?.trim() || '';
+  const content = prompt('Cập nhật nội dung câu hỏi:', current);
+  if (!content || !content.trim()) return;
+
+  fetch('/staff/question-bank/' + id + '/update', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: content.trim() }),
+  })
+    .then(async (res) => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || 'Không thể cập nhật câu hỏi.');
+      showToast('Đã cập nhật câu hỏi!');
+      window.location.reload();
+    })
+    .catch((err) => showToast(err.message || 'Cập nhật thất bại.', 'error'));
+}
 function saveQuestion() {
   const content = document.getElementById('new-q-content').value.trim();
   if (!content) { showToast('Vui lòng nhập nội dung câu hỏi!', 'error'); return; }
-  showToast('Đã thêm câu hỏi mới!');
-  closeModal('modal-add-question');
+
+  const type = document.getElementById('new-q-type').value;
+  const payload = {
+    quizId: Number(document.getElementById('new-q-quiz').value),
+    type,
+    content,
+    correctOption: document.querySelector('input[name="correct-opt"]:checked')?.value,
+    optA: document.getElementById('opt-A')?.value || '',
+    optB: document.getElementById('opt-B')?.value || '',
+    optC: document.getElementById('opt-C')?.value || '',
+    optD: document.getElementById('opt-D')?.value || '',
+  };
+
+  fetch('/staff/question-bank/create', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+    .then(async (res) => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.message || 'Không thể thêm câu hỏi.');
+      showToast('Đã thêm câu hỏi mới!');
+      closeModal('modal-add-question');
+      window.location.reload();
+    })
+    .catch((err) => showToast(err.message || 'Thêm câu hỏi thất bại.', 'error'));
 }
 </script>
 </body>

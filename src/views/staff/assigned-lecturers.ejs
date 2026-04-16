@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>LMS Staff — Phân công giảng viên</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="layout">
+  <%- include('../partials/staff-topbar') %>
+  <div class="layout-body">
+    <%- include('../partials/staff-sidebar', { activeMenu: 'classes' }) %>
+    <main class="layout-main">
+      <div class="max-content" style="max-width:1200px;">
+
+        <div class="page-header" style="display:flex;align-items:center;gap:12px;">
+          <a href="/staff/courses/<%= course?.id || '' %>" class="btn btn-ghost btn-sm" style="padding:6px 8px;">←</a>
+          <div>
+            <h1 class="page-title">Phân công giảng viên</h1>
+            <p class="page-subtitle"><%= course?.title || 'Khóa học' %></p>
+          </div>
+        </div>
+
+        <% if (updated) { %>
+          <div class="card" style="border-color:rgba(35,134,54,.4);margin-bottom:1rem;padding:.85rem 1rem;color:#3fb950;">Cập nhật phân công thành công.</div>
+        <% } %>
+        <% if (error) { %>
+          <div class="card" style="border-color:rgba(218,54,51,.45);margin-bottom:1rem;padding:.85rem 1rem;color:#f85149;"><%= error %></div>
+        <% } %>
+
+        <div class="grid-2" style="grid-template-columns:2fr 1fr;gap:1.25rem;align-items:start;">
+          <div class="card">
+            <div class="card-header"><h3 style="font-weight:600;color:#fff;">Giảng viên đã được phân công</h3></div>
+            <div class="card-body" style="padding:0;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Giảng viên</th>
+                    <th>Email</th>
+                    <th>Ngày phân công</th>
+                    <th style="text-align:right;">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% if (!assignments || assignments.length === 0) { %>
+                    <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:1.5rem;">Chưa có giảng viên nào được phân công.</td></tr>
+                  <% } %>
+                  <% (assignments || []).forEach(function(a){ %>
+                    <tr>
+                      <td style="font-weight:600;color:#fff;"><%= a.instructor?.fullname || ('Lecturer #' + a.instructorId) %></td>
+                      <td style="color:var(--text-muted);"><%= a.instructor?.email || '-' %></td>
+                      <td style="color:var(--text-primary);"><%= a.assignedAt ? String(a.assignedAt).slice(0, 10) : '-' %></td>
+                      <td style="text-align:right;">
+                        <% if (canManageAssignments) { %>
+                          <form method="POST" action="/staff/courses/<%= course?.id %>/assigned-lecturers/<%= a.instructorId %>/remove" style="display:inline;" onsubmit="return confirm('Hủy phân công giảng viên này?');">
+                            <button class="btn btn-red btn-sm" type="submit">Hủy phân công</button>
+                          </form>
+                        <% } else { %>
+                          <span style="font-size:.8rem;color:var(--text-muted);">Chỉ Trưởng bộ môn</span>
+                        <% } %>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3 style="font-weight:600;color:#fff;">Phân công mới</h3></div>
+            <div class="card-body">
+              <% if (canManageAssignments) { %>
+                <form method="POST" action="/staff/courses/<%= course?.id %>/assigned-lecturers/assign">
+                  <div class="form-group">
+                    <label class="form-label">Chọn giảng viên</label>
+                    <% const assignedIds = new Set((assignments || []).map(item => Number(item.instructorId))); %>
+                    <select class="form-input form-select" name="lecturerId" required>
+                      <option value="">-- Chọn giảng viên --</option>
+                      <% (lecturers || []).forEach(function(l){ %>
+                        <% if (!assignedIds.has(Number(l.userId))) { %>
+                          <option value="<%= l.userId %>"><%= l.fullname %> (<%= l.email %>)</option>
+                        <% } %>
+                      <% }) %>
+                    </select>
+                  </div>
+                  <button class="btn btn-green" type="submit">Phân công</button>
+                </form>
+              <% } else { %>
+                <p style="color:var(--text-muted);font-size:.9rem;line-height:1.6;">Bạn chỉ có quyền xem danh sách phân công. Chức năng cập nhật dành cho Trưởng bộ môn.</p>
+              <% } %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="/js/main.js"></script>
+</body>
+</html>

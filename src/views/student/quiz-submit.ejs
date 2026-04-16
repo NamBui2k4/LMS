@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>LMS — Làm bài kiểm tra</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="layout">
+  <%- include('../partials/student-topbar') %>
+  <div class="layout-body">
+    <%- include('../partials/student-sidebar', { activeMenu: 'assignments' }) %>
+
+    <main class="layout-main">
+      <div class="max-content">
+        <div class="page-header" style="display:flex;align-items:center;gap:12px;">
+          <a href="/student/courses" class="btn btn-ghost btn-sm" style="padding:6px 8px;">Quay lại</a>
+          <h1 class="page-title">Làm bài kiểm tra</h1>
+        </div>
+
+        <% if (!quiz) { %>
+          <div class="card" style="padding:1.5rem;color:var(--text-muted);">Không tìm thấy bài kiểm tra.</div>
+        <% } else { %>
+          <div class="card" style="padding:1.25rem;margin-bottom:1rem;">
+            <h2 style="font-size:1.1rem;color:#fff;margin-bottom:.35rem;"><%= quiz.title %></h2>
+            <p style="font-size:.85rem;color:var(--text-muted);">Môn: <%= quiz.course?.title || 'N/A' %> • Loại: <%= quiz.quizType %></p>
+          </div>
+
+          <form method="POST" action="/student/quizzes/<%= quiz.id %>/submit" class="card" style="padding:1.25rem;display:flex;flex-direction:column;gap:.8rem;">
+            <label style="font-size:.85rem;color:#fff;font-weight:600;">Câu trả lời (JSON)</label>
+            <textarea
+              name="answerData"
+              class="form-input form-textarea"
+              rows="10"
+              placeholder='Ví dụ: {"question_1":"A","question_2":"B"}'
+              style="resize:vertical;"
+            ></textarea>
+            <div style="display:flex;justify-content:flex-end;">
+              <button type="submit" class="btn btn-primary">Nộp bài</button>
+            </div>
+          </form>
+        <% } %>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="/js/main.js"></script>
+</body>
+</html>

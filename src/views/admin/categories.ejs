@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>LMS Admin — Danh mục khóa học</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .filter-bar { display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:1rem; }
+    .table-wrap { overflow-x:auto; }
+    .pager { display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-top:1px solid var(--border); }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <%- include('../partials/admin-topbar') %>
+  <div class="layout-body">
+    <%- include('../partials/admin-sidebar', { activeMenu: 'categories' }) %>
+
+    <main class="layout-main">
+      <div class="max-content" style="max-width:1200px;">
+        <div class="page-header" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div>
+            <h1 class="page-title">Danh mục khóa học</h1>
+            <p class="page-subtitle">Quản lý danh mục dùng cho toàn bộ khóa học trong hệ thống</p>
+          </div>
+        </div>
+
+        <% if (updated) { %>
+          <div class="card" style="border-color:rgba(35,134,54,.4);margin-bottom:1rem;padding:.85rem 1rem;color:#3fb950;">Cập nhật danh mục thành công.</div>
+        <% } %>
+        <% if (error) { %>
+          <div class="card" style="border-color:rgba(218,54,51,.45);margin-bottom:1rem;padding:.85rem 1rem;color:#f85149;"><%= error %></div>
+        <% } %>
+
+        <div class="filter-bar">
+          <div class="search-wrap" style="flex:1;min-width:220px;max-width:420px;">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="category-search" class="form-input search-input" placeholder="Tìm theo tên hoặc mô tả...">
+          </div>
+        </div>
+
+        <div class="grid-2" style="grid-template-columns:2fr 1fr;gap:1.25rem;align-items:start;">
+          <div class="card">
+            <div class="card-header"><h3 style="font-weight:600;color:#fff;">Danh sách hiện có</h3></div>
+            <div class="card-body table-wrap" style="padding:0;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tên danh mục</th>
+                    <th>Mô tả</th>
+                    <th style="text-align:right;">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody id="categories-table-body">
+                  <% if (!categories || categories.length === 0) { %>
+                    <tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:1.5rem;">Chưa có danh mục.</td></tr>
+                  <% } %>
+                  <% (categories || []).forEach(function(c){ %>
+                    <tr data-name="<%= (c.name || '').toLowerCase() %>" data-description="<%= (c.description || '').toLowerCase() %>">
+                      <td style="font-weight:600;color:#fff;" class="category-name"><%= c.name %></td>
+                      <td style="color:var(--text-muted);" class="category-description"><%= c.description || '-' %></td>
+                      <td style="text-align:right;">
+                        <button class="btn btn-ghost btn-sm" type="button" onclick='openEditCategory(<%- JSON.stringify({ id: c.id, name: c.name, description: c.description || "" }) %>)'>Sửa</button>
+                        <form method="POST" action="/admin/categories/<%= c.id %>/delete" style="display:inline;" onsubmit="return confirm('Xóa danh mục này?');">
+                          <button class="btn btn-red btn-sm" type="submit">Xóa</button>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+            <div class="pager">
+              <div>Tổng <span id="categories-count" style="color:#fff;font-weight:600;"><%= (categories || []).length %></span> danh mục</div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span>Trang <span id="categories-page-info">1 / 1</span></span>
+                <div style="display:flex;gap:8px;">
+                  <button id="categories-prev" class="btn btn-ghost btn-sm" type="button">Trước</button>
+                  <button id="categories-next" class="btn btn-ghost btn-sm" type="button">Sau</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3 style="font-weight:600;color:#fff;">Thêm danh mục mới</h3></div>
+            <div class="card-body">
+              <form method="POST" action="/admin/categories/create">
+                <div class="form-group">
+                  <label class="form-label">Tên danh mục</label>
+                  <input class="form-input" name="name" required maxlength="150" placeholder="VD: Khoa học dữ liệu">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Mô tả</label>
+                  <textarea class="form-input form-textarea" name="description" rows="4" placeholder="Mô tả ngắn..."></textarea>
+                </div>
+                <button class="btn btn-green" type="submit">Tạo danh mục</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div id="modal-edit-category" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Cập nhật danh mục</span>
+      <button class="modal-close" data-modal-close="modal-edit-category">&times;</button>
+    </div>
+    <form id="edit-category-form" method="POST">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Tên danh mục</label>
+          <input id="edit-category-name" class="form-input" name="name" maxlength="150">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mô tả</label>
+          <textarea id="edit-category-description" class="form-input form-textarea" name="description" rows="4"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" type="button" data-modal-close="modal-edit-category">Hủy</button>
+        <button class="btn btn-primary" type="submit">Lưu thay đổi</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+function openEditCategory(c) {
+  document.getElementById('edit-category-name').value = c.name || '';
+  document.getElementById('edit-category-description').value = c.description || '';
+  document.getElementById('edit-category-form').action = '/admin/categories/' + c.id + '/update';
+  openModal('modal-edit-category');
+}
+
+const categoryState = {
+  currentPage: 1,
+  itemsPerPage: 8,
+  filteredRows: [],
+};
+
+function applyCategoryFilters() {
+  const term = (document.getElementById('category-search').value || '').toLowerCase().trim();
+  const rows = Array.from(document.querySelectorAll('#categories-table-body tr[data-name]'));
+
+  categoryState.filteredRows = rows.filter((row) => {
+    const name = row.dataset.name || '';
+    const description = row.dataset.description || '';
+    return !term || name.includes(term) || description.includes(term);
+  });
+
+  categoryState.currentPage = 1;
+  renderCategoryTable();
+}
+
+function renderCategoryTable() {
+  const rows = Array.from(document.querySelectorAll('#categories-table-body tr[data-name]'));
+  rows.forEach((row) => { row.style.display = 'none'; });
+
+  const total = categoryState.filteredRows.length;
+  const totalPages = Math.max(1, Math.ceil(total / categoryState.itemsPerPage));
+  if (categoryState.currentPage > totalPages) categoryState.currentPage = totalPages;
+
+  const start = (categoryState.currentPage - 1) * categoryState.itemsPerPage;
+  const end = start + categoryState.itemsPerPage;
+  categoryState.filteredRows.slice(start, end).forEach((row) => { row.style.display = ''; });
+
+  document.getElementById('categories-count').textContent = String(total);
+  document.getElementById('categories-page-info').textContent = categoryState.currentPage + ' / ' + totalPages;
+
+  const prev = document.getElementById('categories-prev');
+  const next = document.getElementById('categories-next');
+  prev.disabled = categoryState.currentPage <= 1;
+  next.disabled = categoryState.currentPage >= totalPages;
+}
+
+document.getElementById('category-search').addEventListener('input', applyCategoryFilters);
+document.getElementById('categories-prev').addEventListener('click', () => {
+  if (categoryState.currentPage > 1) {
+    categoryState.currentPage -= 1;
+    renderCategoryTable();
+  }
+});
+document.getElementById('categories-next').addEventListener('click', () => {
+  const totalPages = Math.max(1, Math.ceil(categoryState.filteredRows.length / categoryState.itemsPerPage));
+  if (categoryState.currentPage < totalPages) {
+    categoryState.currentPage += 1;
+    renderCategoryTable();
+  }
+});
+
+applyCategoryFilters();
+</script>
+</body>
+</html>

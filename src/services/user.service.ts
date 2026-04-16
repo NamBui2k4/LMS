@@ -131,4 +131,8 @@ export class UserService {
     }
     return user;
   }
+
+  async getSystemStats() {
+    return this.userRepository.getSystemStats();
+  }
 }

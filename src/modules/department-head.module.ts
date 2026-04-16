@@ -9,6 +9,7 @@ import { User } from '../models/user.entity';
 
 // Services
 import { DepartmentHeadService } from '../services/department-heads.service';
+import { DepartmentHeadController } from '../controller/department-heads.controller';
 
 // Repositories
 import { DepartmentHeadRepository } from '../repository/department-heads.repository';
@@ -19,6 +20,7 @@ import { LecturerModule } from './lecturer.module';
     TypeOrmModule.forFeature([DepartmentHead, User]),
     LecturerModule
   ],
+  controllers: [DepartmentHeadController],
   providers: [DepartmentHeadService, DepartmentHeadRepository],
   exports: [DepartmentHeadService, DepartmentHeadRepository],
 })

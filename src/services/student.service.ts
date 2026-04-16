@@ -11,8 +11,6 @@ import { StudentRepository } from '../repository/student.repository';
 import { UserRepository } from '../repository/user.repository';
 import { Enrollment } from '../models/enrollment.entity';
 import { Submission } from '../models/submission.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { User } from 'src/models/user.entity';
 
 @Injectable()
 export class StudentService {
@@ -31,15 +29,13 @@ export class StudentService {
     return profile;
   }
 
-  // ✅ FIX: id là number (userId — PK bigint)
-  async findOne(userId: number): Promise<Student> {
-    const student = await this.studentRepo.findById(userId);
-    if (!student) throw new NotFoundException('Không tìm thấy học viên.');
-    return student;
+  // Trả về đầy đủ profile student (bao gồm MSSV/Khoa/Ngành/Địa chỉ khi có)
+  async findOne(userId: number): Promise<Record<string, any>> {
+    return this.getProfileByUserId(userId);
   }
 
-  async updateProfile(userId: number, updateDto: UpdateStudentDto): Promise<Student> {
-    const student = await this.findOne(userId);
+  async updateProfile(userId: number, updateDto: UpdateStudentDto): Promise<Record<string, any>> {
+    const student = await this.getProfileByUserId(userId);
 
     // Nếu đổi email → cập nhật cả bảng users (để đồng bộ)
     if (updateDto.email && updateDto.email !== student.email) {
@@ -47,12 +43,18 @@ export class StudentService {
       await this.userRepo.updateEmailById(String(userId), updateDto.email);
     }
 
-    const { email, ...otherInfo } = updateDto;
-    const updated = await this.studentRepo.update(userId, {
-      ...otherInfo,
-      ...(email && { email }),
+    const updated = await this.studentRepo.updateProfileByUserId(userId, {
+      fullname: updateDto.fullname,
+      email: updateDto.email,
+      phone: updateDto.phone,
+      avatarUrl: updateDto.avatarUrl,
+      mssv: updateDto.mssv ?? updateDto.studentCode,
+      khoa: updateDto.khoa ?? updateDto.faculty,
+      nganh: updateDto.nganh ?? updateDto.major,
+      diaChi: updateDto.diaChi ?? updateDto.address,
     });
-    return updated!;
+    if (!updated) throw new NotFoundException('Không tìm thấy học viên.');
+    return updated;
   }
 
   /**

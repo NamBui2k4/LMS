@@ -43,7 +43,7 @@
               <p style="color:var(--text-muted); padding:1.5rem; text-align:center;">Chưa có bài nộp nào.</p>
             <% } else { %>
               <% submissions.forEach(function(sub,i){ %>
-              <div class="sub-item <%= i===0?'selected':'' %>" id="sub-item-<%= sub.id %>" data-status="<%= sub.status %>" onclick="selectSub('<%= sub.id %>')">
+              <div class="sub-item <%= i===0?'selected':'' %>" id="sub-item-<%= sub.id %>" data-status="<%= sub.regradeRequested ? 'regrade_requested' : sub.status %>" onclick="selectSub('<%= sub.id %>')">
                 <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">
                   <span style="font-weight:600;color:#fff;font-size:.9rem;"><%= sub.student?.fullname || 'Ẩn danh' %></span>
                   <% if(sub.status==='submitted'){ %>
@@ -94,7 +94,7 @@
               </div>
 
               <!-- Grade form -->
-              <form action="/api/v1/submissions/<%= sub.id %>/grade" method="POST" style="padding:1.25rem;display:flex;flex-direction:column;flex:1;gap:1rem;">
+              <form action="/staff/submissions/<%= sub.id %>/grade" method="POST" style="padding:1.25rem;display:flex;flex-direction:column;flex:1;gap:1rem;">
                 <div>
                   <label class="form-label" style="font-size:.8rem;">Điểm số (Hệ 10)</label>
                   <input type="number" name="score" step="0.1" min="0" max="10" required class="form-input" id="score-<%= sub.id %>" value="<%= sub.score || '' %>" style="max-width:150px;font-size:1.25rem;font-weight:700;" placeholder="0.0">

@@ -1,4 +1,4 @@
-import { Controller, Get, Render, Param, Req } from '@nestjs/common';
+import { Controller, Get, Render, Param, Req, Post, Body, Res, Query } from '@nestjs/common';
 import { AppService } from './app.service';
 import { StudentService } from './services/student.service';
 import { UserService } from './services/user.service';
@@ -7,12 +7,19 @@ import { CourseService } from './services/course.service';
 import { EnrollmentService } from './services/enrollment.service';
 import { QuizService } from './services/quiz.service';
 import { SubmissionService } from './services/submissions.service';
+import { QuizQuestionService } from './services/quiz-question.service';
+import { LessonService } from './services/lesson.service';
+import { MaterialService } from './services/material.service';
+import { CategoryService } from './services/categories.service';
+import { DepartmentHeadService } from './services/department-heads.service';
+import { AssignedLecturersService } from './services/assigned-lecturers.service';
 import { Lecturer } from './models/lecturers.entity';
 import { Courses } from './models/courses.entity';
 import { Submission } from './models/submission.entity';
 import { Quiz } from './models/quizzes.entity';
 import { Enrollment } from './models/enrollment.entity';
 import { CourseStatus } from './common/enums/course-status.enum';
+import { UserRole } from './common/enums/role.enum';
 
 @Controller()
 export class AppController {
@@ -25,6 +32,12 @@ export class AppController {
     private readonly enrollmentService: EnrollmentService,
     private readonly quizService: QuizService,
     private readonly submissionService: SubmissionService,
+    private readonly quizQuestionService: QuizQuestionService,
+    private readonly lessonService: LessonService,
+    private readonly materialService: MaterialService,
+    private readonly categoryService: CategoryService,
+    private readonly departmentHeadService: DepartmentHeadService,
+    private readonly assignedLecturersService: AssignedLecturersService,
   ) { }
 
   // ====================== ROOT & LOGIN ======================
@@ -109,6 +122,145 @@ export class AppController {
     return { title: 'Cài đặt hệ thống' };
   }
 
+  @Get('admin/categories')
+  @Render('admin/categories')
+  async adminCategories(@Req() req: any, @Query('updated') updated?: string, @Query('error') error?: string) {
+    const payload = req.userPayload;
+    if (!payload || !payload.sub) {
+      return { title: 'Quản lý danh mục', user: null, categories: [], updated: false, error: null };
+    }
+
+    try {
+      const [adminUser, categories] = await Promise.all([
+        this.userService.findUserViaId(String(payload.sub)),
+        this.categoryService.findAll(),
+      ]);
+
+      return {
+        title: 'Quản lý danh mục',
+        user: adminUser,
+        categories,
+        updated: updated === '1',
+        error: error === '1' ? 'Không thể cập nhật danh mục. Vui lòng thử lại.' : null,
+      };
+    } catch {
+      return { title: 'Quản lý danh mục', user: null, categories: [], updated: false, error: null };
+    }
+  }
+
+  @Post('admin/categories/create')
+  async createAdminCategory(@Body() body: any, @Res() res: any) {
+    try {
+      await this.categoryService.create({
+        name: String(body.name || '').trim(),
+        description: String(body.description || '').trim() || undefined,
+      });
+      return res.redirect('/admin/categories?updated=1');
+    } catch {
+      return res.redirect('/admin/categories?error=1');
+    }
+  }
+
+  @Post('admin/categories/:id/update')
+  async updateAdminCategory(@Param('id') id: string, @Body() body: any, @Res() res: any) {
+    try {
+      await this.categoryService.update(Number(id), {
+        name: String(body.name || '').trim() || undefined,
+        description: String(body.description || '').trim() || undefined,
+      });
+      return res.redirect('/admin/categories?updated=1');
+    } catch {
+      return res.redirect('/admin/categories?error=1');
+    }
+  }
+
+  @Post('admin/categories/:id/delete')
+  async deleteAdminCategory(@Param('id') id: string, @Res() res: any) {
+    try {
+      await this.categoryService.delete(Number(id));
+      return res.redirect('/admin/categories?updated=1');
+    } catch {
+      return res.redirect('/admin/categories?error=1');
+    }
+  }
+
+  @Get('admin/department-heads')
+  @Render('admin/department-heads')
+  async adminDepartmentHeads(@Req() req: any, @Query('updated') updated?: string, @Query('error') error?: string) {
+    const payload = req.userPayload;
+    if (!payload || !payload.sub) {
+      return {
+        title: 'Quản lý trưởng bộ môn',
+        user: null,
+        departmentHeads: [],
+        lecturers: [],
+        updated: false,
+        error: null,
+      };
+    }
+
+    try {
+      const [adminUser, departmentHeads, lecturers] = await Promise.all([
+        this.userService.findUserViaId(String(payload.sub)),
+        this.departmentHeadService.findAll(),
+        this.lecturerService.getAllLecturers(),
+      ]);
+
+      return {
+        title: 'Quản lý trưởng bộ môn',
+        user: adminUser,
+        departmentHeads,
+        lecturers,
+        updated: updated === '1',
+        error: error === '1' ? 'Không thể cập nhật trưởng bộ môn. Vui lòng thử lại.' : null,
+      };
+    } catch {
+      return {
+        title: 'Quản lý trưởng bộ môn',
+        user: null,
+        departmentHeads: [],
+        lecturers: [],
+        updated: false,
+        error: null,
+      };
+    }
+  }
+
+  @Post('admin/department-heads/appoint')
+  async appointDepartmentHead(@Body() body: any, @Res() res: any) {
+    try {
+      const termEnd = body.termEnd ? new Date(body.termEnd) : undefined;
+      await this.departmentHeadService.appoint({
+        userId: Number(body.userId),
+        termEnd,
+      });
+      return res.redirect('/admin/department-heads?updated=1');
+    } catch {
+      return res.redirect('/admin/department-heads?error=1');
+    }
+  }
+
+  @Post('admin/department-heads/:id/update')
+  async updateDepartmentHead(@Param('id') id: string, @Body() body: any, @Res() res: any) {
+    try {
+      const termEnd = body.termEnd ? new Date(body.termEnd) : undefined;
+      await this.departmentHeadService.update(Number(id), termEnd);
+      return res.redirect('/admin/department-heads?updated=1');
+    } catch {
+      return res.redirect('/admin/department-heads?error=1');
+    }
+  }
+
+  @Post('admin/department-heads/:id/remove')
+  async removeDepartmentHead(@Param('id') id: string, @Res() res: any) {
+    try {
+      await this.departmentHeadService.remove(Number(id));
+      return res.redirect('/admin/department-heads?updated=1');
+    } catch {
+      return res.redirect('/admin/department-heads?error=1');
+    }
+  }
+
   // ====================== STAFF ======================
   @Get('staff')
   @Render('staff/index')
@@ -175,9 +327,181 @@ export class AppController {
     try {
       const lecturer = await this.lecturerService.getLecturerProfile(Number(payload.sub));
       const course = await this.courseService.findOne(Number(id), Number(payload.sub), payload.role);
-      return { title: 'Chi tiết khóa học', courseId: id, course, user: lecturer };
+      return {
+        title: 'Chi tiết khóa học',
+        courseId: id,
+        course,
+        user: lecturer,
+        canManageAssignments: payload.role === UserRole.HEAD_OF_DEPARTMENT,
+      };
     } catch {
-      return { title: 'Không tìm thấy khóa học', courseId: id, course: null, user: null };
+      return {
+        title: 'Không tìm thấy khóa học',
+        courseId: id,
+        course: null,
+        user: null,
+        canManageAssignments: false,
+      };
+    }
+  }
+
+  @Get('staff/courses/:id/assigned-lecturers')
+  @Render('staff/assigned-lecturers')
+  async staffAssignedLecturers(@Req() req: any, @Param('id') id: string, @Query('updated') updated?: string, @Query('error') error?: string) {
+    const payload = req.userPayload;
+    if (!payload || !payload.sub) {
+      return {
+        title: 'Phân công giảng viên',
+        user: null,
+        course: null,
+        assignments: [],
+        lecturers: [],
+        canManageAssignments: false,
+        updated: false,
+        error: null,
+      };
+    }
+
+    const courseId = Number(id);
+    try {
+      const [lecturer, course, assignments, lecturers] = await Promise.all([
+        this.lecturerService.getLecturerProfile(Number(payload.sub)),
+        this.courseService.findOne(courseId, Number(payload.sub), payload.role),
+        this.assignedLecturersService.findByCourse(courseId),
+        this.lecturerService.getAllLecturers(),
+      ]);
+
+      return {
+        title: 'Phân công giảng viên',
+        user: lecturer,
+        course,
+        assignments,
+        lecturers,
+        canManageAssignments: payload.role === UserRole.HEAD_OF_DEPARTMENT,
+        updated: updated === '1',
+        error: error === '1' ? 'Không thể cập nhật phân công giảng viên. Vui lòng thử lại.' : null,
+      };
+    } catch {
+      return {
+        title: 'Phân công giảng viên',
+        user: null,
+        course: null,
+        assignments: [],
+        lecturers: [],
+        canManageAssignments: false,
+        updated: false,
+        error: null,
+      };
+    }
+  }
+
+  @Post('staff/courses/:id/assigned-lecturers/assign')
+  async assignLecturerToCourse(@Req() req: any, @Param('id') id: string, @Body() body: any, @Res() res: any) {
+    const payload = req.userPayload;
+    if (!payload || payload.role !== UserRole.HEAD_OF_DEPARTMENT) {
+      return res.redirect(`/staff/courses/${id}/assigned-lecturers?error=1`);
+    }
+
+    try {
+      await this.assignedLecturersService.assign(Number(id), Number(body.lecturerId));
+      return res.redirect(`/staff/courses/${id}/assigned-lecturers?updated=1`);
+    } catch {
+      return res.redirect(`/staff/courses/${id}/assigned-lecturers?error=1`);
+    }
+  }
+
+  @Post('staff/courses/:id/assigned-lecturers/:lecturerId/remove')
+  async unassignLecturerFromCourse(@Req() req: any, @Param('id') id: string, @Param('lecturerId') lecturerId: string, @Res() res: any) {
+    const payload = req.userPayload;
+    if (!payload || payload.role !== UserRole.HEAD_OF_DEPARTMENT) {
+      return res.redirect(`/staff/courses/${id}/assigned-lecturers?error=1`);
+    }
+
+    try {
+      await this.assignedLecturersService.unassign(Number(id), Number(lecturerId));
+      return res.redirect(`/staff/courses/${id}/assigned-lecturers?updated=1`);
+    } catch {
+      return res.redirect(`/staff/courses/${id}/assigned-lecturers?error=1`);
+    }
+  }
+
+  @Post('staff/courses/:courseId/lessons')
+  async createStaffLesson(@Req() req: any, @Param('courseId') courseId: string, @Body() body: any, @Res() res: any) {
+    const payload = req.userPayload;
+    if (!payload || !payload.sub) return res.redirect('/login/staff');
+
+    try {
+      await this.lessonService.create(
+        Number(courseId),
+        {
+          title: body.title,
+          summary: body.summary,
+          content: body.content,
+        },
+        Number(payload.sub),
+      );
+      return res.redirect(`/staff/courses/${courseId}`);
+    } catch {
+      return res.redirect(`/staff/courses/${courseId}`);
+    }
+  }
+
+  @Post('staff/courses/:courseId/lessons/:lessonId/delete')
+  async deleteStaffLesson(
+    @Req() req: any,
+    @Param('courseId') courseId: string,
+    @Param('lessonId') lessonId: string,
+    @Res() res: any,
+  ) {
+    const payload = req.userPayload;
+    if (!payload || !payload.sub) return res.redirect('/login/staff');
+
+    try {
+      await this.lessonService.delete(Number(lessonId), Number(payload.sub));
+      return res.redirect(`/staff/courses/${courseId}`);
+    } catch {
+      return res.redirect(`/staff/courses/${courseId}`);
+    }
+  }
+
+  @Post('staff/lessons/:lessonId/materials')
+  async createStaffMaterial(@Req() req: any, @Param('lessonId') lessonId: string, @Body() body: any, @Res() res: any) {
+    const payload = req.userPayload;
+    const backTo = req.get('referer') || '/staff/courses';
+    if (!payload || !payload.sub) return res.redirect('/login/staff');
+
+    try {
+      await this.materialService.create(
+        Number(lessonId),
+        {
+          fileName: body.fileName,
+          fileUrl: body.fileUrl,
+          fileType: body.fileType || 'document',
+        },
+        Number(payload.sub),
+      );
+      return res.redirect(backTo);
+    } catch {
+      return res.redirect(backTo);
+    }
+  }
+
+  @Post('staff/lessons/:lessonId/materials/:materialId/delete')
+  async deleteStaffMaterial(
+    @Req() req: any,
+    @Param('lessonId') lessonId: string,
+    @Param('materialId') materialId: string,
+    @Res() res: any,
+  ) {
+    const payload = req.userPayload;
+    const backTo = req.get('referer') || '/staff/courses';
+    if (!payload || !payload.sub) return res.redirect('/login/staff');
+
+    try {
+      await this.materialService.delete(Number(materialId), Number(payload.sub));
+      return res.redirect(backTo);
+    } catch {
+      return res.redirect(backTo);
     }
   }
 
@@ -193,6 +517,23 @@ export class AppController {
       return { title: 'Chấm điểm', submissions, user: lecturer };
     } catch {
       return { title: 'Chấm điểm', submissions: [], user: null };
+    }
+  }
+
+  @Post('staff/submissions/:id/grade')
+  async staffGradeSubmission(@Req() req: any, @Param('id') id: string, @Body() body: any, @Res() res: any) {
+    const payload = req.userPayload;
+    if (!payload || !payload.sub) return res.redirect('/login/staff');
+
+    try {
+      await this.submissionService.grade(
+        Number(id),
+        { score: Number(body.score), note: body.note },
+        Number(payload.sub),
+      );
+      return res.redirect('/staff/grading');
+    } catch {
+      return res.redirect('/staff/grading');
     }
   }
 
@@ -223,20 +564,88 @@ export class AppController {
     // Convert quizzes to formatted questions for the view
     const questionsFormatted = quizzes.flatMap(q => (q.questions || []).map(ques => ({
       id: ques.id,
+      quizId: q.id,
       course: q.course?.id || 'N/A',
       courseName: q.course?.title || 'Chưa phân môn',
       difficulty: 'Trung bình',
       type: q.quizType === 'multiple_choice' ? 'multiple_choice' : 'essay',
       content: ques.questionText,
-      options: []
+      options: ques.options || []
     })));
 
     return { 
       title: 'Ngân hàng câu hỏi', 
       questions: questionsFormatted, 
       user: lecturer, 
-      courses: courses 
+      courses: courses,
+      quizzes: quizzes,
     };
+  }
+
+  @Post('staff/question-bank/create')
+  async createQuestion(@Req() req: any, @Body() body: any, @Res() res: any) {
+    const payload = req.userPayload;
+    if (!payload || !payload.sub) return res.status(401).json({ message: 'Unauthorized' });
+
+    try {
+      const type = body.type || 'multiple_choice';
+      const options = type === 'multiple_choice'
+        ? ['A', 'B', 'C', 'D']
+            .map((label) => ({
+              label,
+              text: String(body[`opt${label}`] || '').trim(),
+              isCorrect: String(body.correctOption || '').toUpperCase() === label,
+            }))
+            .filter((opt) => opt.text.length > 0)
+        : undefined;
+
+      await this.quizQuestionService.create(
+        Number(body.quizId),
+        {
+          questionText: body.content,
+          options,
+          correctAnswer: type === 'multiple_choice' ? String(body.correctOption || '').toUpperCase() : undefined,
+          scoreWeight: 1,
+        },
+        Number(payload.sub),
+      );
+
+      return res.json({ ok: true });
+    } catch (err: any) {
+      return res.status(400).json({ ok: false, message: err?.message || 'Không thể tạo câu hỏi.' });
+    }
+  }
+
+  @Post('staff/question-bank/:id/update')
+  async updateQuestion(@Req() req: any, @Param('id') id: string, @Body() body: any, @Res() res: any) {
+    const payload = req.userPayload;
+    if (!payload || !payload.sub) return res.status(401).json({ message: 'Unauthorized' });
+
+    try {
+      await this.quizQuestionService.update(
+        Number(id),
+        {
+          questionText: body.content,
+        },
+        Number(payload.sub),
+      );
+      return res.json({ ok: true });
+    } catch (err: any) {
+      return res.status(400).json({ ok: false, message: err?.message || 'Không thể cập nhật câu hỏi.' });
+    }
+  }
+
+  @Post('staff/question-bank/:id/delete')
+  async deleteQuestion(@Req() req: any, @Param('id') id: string, @Res() res: any) {
+    const payload = req.userPayload;
+    if (!payload || !payload.sub) return res.status(401).json({ message: 'Unauthorized' });
+
+    try {
+      await this.quizQuestionService.delete(Number(id), Number(payload.sub));
+      return res.json({ ok: true });
+    } catch (err: any) {
+      return res.status(400).json({ ok: false, message: err?.message || 'Không thể xóa câu hỏi.' });
+    }
   }
 
   @Get('staff/reports')
@@ -346,14 +755,37 @@ export class AppController {
 
   @Get('student/profile')
   @Render('student/profile')
-  async studentProfile(@Req() req: any) {
+  async studentProfile(@Req() req: any, @Query('updated') updated?: string, @Query('error') error?: string) {
     const payload = req.userPayload;
-    if (!payload) return { title: 'Hồ sơ sinh viên', user: null };
+    if (!payload) return { title: 'Hồ sơ sinh viên', user: null, updated: false, error: null };
     try {
       const student = await this.studentService.getProfileByUserId(Number(payload.sub));
-      return { title: 'Hồ sơ sinh viên', user: student };
+      return {
+        title: 'Hồ sơ sinh viên',
+        user: student,
+        updated: updated === '1',
+        error: error === '1' ? 'Không thể cập nhật thông tin. Vui lòng thử lại.' : null,
+      };
     } catch {
-      return { title: 'Hồ sơ sinh viên', user: null };
+      return { title: 'Hồ sơ sinh viên', user: null, updated: false, error: null };
+    }
+  }
+
+  @Post('student/profile')
+  async updateStudentProfile(@Req() req: any, @Body() body: any, @Res() res: any) {
+    const payload = req.userPayload;
+    if (!payload || !payload.sub) {
+      return res.redirect('/login/student');
+    }
+
+    try {
+      await this.studentService.updateProfile(Number(payload.sub), {
+        phone: body.phone,
+        diaChi: body.diaChi,
+      });
+      return res.redirect('/student/profile?updated=1');
+    } catch {
+      return res.redirect('/student/profile?error=1');
     }
   }
 
@@ -392,6 +824,21 @@ export class AppController {
     }
   }
 
+  @Post('student/courses/:id/enroll')
+  async studentEnrollCourse(@Req() req: any, @Param('id') id: string, @Res() res: any) {
+    const payload = req.userPayload;
+    if (!payload || !payload.sub) {
+      return res.status(401).json({ ok: false, message: 'Bạn chưa đăng nhập.' });
+    }
+
+    try {
+      await this.enrollmentService.enroll(Number(payload.sub), Number(id));
+      return res.json({ ok: true });
+    } catch (err: any) {
+      return res.status(400).json({ ok: false, message: err?.message || 'Không thể đăng ký khóa học.' });
+    }
+  }
+
   @Get('student/courses/:id')
   @Render('student/course-detail')
   async studentCourseDetail(@Req() req: any, @Param('id') id: string) {
@@ -409,6 +856,47 @@ export class AppController {
       return { title: 'Lớp học', courseId: id, course, user: student };
     } catch {
       return { title: 'Không tìm thấy khóa học', courseId: id, course: null, user: null };
+    }
+  }
+
+  @Get('student/quizzes/:id')
+  @Render('student/quiz-submit')
+  async studentQuizSubmitPage(@Req() req: any, @Param('id') id: string) {
+    const payload = req.userPayload;
+    if (!payload || !payload.sub) return { title: 'Làm bài', quiz: null, user: null };
+
+    try {
+      const [student, quiz] = await Promise.all([
+        this.studentService.getProfileByUserId(Number(payload.sub)),
+        this.quizService.findOne(Number(id)),
+      ]);
+
+      return {
+        title: 'Làm bài kiểm tra',
+        quiz,
+        user: student,
+      };
+    } catch {
+      return { title: 'Làm bài', quiz: null, user: null };
+    }
+  }
+
+  @Post('student/quizzes/:id/submit')
+  async studentQuizSubmit(@Req() req: any, @Param('id') id: string, @Body() body: any, @Res() res: any) {
+    const payload = req.userPayload;
+    if (!payload || !payload.sub) return res.redirect('/login/student');
+
+    try {
+      let answerData: any = body.answerData;
+      if (typeof answerData === 'string') {
+        const trimmed = answerData.trim();
+        answerData = trimmed ? JSON.parse(trimmed) : {};
+      }
+
+      await this.submissionService.submit(Number(id), Number(payload.sub), { answerData });
+      return res.redirect('/student/assignments');
+    } catch {
+      return res.redirect('/student/assignments');
     }
   }
 

@@ -9,7 +9,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     // 1. Không cần dùng @Inject(ConfigService) vì ConfigService là một class provider 
     // NestJS tự động nhận diện được qua kiểu dữ liệu (Type-based injection).
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        (req: any) => req?.cookies?.refreshToken,
+      ]),
       ignoreExpiration: false,
       // 2. Đảm bảo biến môi trường 'JWT_SECRET' đã được định nghĩa trong file .env
       secretOrKey: configService.get<string>('JWT_SECRET') || 'mặc_định_nếu_thiếu', 

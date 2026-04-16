@@ -20,6 +20,7 @@ import { EnrollmentModule } from './modules/enrollment.module';
 import { QuizModule } from './modules/quizz.module';
 import { SubmissionModule } from './modules/submission.module';
 import { DepartmentHeadModule } from './modules/department-head.module';
+import { AssignedLecturersModule } from './modules/assigned-lecturers.module';
 
 // ── Controllers ─────────────────────────────────────────────
 import { AppController } from './app.controller';
@@ -70,9 +71,10 @@ import { AppService } from './app.service';
     QuizModule,
     SubmissionModule,
     DepartmentHeadModule,
+    AssignedLecturersModule,
   ],
 
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}  // PageAuthMiddleware đã được đăng ký trong main.ts
+export class AppModule {}  // PageAuthMiddleware đã được đăng ký trong main.ts

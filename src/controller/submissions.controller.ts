@@ -75,6 +75,20 @@ export class SubmissionController {
     return this.submissionService.grade(id, dto, req.user.id);
   }
 
+  @Post('submissions/:id/grade')
+  @Roles(UserRole.LECTURER)
+  async gradeViaForm(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: any,
+    @Request() req: any,
+  ) {
+    const dto: GradeSubmissionDto = {
+      score: Number(body.score),
+      note: body.note,
+    };
+    return this.submissionService.grade(id, dto, req.user.id);
+  }
+
   /**
    * PATCH /api/v1/submissions/:id/regrade
    * Học viên yêu cầu phúc khảo

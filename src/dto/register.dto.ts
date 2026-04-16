@@ -37,4 +37,36 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   phone?: string;
+
+  @IsOptional()
+  @IsString()
+  mssv?: string;
+
+  @IsOptional()
+  @IsString()
+  khoa?: string;
+
+  @IsOptional()
+  @IsString()
+  nganh?: string;
+
+  @IsOptional()
+  @IsString()
+  diaChi?: string;
+
+  @IsOptional()
+  @IsString()
+  studentCode?: string;
+
+  @IsOptional()
+  @IsString()
+  faculty?: string;
+
+  @IsOptional()
+  @IsString()
+  major?: string;
+
+  @IsOptional()
+  @IsString()
+  address?: string;
 }

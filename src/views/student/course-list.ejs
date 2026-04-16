@@ -97,5 +97,19 @@
   </div>
 </div>
 <script src="/js/main.js"></script>
+<script>
+function enrollCourse(courseId) {
+  fetch('/student/courses/' + courseId + '/enroll', { method: 'POST' })
+    .then(async (res) => {
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) {
+        throw new Error(data.message || 'Không thể đăng ký khóa học.');
+      }
+      showToast('Đăng ký khóa học thành công!');
+      window.location.reload();
+    })
+    .catch((err) => showToast(err.message || 'Đăng ký thất bại.', 'error'));
+}
+</script>
 </body>
 </html>

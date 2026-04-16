@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>LMS Admin — Trưởng bộ môn</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .filter-bar { display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-bottom:1rem; }
+    .table-wrap { overflow-x:auto; }
+    .pager { display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-top:1px solid var(--border); }
+  </style>
+</head>
+<body>
+<div class="layout">
+  <%- include('../partials/admin-topbar') %>
+  <div class="layout-body">
+    <%- include('../partials/admin-sidebar', { activeMenu: 'department-heads' }) %>
+
+    <main class="layout-main">
+      <div class="max-content" style="max-width:1200px;">
+        <div class="page-header">
+          <h1 class="page-title">Quản lý trưởng bộ môn</h1>
+          <p class="page-subtitle">Bổ nhiệm và quản lý nhiệm kỳ cho vai trò Head of Department</p>
+        </div>
+
+        <% if (updated) { %>
+          <div class="card" style="border-color:rgba(35,134,54,.4);margin-bottom:1rem;padding:.85rem 1rem;color:#3fb950;">Đã cập nhật trưởng bộ môn thành công.</div>
+        <% } %>
+        <% if (error) { %>
+          <div class="card" style="border-color:rgba(218,54,51,.45);margin-bottom:1rem;padding:.85rem 1rem;color:#f85149;"><%= error %></div>
+        <% } %>
+
+        <div class="filter-bar">
+          <div class="search-wrap" style="flex:1;min-width:220px;max-width:420px;">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="head-search" class="form-input search-input" placeholder="Tìm theo tên hoặc email...">
+          </div>
+        </div>
+
+        <div class="grid-2" style="grid-template-columns:2fr 1fr;gap:1.25rem;align-items:start;">
+          <div class="card">
+            <div class="card-header"><h3 style="font-weight:600;color:#fff;">Danh sách hiện tại</h3></div>
+            <div class="card-body table-wrap" style="padding:0;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Giảng viên</th>
+                    <th>Email</th>
+                    <th>Nhiệm kỳ kết thúc</th>
+                    <th style="text-align:right;">Hành động</th>
+                  </tr>
+                </thead>
+                <tbody id="heads-table-body">
+                  <% if (!departmentHeads || departmentHeads.length === 0) { %>
+                    <tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:1.5rem;">Chưa có trưởng bộ môn nào.</td></tr>
+                  <% } %>
+                  <% (departmentHeads || []).forEach(function(dh){ %>
+                    <tr data-name="<%= (dh.lecturer?.fullname || ('User #' + dh.userId)).toLowerCase() %>" data-email="<%= (dh.lecturer?.email || '').toLowerCase() %>">
+                      <td style="font-weight:600;color:#fff;" class="head-name"><%= dh.lecturer?.fullname || ('User #' + dh.userId) %></td>
+                      <td style="color:var(--text-muted);" class="head-email"><%= dh.lecturer?.email || '-' %></td>
+                      <td style="color:var(--text-primary);"><%= dh.termEnd || 'Chưa xác định' %></td>
+                      <td style="text-align:right;">
+                        <button class="btn btn-ghost btn-sm" type="button" onclick='openEditTerm(<%- JSON.stringify({ userId: dh.userId, termEnd: dh.termEnd || "" }) %>)'>Sửa nhiệm kỳ</button>
+                        <form method="POST" action="/admin/department-heads/<%= dh.userId %>/remove" style="display:inline;" onsubmit="return confirm('Miễn nhiệm trưởng bộ môn này?');">
+                          <button class="btn btn-red btn-sm" type="submit">Miễn nhiệm</button>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+            <div class="pager">
+              <div>Tổng <span id="heads-count" style="color:#fff;font-weight:600;"><%= (departmentHeads || []).length %></span> trưởng bộ môn</div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span>Trang <span id="heads-page-info">1 / 1</span></span>
+                <div style="display:flex;gap:8px;">
+                  <button id="heads-prev" class="btn btn-ghost btn-sm" type="button">Trước</button>
+                  <button id="heads-next" class="btn btn-ghost btn-sm" type="button">Sau</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3 style="font-weight:600;color:#fff;">Bổ nhiệm mới</h3></div>
+            <div class="card-body">
+              <form method="POST" action="/admin/department-heads/appoint">
+                <div class="form-group">
+                  <label class="form-label">Chọn giảng viên</label>
+                  <select class="form-input form-select" name="userId" required>
+                    <option value="">-- Chọn giảng viên --</option>
+                    <% const appointedIds = new Set((departmentHeads || []).map(item => Number(item.userId))); %>
+                    <% (lecturers || []).forEach(function(l){ %>
+                      <% if (!appointedIds.has(Number(l.userId))) { %>
+                        <option value="<%= l.userId %>"><%= l.fullname %> (<%= l.email %>)</option>
+                      <% } %>
+                    <% }) %>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Ngày kết thúc nhiệm kỳ (tùy chọn)</label>
+                  <input class="form-input" type="date" name="termEnd">
+                </div>
+                <button class="btn btn-green" type="submit">Bổ nhiệm</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div id="modal-edit-term" class="modal-overlay hidden">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Cập nhật nhiệm kỳ</span>
+      <button class="modal-close" data-modal-close="modal-edit-term">&times;</button>
+    </div>
+    <form id="edit-term-form" method="POST">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Ngày kết thúc nhiệm kỳ</label>
+          <input id="edit-term-end" class="form-input" type="date" name="termEnd">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" type="button" data-modal-close="modal-edit-term">Hủy</button>
+        <button class="btn btn-primary" type="submit">Lưu thay đổi</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+function openEditTerm(data) {
+  document.getElementById('edit-term-form').action = '/admin/department-heads/' + data.userId + '/update';
+  document.getElementById('edit-term-end').value = data.termEnd ? String(data.termEnd).slice(0, 10) : '';
+  openModal('modal-edit-term');
+}
+
+const headState = {
+  currentPage: 1,
+  itemsPerPage: 8,
+  filteredRows: [],
+};
+
+function applyHeadFilters() {
+  const term = (document.getElementById('head-search').value || '').toLowerCase().trim();
+  const rows = Array.from(document.querySelectorAll('#heads-table-body tr[data-name]'));
+
+  headState.filteredRows = rows.filter((row) => {
+    const name = row.dataset.name || '';
+    const email = row.dataset.email || '';
+    return !term || name.includes(term) || email.includes(term);
+  });
+
+  headState.currentPage = 1;
+  renderHeadsTable();
+}
+
+function renderHeadsTable() {
+  const rows = Array.from(document.querySelectorAll('#heads-table-body tr[data-name]'));
+  rows.forEach((row) => { row.style.display = 'none'; });
+
+  const total = headState.filteredRows.length;
+  const totalPages = Math.max(1, Math.ceil(total / headState.itemsPerPage));
+  if (headState.currentPage > totalPages) headState.currentPage = totalPages;
+
+  const start = (headState.currentPage - 1) * headState.itemsPerPage;
+  const end = start + headState.itemsPerPage;
+  headState.filteredRows.slice(start, end).forEach((row) => { row.style.display = ''; });
+
+  document.getElementById('heads-count').textContent = String(total);
+  document.getElementById('heads-page-info').textContent = headState.currentPage + ' / ' + totalPages;
+
+  const prev = document.getElementById('heads-prev');
+  const next = document.getElementById('heads-next');
+  prev.disabled = headState.currentPage <= 1;
+  next.disabled = headState.currentPage >= totalPages;
+}
+
+document.getElementById('head-search').addEventListener('input', applyHeadFilters);
+document.getElementById('heads-prev').addEventListener('click', () => {
+  if (headState.currentPage > 1) {
+    headState.currentPage -= 1;
+    renderHeadsTable();
+  }
+});
+document.getElementById('heads-next').addEventListener('click', () => {
+  const totalPages = Math.max(1, Math.ceil(headState.filteredRows.length / headState.itemsPerPage));
+  if (headState.currentPage < totalPages) {
+    headState.currentPage += 1;
+    renderHeadsTable();
+  }
+});
+
+applyHeadFilters();
+</script>
+</body>
+</html>

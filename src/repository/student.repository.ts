@@ -126,6 +126,76 @@ export class StudentRepository {
     return rows[0] ?? null;
   }
 
+  async updateProfileByUserId(
+    userId: number,
+    data: {
+      fullname?: string;
+      email?: string;
+      phone?: string;
+      avatarUrl?: string;
+      mssv?: string;
+      khoa?: string;
+      nganh?: string;
+      diaChi?: string;
+    },
+  ): Promise<Record<string, any> | null> {
+    const columns: Array<{ column_name: string }> = await this.dataSource.query(
+      `SELECT column_name
+       FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = 'students'`,
+    );
+
+    const set = new Set(columns.map((c) => c.column_name));
+    const values: any[] = [];
+    const updates: string[] = [];
+
+    const push = (column: string, value: any) => {
+      values.push(value);
+      updates.push(`${column} = $${values.length}`);
+    };
+
+    if (data.fullname !== undefined && set.has('fullname')) push('fullname', data.fullname);
+    if (data.email !== undefined && set.has('email')) push('email', data.email);
+    if (data.phone !== undefined && set.has('phone')) push('phone', data.phone);
+    if (data.avatarUrl !== undefined && set.has('avatar_url')) push('avatar_url', data.avatarUrl);
+
+    if (data.mssv !== undefined) {
+      if (set.has('mssv')) push('mssv', data.mssv);
+      else if (set.has('student_code')) push('student_code', data.mssv);
+    }
+
+    if (data.khoa !== undefined) {
+      if (set.has('khoa')) push('khoa', data.khoa);
+      else if (set.has('faculty')) push('faculty', data.khoa);
+    }
+
+    if (data.nganh !== undefined) {
+      if (set.has('nganh')) push('nganh', data.nganh);
+      else if (set.has('major')) push('major', data.nganh);
+    }
+
+    if (data.diaChi !== undefined) {
+      if (set.has('dia_chi')) push('dia_chi', data.diaChi);
+      else if (set.has('address')) push('address', data.diaChi);
+    }
+
+    if (set.has('updated_at')) {
+      updates.push('updated_at = NOW()');
+    }
+
+    if (updates.length > 0) {
+      values.push(userId);
+      await this.dataSource.query(
+        `UPDATE students
+         SET ${updates.join(', ')}
+         WHERE user_id = $${values.length}`,
+        values,
+      );
+    }
+
+    return this.findProfileByUserId(userId);
+  }
+
   async findByIdWithRelations(userId: number): Promise<Student | null> {
     return this.studentRepo.findOne({
       where: { userId },
@@ -215,6 +285,10 @@ export class StudentRepository {
     email: string;
     passwordHash: string;
     phone?: string | null;
+    mssv?: string | null;
+    khoa?: string | null;
+    nganh?: string | null;
+    diaChi?: string | null;
   }): Promise<CreateTransactionResult> {
     return this.dataSource.transaction(async (manager) => {
       // ── Bước 1: Insert vào bảng users ──────────────────────────────────────
@@ -283,6 +357,58 @@ export class StudentRepository {
         phone: data.phone ?? undefined,
       });
       const savedStudent = await manager.save(Student, student);
+
+      // Đồng bộ thêm các cột hồ sơ mở rộng nếu schema có hỗ trợ
+      if (data.mssv || data.khoa || data.nganh || data.diaChi) {
+        const columns: Array<{ column_name: string }> = await manager.query(
+          `SELECT column_name
+           FROM information_schema.columns
+           WHERE table_schema = 'public' AND table_name = 'students'`,
+        );
+
+        const set = new Set(columns.map((c) => c.column_name));
+        const values: any[] = [];
+        const updates: string[] = [];
+
+        const push = (column: string, value: any) => {
+          values.push(value);
+          updates.push(`${column} = $${values.length}`);
+        };
+
+        if (data.mssv !== undefined && data.mssv !== null) {
+          if (set.has('mssv')) push('mssv', data.mssv);
+          else if (set.has('student_code')) push('student_code', data.mssv);
+        }
+
+        if (data.khoa !== undefined && data.khoa !== null) {
+          if (set.has('khoa')) push('khoa', data.khoa);
+          else if (set.has('faculty')) push('faculty', data.khoa);
+        }
+
+        if (data.nganh !== undefined && data.nganh !== null) {
+          if (set.has('nganh')) push('nganh', data.nganh);
+          else if (set.has('major')) push('major', data.nganh);
+        }
+
+        if (data.diaChi !== undefined && data.diaChi !== null) {
+          if (set.has('dia_chi')) push('dia_chi', data.diaChi);
+          else if (set.has('address')) push('address', data.diaChi);
+        }
+
+        if (set.has('updated_at')) {
+          updates.push('updated_at = NOW()');
+        }
+
+        if (updates.length > 0) {
+          values.push(userId);
+          await manager.query(
+            `UPDATE students
+             SET ${updates.join(', ')}
+             WHERE user_id = $${values.length}`,
+            values,
+          );
+        }
+      }
 
       return { user, student: savedStudent };
     });

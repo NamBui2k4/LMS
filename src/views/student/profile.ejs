@@ -35,6 +35,17 @@
           <button style="background:none;border:none;color:#eab308;cursor:pointer;font-size:1.2rem;padding:0 0 0 12px;" onclick="this.parentElement.remove()">×</button>
         </div>
 
+        <% if (updated) { %>
+          <div class="alert" style="background:rgba(35,134,54,.12);border:1px solid rgba(35,134,54,.35);color:#3fb950;">
+            Cập nhật thông tin thành công.
+          </div>
+        <% } %>
+        <% if (error) { %>
+          <div class="alert alert-red" style="margin-top:10px;">
+            <%= error %>
+          </div>
+        <% } %>
+
         <div class="grid-2" style="grid-template-columns:1fr 2fr;align-items:start;">
           <!-- Avatar card -->
           <div class="card" style="text-align:center;padding:2rem;">
@@ -105,6 +116,43 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:1rem;">
+          <div class="card-header">
+            <h3 style="font-weight:600;color:var(--text-primary);">Cập nhật thông tin liên hệ</h3>
+          </div>
+          <div class="card-body">
+            <form method="POST" action="/student/profile" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+              <div>
+                <label class="info-label" for="phone">Số điện thoại</label>
+                <input
+                  id="phone"
+                  name="phone"
+                  type="text"
+                  value="<%= user?.phone || '' %>"
+                  placeholder="Nhập số điện thoại"
+                  style="width:100%;background:var(--bg-base);border:1px solid var(--border);border-radius:8px;padding:.65rem .75rem;color:#fff;outline:none;"
+                />
+              </div>
+
+              <div style="grid-column:1/-1;">
+                <label class="info-label" for="diaChi">Địa chỉ liên hệ</label>
+                <input
+                  id="diaChi"
+                  name="diaChi"
+                  type="text"
+                  value="<%= user?.diaChi || '' %>"
+                  placeholder="Nhập địa chỉ liên hệ"
+                  style="width:100%;background:var(--bg-base);border:1px solid var(--border);border-radius:8px;padding:.65rem .75rem;color:#fff;outline:none;"
+                />
+              </div>
+
+              <div style="grid-column:1/-1;display:flex;justify-content:flex-end;">
+                <button type="submit" class="btn btn-primary">Lưu thay đổi</button>
+              </div>
+            </form>
           </div>
         </div>
 
