@@ -79,6 +79,7 @@ export class CourseRepository {
         'lessons.materials', // <--- [MỚI] Fetch data học liệu
         'quizzes',
         'enrollments',
+        'enrollments.student',
         'assignedLecturers',
         'assignedLecturers.instructor',
       ],
@@ -102,6 +103,14 @@ export class CourseRepository {
   async create(courseData: Partial<Courses>): Promise<Courses> {
     const course = this.courseRepo.create(courseData);
     return this.courseRepo.save(course);
+  }
+
+  async save(course: Courses): Promise<Courses> {
+    return this.courseRepo.save(course);
+  }
+
+  async deleteById(courseId: number): Promise<void> {
+    await this.courseRepo.delete({ id: courseId });
   }
 
   /**

@@ -19,12 +19,33 @@
           </a>
           <div>
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-              <span style="font-size:.75rem;font-family:monospace;background:rgba(35,134,54,.15);color:#3fb950;border:1px solid rgba(35,134,54,.3);padding:3px 10px;border-radius:4px;">IT004</span>
-              <span class="badge badge-green">Đang hoạt động</span>
+              <span style="font-size:.75rem;font-family:monospace;background:rgba(35,134,54,.15);color:#3fb950;border:1px solid rgba(35,134,54,.3);padding:3px 10px;border-radius:4px;">COURSE-<%= courseId %></span>
+              <% if (course.status === 'published' || course.status === 'PUBLISHED') { %>
+                <span class="badge badge-green">Đang hoạt động</span>
+              <% } else if (course.status === 'pending' || course.status === 'PENDING') { %>
+                <span class="badge badge-yellow">Chờ duyệt</span>
+              <% } else if (course.status === 'closed' || course.status === 'CLOSED') { %>
+                <span class="badge badge-red">Đã đóng</span>
+              <% } else if (course.status === 'archived' || course.status === 'ARCHIVED') { %>
+                <span class="badge badge-blue">Đã lưu trữ</span>
+              <% } else { %>
+                <span class="badge badge-blue">Bản nháp</span>
+              <% } %>
             </div>
-            <h1 style="font-size:1.5rem;font-weight:700;color:#fff;">Phát triển Ứng dụng Web với React</h1>
+            <h1 style="font-size:1.5rem;font-weight:700;color:#fff;"><%= course.title || 'Khóa học' %></h1>
           </div>
         </div>
+
+        <% if (updated) { %>
+          <div class="card" style="padding:.75rem 1rem;border-color:rgba(35,134,54,.4);background:rgba(35,134,54,.12);margin-bottom:1rem;color:#9be9a8;">
+            Đã lưu thay đổi khóa học thành công.
+          </div>
+        <% } %>
+        <% if (error) { %>
+          <div class="card" style="padding:.75rem 1rem;border-color:rgba(248,81,73,.45);background:rgba(248,81,73,.12);margin-bottom:1rem;color:#ffb4ad;">
+            <%= error %>
+          </div>
+        <% } %>
 
         <div class="grid-2" style="grid-template-columns:2fr 1fr;gap:2rem;align-items:start;">
           <!-- Left: Lessons -->
@@ -94,6 +115,40 @@
 
           <!-- Right: Enrolled students -->
           <div>
+            <h2 style="font-size:1.1rem;font-weight:600;color:#fff;margin-bottom:1rem;">Chỉnh sửa khóa học</h2>
+            <form class="card" method="POST" action="/staff/courses/<%= courseId %>/update" style="padding:1rem;margin-bottom:1rem;display:flex;flex-direction:column;gap:.75rem;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Tên khóa học</label>
+                <input class="form-input" name="title" value="<%= course.title || '' %>" required />
+              </div>
+
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">Mô tả</label>
+                <textarea class="form-input form-textarea" rows="4" name="description"><%= course.description || '' %></textarea>
+              </div>
+
+              <% if (canChangeStatus) { %>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label">Đổi trạng thái khóa học</label>
+                  <select class="form-input form-select" name="status" <%= !statusOptions || statusOptions.length === 0 ? 'disabled' : '' %>>
+                    <option value="">-- Giữ nguyên (<%= course.status %>) --</option>
+                    <% (statusOptions || []).forEach(function(s){ %>
+                      <option value="<%= s %>"><%= s %></option>
+                    <% }) %>
+                  </select>
+                </div>
+              <% } %>
+
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-green" type="submit">Lưu thay đổi</button>
+                <a href="/staff/courses" class="btn btn-ghost">Hủy</a>
+              </div>
+            </form>
+
+            <form method="POST" action="/staff/courses/<%= courseId %>/delete" onsubmit="return confirm('Bạn có chắc muốn xóa khóa học này?');" style="margin-bottom:1rem;">
+              <button class="btn btn-red" type="submit">Xóa khóa học</button>
+            </form>
+
             <h2 style="font-size:1.1rem;font-weight:600;color:#fff;margin-bottom:1rem;">Sinh viên ghi danh</h2>
             <div class="card" style="padding:.5rem;">
               <% if (!course.enrollments || course.enrollments.length === 0) { %>

@@ -66,6 +66,50 @@ export class CourseService {
     });
   }
 
+  async updateBasicInfo(
+    courseId: number,
+    payload: { title?: string; description?: string },
+    actorUserId: number,
+    actorRole: UserRole,
+  ): Promise<Courses> {
+    const course = await this.courseRepo.findById(courseId);
+    if (!course) throw new NotFoundException('Không tìm thấy khóa học.');
+
+    const isHead = actorRole === UserRole.HEAD_OF_DEPARTMENT;
+    const isOwner = Number(course.createdBy.userId) === Number(actorUserId);
+    if (!isHead && !isOwner) {
+      throw new ForbiddenException('Bạn không có quyền chỉnh sửa khóa học này.');
+    }
+
+    if (typeof payload.title === 'string') {
+      const nextTitle = payload.title.trim();
+      if (!nextTitle) {
+        throw new BadRequestException('Tiêu đề khóa học không được để trống.');
+      }
+      course.title = nextTitle;
+    }
+
+    if (typeof payload.description === 'string') {
+      const nextDescription = payload.description.trim();
+      course.description = nextDescription || undefined;
+    }
+
+    return this.courseRepo.save(course);
+  }
+
+  async delete(courseId: number, actorUserId: number, actorRole: UserRole): Promise<void> {
+    const course = await this.courseRepo.findById(courseId);
+    if (!course) throw new NotFoundException('Không tìm thấy khóa học.');
+
+    const isHead = actorRole === UserRole.HEAD_OF_DEPARTMENT;
+    const isOwner = Number(course.createdBy.userId) === Number(actorUserId);
+    if (!isHead && !isOwner) {
+      throw new ForbiddenException('Bạn không có quyền xóa khóa học này.');
+    }
+
+    await this.courseRepo.deleteById(courseId);
+  }
+
       async changeStatus(
     courseId: number,
     newStatus: CourseStatus,

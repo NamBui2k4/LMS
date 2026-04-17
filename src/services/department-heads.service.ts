@@ -4,10 +4,14 @@ import {
   ConflictException,
   ForbiddenException,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { DepartmentHeadRepository } from '../repository/department-heads.repository';
 import { LecturerRepository } from '../repository/lecturer.repository';
 import { DepartmentHead } from '../models/department-heads.entity';
 import { IsNumber, IsOptional } from 'class-validator';
+import { User } from '../models/user.entity';
+import { UserRole } from '../common/enums/role.enum';
 
 // ✅ FIX: DTO dùng userId (không phải instructorId)
 export class AppointDeptHeadDto {
@@ -23,6 +27,8 @@ export class DepartmentHeadService {
   constructor(
     private readonly deptHeadRepo: DepartmentHeadRepository,
     private readonly lecturerRepo: LecturerRepository,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
   ) {}
 
   async findAll(): Promise<DepartmentHead[]> {
@@ -48,10 +54,16 @@ export class DepartmentHeadService {
     const existing = await this.deptHeadRepo.findById(dto.userId); // ✅ FIX
     if (existing) throw new ConflictException('Giảng viên đã là trưởng bộ môn.');
 
-    return this.deptHeadRepo.create({
+    const departmentHead = await this.deptHeadRepo.create({
       userId: dto.userId, // ✅ FIX
       termEnd: dto.termEnd,
     });
+
+    await this.userRepo.update({ id: dto.userId } as any, {
+      role: UserRole.HEAD_OF_DEPARTMENT,
+    });
+
+    return departmentHead;
   }
 
   // ✅ FIX: tham số userId
@@ -65,6 +77,9 @@ export class DepartmentHeadService {
   async remove(userId: number): Promise<void> {
     await this.findOne(userId);
     await this.deptHeadRepo.delete(userId);
+    await this.userRepo.update({ id: userId } as any, {
+      role: UserRole.LECTURER,
+    });
   }
 
   async getReviewedCourses(userId: number): Promise<DepartmentHead> {

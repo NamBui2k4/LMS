@@ -21,6 +21,17 @@
           <button class="btn btn-green" data-modal-open="modal-create-course">+ Tạo khóa học mới</button>
         </div>
 
+        <% if (updated) { %>
+          <div class="card" style="padding:.75rem 1rem;border-color:rgba(35,134,54,.4);background:rgba(35,134,54,.12);margin-bottom:1rem;color:#9be9a8;">
+            Cập nhật khóa học thành công.
+          </div>
+        <% } %>
+        <% if (error) { %>
+          <div class="card" style="padding:.75rem 1rem;border-color:rgba(248,81,73,.45);background:rgba(248,81,73,.12);margin-bottom:1rem;color:#ffb4ad;">
+            <%= error %>
+          </div>
+        <% } %>
+
         <% if (!courses || courses.length === 0) { %>
           <div style="text-align:center;color:#8b949e;padding:3rem 0;">
             <p>Chưa có khóa học nào.</p>
@@ -54,11 +65,16 @@
             <div style="margin-top:auto;padding-top:1rem;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:8px;">
               <!-- Nút phê duyệt dành cho Head of Dept -->
               <% if ((c.status === 'pending' || c.status === 'PENDING') && userRole === 'HEAD_OF_DEPARTMENT') { %>
-                <button class="btn btn-green btn-block" style="justify-content:center;" onclick="approveCourse('<%= c.id %>')">✓ Phê duyệt mở lớp</button>
+                <form method="POST" action="/staff/courses/<%= c.id %>/update">
+                  <input type="hidden" name="status" value="published" />
+                  <button class="btn btn-green btn-block" style="justify-content:center;" type="submit">✓ Phê duyệt mở lớp</button>
+                </form>
               <% } %>
               <div style="display:flex;gap:8px;">
                 <a href="/staff/courses/<%= c.id %>" class="btn btn-ghost" style="flex:1;justify-content:center;">Chỉnh sửa</a>
-                <button class="btn btn-red btn-sm" onclick="deleteCourse('<%= c.id %>')">Xóa</button>
+                <form method="POST" action="/staff/courses/<%= c.id %>/delete" onsubmit="return confirm('Bạn có chắc muốn xóa khóa học này?');">
+                  <button class="btn btn-red btn-sm" type="submit">Xóa</button>
+                </form>
               </div>
             </div>
           </div>
@@ -109,22 +125,7 @@
 
 <script src="/js/main.js"></script>
 <script>
-function approveCourse(id) {
-  fetch('/api/v1/courses/' + id + '/status', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status: 'published' }),
-  })
-    .then(async (res) => {
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.message || 'Không thể phê duyệt khóa học.');
-      showToast('Đã phê duyệt khóa học!');
-      window.location.reload();
-    })
-    .catch((err) => showToast(err.message || 'Phê duyệt thất bại.', 'error'));
-}
 function voteForCourse(id) { showToast('Đã bỏ phiếu ủng hộ!'); }
-function deleteCourse(id) { if(confirm('Bạn có chắc muốn xóa khóa học này?')) showToast('Đã xóa khóa học!'); }
 function createCourse() { showToast('Đã tạo khóa học mới!'); closeModal('modal-create-course'); }
 </script>
 </body>

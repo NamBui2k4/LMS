@@ -305,43 +305,119 @@ export class AppController {
 
   @Get('staff/courses')
   @Render('staff/course-list')
-  async staffCourseList(@Req() req: any) {
+  async staffCourseList(@Req() req: any, @Query('updated') updated?: string, @Query('error') error?: string) {
     const payload = req.userPayload;
-    if (!payload || !payload.sub) return { title: 'Danh sách khóa học', courses: [], user: null };
+    if (!payload || !payload.sub) {
+      return {
+        title: 'Danh sách khóa học',
+        courses: [],
+        user: null,
+        updated: false,
+        error: null,
+      };
+    }
     try {
       const lecturer = await this.lecturerService.getLecturerProfile(Number(payload.sub));
       const courses = await this.courseService.findAll(Number(payload.sub), payload.role);
       
-      return { title: 'Danh sách khóa học', courses, user: lecturer };
+      return {
+        title: 'Danh sách khóa học',
+        courses,
+        user: lecturer,
+        updated: updated === '1',
+        error: error === '1' ? 'Không thể cập nhật dữ liệu khóa học. Vui lòng thử lại.' : null,
+      };
     } catch {
-      return { title: 'Danh sách khóa học', courses: [], user: null };
+      return {
+        title: 'Danh sách khóa học',
+        courses: [],
+        user: null,
+        updated: false,
+        error: null,
+      };
     }
   }
 
   @Get('staff/courses/:id')
   @Render('staff/course-detail')
-  async staffCourseDetail(@Req() req: any, @Param('id') id: string) {
+  async staffCourseDetail(@Req() req: any, @Param('id') id: string, @Query('updated') updated?: string, @Query('error') error?: string) {
     const payload = req.userPayload;
     if (!payload || !payload.sub) return { title: 'Lỗi', courseId: id, course: null, user: null };
     
     try {
       const lecturer = await this.lecturerService.getLecturerProfile(Number(payload.sub));
       const course = await this.courseService.findOne(Number(id), Number(payload.sub), payload.role);
+      const statusOptions = this.getAllowedCourseStatusTransitions(course.status);
       return {
         title: 'Chi tiết khóa học',
         courseId: id,
         course,
         user: lecturer,
         canManageAssignments: payload.role === UserRole.HEAD_OF_DEPARTMENT,
+        canChangeStatus: payload.role === UserRole.HEAD_OF_DEPARTMENT,
+        statusOptions,
+        updated: updated === '1',
+        error: error === '1' ? 'Không thể cập nhật khóa học. Vui lòng thử lại.' : null,
       };
     } catch {
       return {
         title: 'Không tìm thấy khóa học',
         courseId: id,
-        course: null,
+        course: { title: 'Khóa học', description: '', status: 'draft', lessons: [], enrollments: [] },
         user: null,
         canManageAssignments: false,
+        canChangeStatus: false,
+        statusOptions: [],
+        updated: false,
+        error: null,
       };
+    }
+  }
+
+  @Post('staff/courses/:id/update')
+  async updateStaffCourse(@Req() req: any, @Param('id') id: string, @Body() body: any, @Res() res: any) {
+    const payload = req.userPayload;
+    if (!payload || !payload.sub) return res.redirect('/login/staff');
+
+    const courseId = Number(id);
+
+    try {
+      await this.courseService.updateBasicInfo(
+        courseId,
+        {
+          title: body.title,
+          description: body.description,
+        },
+        Number(payload.sub),
+        payload.role,
+      );
+
+      if (payload.role === UserRole.HEAD_OF_DEPARTMENT && body.status) {
+        const deptHead = await this.departmentHeadService.findOne(Number(payload.sub));
+        await this.courseService.changeStatus(
+          courseId,
+          body.status,
+          deptHead,
+          payload.role,
+        );
+      }
+
+      return res.redirect(`/staff/courses/${courseId}?updated=1`);
+    } catch {
+      return res.redirect(`/staff/courses/${courseId}?error=1`);
+    }
+  }
+
+  @Post('staff/courses/:id/delete')
+  async deleteStaffCourse(@Req() req: any, @Param('id') id: string, @Res() res: any) {
+    const payload = req.userPayload;
+    if (!payload || !payload.sub) return res.redirect('/login/staff');
+
+    try {
+      await this.courseService.delete(Number(id), Number(payload.sub), payload.role);
+      return res.redirect('/staff/courses?updated=1');
+    } catch {
+      return res.redirect('/staff/courses?error=1');
     }
   }
 
@@ -947,5 +1023,17 @@ export class AppController {
     } catch {
       return { title: 'Điểm danh', user: null, enrollments: [] };
     }
+  }
+
+  private getAllowedCourseStatusTransitions(currentStatus: CourseStatus): CourseStatus[] {
+    const transitions: Record<CourseStatus, CourseStatus[]> = {
+      [CourseStatus.DRAFT]: [CourseStatus.PENDING],
+      [CourseStatus.PENDING]: [CourseStatus.PUBLISHED, CourseStatus.DRAFT],
+      [CourseStatus.PUBLISHED]: [CourseStatus.CLOSED, CourseStatus.ARCHIVED],
+      [CourseStatus.CLOSED]: [CourseStatus.ARCHIVED],
+      [CourseStatus.ARCHIVED]: [],
+    };
+
+    return transitions[currentStatus] ?? [];
   }
 }
