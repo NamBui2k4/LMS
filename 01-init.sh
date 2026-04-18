@@ -74,6 +74,9 @@ COMMENT ON COLUMN users.role IS 'Vai trò chính của người dùng, quyết �
 -- BẢNG: students
 -- Học viên — kế thừa users (Table-Per-Type)
 -- =======================
+-- =======================
+-- BẢNG: students
+-- =======================
 CREATE TABLE students (
     user_id         BIGINT           PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
     fullname        VARCHAR(150)     NOT NULL,
@@ -81,6 +84,10 @@ CREATE TABLE students (
     phone           VARCHAR(20),
     avatar_url      TEXT,
     google_id       VARCHAR(255)     UNIQUE,
+    student_code    VARCHAR(20)      UNIQUE, -- Thêm mới
+    faculty         VARCHAR(150),            -- Thêm mới
+    major           VARCHAR(150),            -- Thêm mới
+    address         TEXT,                    -- Thêm mới
     status          account_status   NOT NULL DEFAULT 'active',
     created_at      TIMESTAMPTZ      NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ      NOT NULL DEFAULT NOW()
