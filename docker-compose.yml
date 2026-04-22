@@ -43,6 +43,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./01-init.sh:/docker-entrypoint-initdb.d/01-init.sh
+      - ./seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
     networks:
       - lms-network
     healthcheck:

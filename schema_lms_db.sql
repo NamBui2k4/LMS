@@ -41,6 +41,10 @@ CREATE TABLE students (
     phone           VARCHAR(20),
     avatar_url      TEXT,
     google_id       VARCHAR(255)     UNIQUE,
+    student_code    VARCHAR(20)      UNIQUE,
+    faculty         VARCHAR(150),
+    major           VARCHAR(150),
+    address         TEXT,
     status          account_status   NOT NULL DEFAULT 'active',
     created_at      TIMESTAMPTZ      NOT NULL DEFAULT NOW(),
     updated_at      TIMESTAMPTZ      NOT NULL DEFAULT NOW()
@@ -359,8 +363,3 @@ INSERT INTO users (
 INSERT INTO admins ( user_id, fullname, permissions) VALUES ( 1, 'Administrator', '["all"]');
 
 
-ALTER TABLE students 
-ADD COLUMN student_code VARCHAR(20) UNIQUE, -- MSSV
-ADD COLUMN faculty      VARCHAR(150),       -- Khoa chủ quản
-ADD COLUMN major        VARCHAR(150),       -- Ngành học
-ADD COLUMN address      TEXT;               -- Địa chỉ liên hệ
