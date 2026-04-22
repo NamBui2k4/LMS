@@ -135,4 +135,18 @@ export class UserService {
   async getSystemStats() {
     return this.userRepository.getSystemStats();
   }
+
+  async getUsersForAdminView(): Promise<
+    Pick<User, 'id' | 'email' | 'role' | 'isActive' | 'createdAt'>[]
+  > {
+    return this.userRepository.findAllForAdminView();
+  }
+
+  async updatePasswordHash(userId: string, passwordHash: string): Promise<User> {
+    const user = await this.userRepository.updatePasswordHashById(userId, passwordHash);
+    if (!user) {
+      throw new NotFoundException(`Không tìm thấy tài khoản với ID: ${userId}.`);
+    }
+    return user;
+  }
 }

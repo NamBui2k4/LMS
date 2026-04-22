@@ -12,17 +12,29 @@ import {
   HttpStatus,
   UseGuards,
   Request,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { MaterialService } from '../services/material.service';
 import {
   CreateMaterialDto,
   UpdateMaterialDto,
   MaterialResponseDto,
+  UploadMaterialDto,
 } from '../dto/material.dto';
 import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 import { RolesGuard } from '../auth/guard/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../common/enums/role.enum';
+
+type UploadedFileType = {
+  originalname: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+};
 
 @Controller('api/v1/lessons/:lessonId/materials')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -74,6 +86,36 @@ export class MaterialController {
     @Request() req: any,
   ): Promise<MaterialResponseDto> {
     const material = await this.materialService.create(lessonId, dto, req.user.id);
+    return MaterialResponseDto.fromEntity(material);
+  }
+
+  /**
+   * POST /api/v1/lessons/:lessonId/materials/upload
+   * Upload file học liệu lên Supabase và tạo material record
+   */
+  @Post('upload')
+  @HttpCode(HttpStatus.CREATED)
+  @Roles(UserRole.LECTURER)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: {
+        fileSize: 50 * 1024 * 1024,
+      },
+    }),
+  )
+  async uploadAndCreate(
+    @Param('lessonId', ParseIntPipe) lessonId: number,
+    @UploadedFile() file: UploadedFileType,
+    @Body() dto: UploadMaterialDto,
+    @Request() req: any,
+  ): Promise<MaterialResponseDto> {
+    const material = await this.materialService.uploadAndCreate(
+      lessonId,
+      file,
+      dto,
+      req.user.id,
+    );
     return MaterialResponseDto.fromEntity(material);
   }
 

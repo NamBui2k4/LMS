@@ -41,23 +41,23 @@ export class Quiz {
   })
   quizType!: QuizType;
 
-  @Column({ type: 'numeric', precision: 6, scale: 2, default: 100.00 })
+  @Column({ type: 'numeric', precision: 6, scale: 2, default: 100.00, name: 'max_score' })
   maxScore!: number;
 
-  @Column({ type: 'numeric', precision: 6, scale: 2, nullable: true })
+  @Column({ type: 'numeric', precision: 6, scale: 2, nullable: true, name: 'pass_score' })
   passScore?: number;
 
-  @Column({ type: 'int', nullable: true })
+  @Column({ type: 'int', nullable: true, name: 'duration_min' })
   durationMin?: number;
 
   @ManyToOne(() => Lecturer, { nullable: false, onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'created_by', referencedColumnName: 'userId' })
   createdBy!: Lecturer;
 
-  @CreateDateColumn({ type: 'timestamptz' })
+  @CreateDateColumn({ type: 'timestamptz', name: 'created_at' })
   createdAt!: Date;
 
-  @UpdateDateColumn({ type: 'timestamptz' })
+  @UpdateDateColumn({ type: 'timestamptz', name: 'updated_at' })
   updatedAt!: Date;
 
   // Quan hệ 1-n: Một quiz có nhiều câu hỏi

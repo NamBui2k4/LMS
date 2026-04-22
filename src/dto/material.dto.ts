@@ -33,6 +33,21 @@ export class CreateMaterialDto {
   orderIndex?: number;
 }
 
+export class UploadMaterialDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  fileName?: string;
+
+  @IsOptional()
+  @IsEnum(MaterialType)
+  fileType?: MaterialType;
+
+  @IsOptional()
+  @IsNumber()
+  orderIndex?: number;
+}
+
 export class UpdateMaterialDto {
   // ✅ FIX: name → fileName
   @IsOptional()
@@ -43,6 +58,10 @@ export class UpdateMaterialDto {
   @IsOptional()
   @IsString()
   fileUrl?: string;
+
+  @IsOptional()
+  @IsEnum(MaterialType)
+  fileType?: MaterialType;
 
   // ✅ FIX: Thêm fileSizeKb
   @IsOptional()

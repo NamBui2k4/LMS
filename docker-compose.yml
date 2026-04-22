@@ -4,6 +4,8 @@ services:
   backend:
     build: .
     container_name: lms_backend
+    env_file:
+      - .env
     ports:
       - "3001:3001"
     environment:
@@ -15,6 +17,9 @@ services:
       DB_PASSWORD: quanminh08
       DB_NAME: LMS-monolithic
       JWT_SECRET: supersecretkey
+      SUPABASE_URL: ${SUPABASE_URL}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_STORAGE_BUCKET: ${SUPABASE_STORAGE_BUCKET:-materials}
     volumes:
       - .:/app
       - /app/node_modules

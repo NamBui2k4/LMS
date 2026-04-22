@@ -12,6 +12,7 @@ import { MaterialController } from '../controller/material.controller';
 
 // Services
 import { MaterialService } from '../services/material.service';
+import { SupabaseStorageService } from '../services/supabase-storage.service';
 
 // Repositories
 import { MaterialRepository } from '../repository/material.repository';
@@ -25,7 +26,7 @@ import { CourseModule } from './course.module';
     CourseModule
   ],
   controllers: [MaterialController],
-  providers: [MaterialService, MaterialRepository],
+  providers: [MaterialService, MaterialRepository, SupabaseStorageService],
   exports: [MaterialService, MaterialRepository],
 })
 export class MaterialModule {}

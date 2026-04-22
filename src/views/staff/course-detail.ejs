@@ -41,9 +41,19 @@
             Đã lưu thay đổi khóa học thành công.
           </div>
         <% } %>
+        <% if (notice) { %>
+          <div class="card" style="padding:.75rem 1rem;border-color:rgba(35,134,54,.4);background:rgba(35,134,54,.12);margin-bottom:1rem;color:#9be9a8;">
+            <%= notice %>
+          </div>
+        <% } %>
         <% if (error) { %>
           <div class="card" style="padding:.75rem 1rem;border-color:rgba(248,81,73,.45);background:rgba(248,81,73,.12);margin-bottom:1rem;color:#ffb4ad;">
             <%= error %>
+          </div>
+        <% } %>
+        <% if (flowError) { %>
+          <div class="card" style="padding:.75rem 1rem;border-color:rgba(248,81,73,.45);background:rgba(248,81,73,.12);margin-bottom:1rem;color:#ffb4ad;">
+            <%= flowError %>
           </div>
         <% } %>
 
@@ -61,7 +71,13 @@
             </div>
             <div style="display:flex;flex-direction:column;gap:.75rem;">
               <% if (!course.lessons || course.lessons.length === 0) { %>
-                <p style="color:var(--text-muted); text-align:center; padding: 2rem;">Chưa có bài giảng nào được thêm.</p>
+                <div class="card" style="padding:1rem;border-style:dashed;text-align:center;">
+                  <p style="color:var(--text-muted);margin-bottom:.5rem;">Chưa có bài giảng nào được thêm.</p>
+                  <p style="color:var(--text-muted);font-size:.85rem;margin-bottom:.85rem;">
+                    Khu vực upload học liệu Supabase sẽ hiển thị bên dưới mỗi bài giảng sau khi bạn tạo bài giảng đầu tiên.
+                  </p>
+                  <button class="btn btn-green btn-sm" type="button" data-modal-open="modal-add-lesson">+ Tạo bài giảng đầu tiên</button>
+                </div>
               <% } else { %>
                 <% course.lessons.sort((a,b) => a.orderIndex - b.orderIndex).forEach(function(lesson){ %>
                 <div class="card" style="padding:1rem;display:flex;flex-direction:column;gap:12px;">
@@ -79,9 +95,29 @@
                     </div>
                   </div>
 
-                  <form method="POST" action="/staff/lessons/<%= lesson.id %>/materials" style="display:flex;gap:8px;flex-wrap:wrap;padding-left:44px;">
+                  <div style="padding-left:44px; font-size:.75rem; color:var(--text-muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <span>Upload học liệu (Supabase Storage)</span>
+                    <% if (isSupabaseStorageReady) { %>
+                      <span style="display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:999px;border:1px solid rgba(35,134,54,.45);background:rgba(35,134,54,.15);color:#9be9a8;">
+                        <span style="width:6px;height:6px;border-radius:50%;background:#3fb950;"></span>
+                        Supabase: Ready
+                      </span>
+                    <% } else { %>
+                      <span style="display:inline-flex;align-items:center;gap:6px;padding:2px 8px;border-radius:999px;border:1px solid rgba(248,81,73,.45);background:rgba(248,81,73,.12);color:#ffb4ad;">
+                        <span style="width:6px;height:6px;border-radius:50%;background:#f85149;"></span>
+                        Supabase: Not configured
+                      </span>
+                    <% } %>
+                  </div>
+                  <% if (!isSupabaseStorageReady) { %>
+                    <div style="padding-left:44px; font-size:.72rem; color:#ffb4ad;">
+                      Chưa cấu hình SUPABASE_URL hoặc SUPABASE_SERVICE_ROLE_KEY. Bạn vẫn có thể thêm học liệu bằng URL.
+                    </div>
+                  <% } %>
+                  <form class="js-material-form" method="POST" enctype="multipart/form-data" action="/staff/lessons/<%= lesson.id %>/materials" style="display:flex;gap:8px;flex-wrap:wrap;padding-left:44px;">
                     <input class="form-input" name="fileName" placeholder="Tên học liệu" style="flex:1;min-width:180px;" required />
-                    <input class="form-input" name="fileUrl" placeholder="URL học liệu" style="flex:1;min-width:220px;" required />
+                    <input class="form-input js-material-file" type="file" name="file" style="flex:1;min-width:220px;" <%= !isSupabaseStorageReady ? 'disabled title="Supabase chưa được cấu hình"' : '' %> />
+                    <input class="form-input js-material-url" name="fileUrl" placeholder="URL học liệu (nếu không upload file)" style="flex:1;min-width:220px;" />
                     <select class="form-input form-select" name="fileType" style="min-width:130px;">
                       <option value="document">document</option>
                       <option value="video">video</option>
@@ -224,6 +260,25 @@ document.querySelectorAll('.js-progress-fill').forEach((el) => {
   const color = el.getAttribute('data-color') || '#1f6feb';
   el.style.width = width + '%';
   el.style.background = color;
+});
+
+document.querySelectorAll('.js-material-form').forEach((form) => {
+  form.addEventListener('submit', (event) => {
+    const fileInput = form.querySelector('.js-material-file');
+    const urlInput = form.querySelector('.js-material-url');
+
+    const hasFile = fileInput && fileInput.files && fileInput.files.length > 0;
+    const hasUrl = urlInput && String(urlInput.value || '').trim().length > 0;
+
+    if (!hasFile && !hasUrl) {
+      event.preventDefault();
+      if (typeof showToast === 'function') {
+        showToast('Vui lòng chọn file hoặc nhập URL học liệu.', 'error');
+      } else {
+        alert('Vui lòng chọn file hoặc nhập URL học liệu.');
+      }
+    }
+  });
 });
 </script>
 </body>

@@ -2,8 +2,10 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 import { UserService } from './user.service';
 import { StudentRepository } from '../repository/student.repository';
 import * as bcrypt from 'bcrypt';
@@ -18,6 +20,7 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly jwtService: JwtService,
     private readonly studentRepo: StudentRepository,
+    private readonly configService: ConfigService,
   ) {}
 
   // ─── 1. Validate đăng nhập ─────────────────────────────────────────────────
@@ -177,6 +180,98 @@ export class AuthService {
     }
   }
 
+  async forgotPassword(email: string): Promise<Record<string, string>> {
+    const user = await this.userService.findUserViaEmail(email).catch(() => null);
+
+    const genericMessage =
+      'Nếu email tồn tại trong hệ thống, liên kết đặt lại mật khẩu đã được tạo.';
+
+    if (!user || !user.isActive) {
+      return { message: genericMessage };
+    }
+
+    const token = this.jwtService.sign(
+      {
+        sub: Number(user.id),
+        email: user.email,
+        type: 'password_reset',
+      },
+      {
+        secret: this.getResetTokenSecret(),
+        expiresIn: this.getResetTokenExpiresIn() as any,
+      },
+    );
+
+    const resetBaseUrl =
+      this.configService.get<string>('PASSWORD_RESET_URL') ||
+      'http://localhost:3001/reset-password';
+    const resetLink = `${resetBaseUrl}?token=${encodeURIComponent(token)}`;
+
+    if (process.env.NODE_ENV !== 'production') {
+      return {
+        message: genericMessage,
+        resetToken: token,
+        resetLink,
+      };
+    }
+
+    return { message: genericMessage };
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<Record<string, string>> {
+    let payload: any;
+
+    try {
+      payload = this.jwtService.verify(token, {
+        secret: this.getResetTokenSecret(),
+      });
+    } catch {
+      throw new UnauthorizedException('Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.');
+    }
+
+    if (!payload || payload.type !== 'password_reset' || !payload.sub) {
+      throw new UnauthorizedException('Token đặt lại mật khẩu không hợp lệ.');
+    }
+
+    const user = await this.userService.findUserViaId(String(payload.sub));
+    if (!user.isActive) {
+      throw new UnauthorizedException('Tài khoản đã bị vô hiệu hóa.');
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await this.userService.updatePasswordHash(String(user.id), newHash);
+
+    return { message: 'Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.' };
+  }
+
+  async changePassword(
+    userId: number,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<Record<string, string>> {
+    const user = await this.userService.findUserViaId(String(userId));
+
+    if (!user.passwordHash) {
+      throw new BadRequestException(
+        'Tài khoản này chưa có mật khẩu. Vui lòng dùng luồng đặt lại mật khẩu.',
+      );
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!isMatch) {
+      throw new UnauthorizedException('Mật khẩu hiện tại không chính xác.');
+    }
+
+    if (currentPassword === newPassword) {
+      throw new BadRequestException('Mật khẩu mới phải khác mật khẩu hiện tại.');
+    }
+
+    const newHash = await bcrypt.hash(newPassword, 10);
+    await this.userService.updatePasswordHash(String(user.id), newHash);
+
+    return { message: 'Thay đổi mật khẩu thành công.' };
+  }
+
   // ─── Private helpers ───────────────────────────────────────────────────────
 
   // Ký cặp token — dùng chung cho register, login, refresh
@@ -192,6 +287,18 @@ export class AuthService {
         expiresIn: refreshTokenExp as any,
       }),
     };
+  }
+
+  private getResetTokenSecret(): string {
+    return (
+      this.configService.get<string>('JWT_RESET_PASSWORD_SECRET') ||
+      this.configService.get<string>('JWT_SECRET') ||
+      'reset_password_secret'
+    );
+  }
+
+  private getResetTokenExpiresIn(): string {
+    return this.configService.get<string>('JWT_RESET_PASSWORD_EXPIRES_IN') || '15m';
   }
 
   // Build userData shape thống nhất — dùng chung cho register và login

@@ -9,7 +9,12 @@ import { LessonRepository } from '../repository/lesson.repository';
 import { CourseRepository } from '../repository/course.repository';
 import { Material } from '../models/material.entity';
 import { CourseStatus } from '../common/enums/course-status.enum';
-import { CreateMaterialDto, UpdateMaterialDto } from '../dto/material.dto';
+import {
+  CreateMaterialDto,
+  UpdateMaterialDto,
+  UploadMaterialDto,
+} from '../dto/material.dto';
+import { SupabaseStorageService } from './supabase-storage.service';
 
 // Trạng thái khóa học cho phép chỉnh sửa học liệu.
 // Theo SRS & DB: giảng viên chỉnh sửa khi khóa học đang ở draft hoặc pending
@@ -17,7 +22,15 @@ import { CreateMaterialDto, UpdateMaterialDto } from '../dto/material.dto';
 const EDITABLE_STATUSES: CourseStatus[] = [
   CourseStatus.DRAFT,
   CourseStatus.PENDING,
+  CourseStatus.PUBLISHED,
 ];
+
+type UploadedFile = {
+  originalname: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+};
 
 @Injectable()
 export class MaterialService {
@@ -25,6 +38,7 @@ export class MaterialService {
     private readonly materialRepo: MaterialRepository,
     private readonly lessonRepo: LessonRepository,
     private readonly courseRepo: CourseRepository,
+    private readonly supabaseStorageService: SupabaseStorageService,
   ) {}
 
   // lessonId: number (BIGSERIAL)
@@ -100,6 +114,42 @@ export class MaterialService {
     });
   }
 
+  async uploadAndCreate(
+    lessonId: number,
+    file: UploadedFile,
+    dto: UploadMaterialDto,
+    lecturerId: number,
+  ): Promise<Material> {
+    await this.assertLecturerCanEdit(lessonId, lecturerId);
+
+    if (!file) {
+      throw new BadRequestException('Vui lòng chọn file học liệu để tải lên.');
+    }
+
+    const uploadResult = await this.supabaseStorageService.uploadMaterial(
+      file,
+      lessonId,
+      dto.fileName,
+    );
+
+    try {
+      const maxOrder = await this.materialRepo.findMaxOrderIndex(lessonId);
+      const orderIndex = dto.orderIndex ?? maxOrder + 1;
+
+      return await this.materialRepo.create({
+        fileName: dto.fileName || file.originalname,
+        fileUrl: uploadResult.publicUrl,
+        fileType: dto.fileType || uploadResult.fileType,
+        fileSizeKb: uploadResult.fileSizeKb,
+        orderIndex,
+        lesson: { id: lessonId } as any,
+      });
+    } catch (error) {
+      await this.supabaseStorageService.deleteByPublicUrl(uploadResult.publicUrl);
+      throw error;
+    }
+  }
+
   async update(
     id: number,
     dto: UpdateMaterialDto,
@@ -111,6 +161,7 @@ export class MaterialService {
     const updated = await this.materialRepo.update(id, {
       ...(dto.fileName   !== undefined && { fileName:   dto.fileName }),
       ...(dto.fileUrl    !== undefined && { fileUrl:    dto.fileUrl }),
+      ...(dto.fileType   !== undefined && { fileType:   dto.fileType }),
       ...(dto.fileSizeKb !== undefined && { fileSizeKb: dto.fileSizeKb }),
       ...(dto.orderIndex !== undefined && { orderIndex: dto.orderIndex }),
     });
@@ -132,5 +183,6 @@ export class MaterialService {
     const material = await this.findOne(id);
     await this.assertLecturerCanEdit(material.lesson.id, lecturerId);
     await this.materialRepo.delete(id);
+    await this.supabaseStorageService.deleteByPublicUrl(material.fileUrl);
   }
 }

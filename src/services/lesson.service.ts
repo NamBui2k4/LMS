@@ -16,6 +16,7 @@ import { CreateLessonDto, UpdateLessonDto } from '../dto/lesson.dto';
 const EDITABLE_STATUSES: CourseStatus[] = [
   CourseStatus.DRAFT,
   CourseStatus.PENDING,
+  CourseStatus.PUBLISHED,
 ];
 
 @Injectable()

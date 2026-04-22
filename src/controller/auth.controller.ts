@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Patch,
   Body,
   HttpCode,
   HttpStatus,
@@ -9,12 +10,19 @@ import {
   Req,
   BadRequestException,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { type Response, type Request } from 'express';
 import { AuthService } from '../services/auth.service';
 import { RegisterDto } from '../dto/register.dto';
+import {
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  ChangePasswordDto,
+} from '../dto/auth-password.dto';
+import { JwtAuthGuard } from '../auth/guard/jwt-auth.guard';
 
 @Controller('api/v1/auth')
 export class AuthController {
@@ -145,6 +153,48 @@ export class AuthController {
     }
     const refreshToken = authHeader.split(' ')[1];
     return this.authService.refresh(refreshToken);
+  }
+
+  /**
+   * POST /api/v1/auth/forgot-password
+   * Tạo token đặt lại mật khẩu có thời gian hiệu lực.
+   */
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
+  }
+
+  /**
+   * POST /api/v1/auth/reset-password
+   * Đặt lại mật khẩu bằng reset token.
+   */
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    if (dto.newPassword !== dto.confirmPassword) {
+      throw new BadRequestException('Mật khẩu xác nhận không khớp.');
+    }
+    return this.authService.resetPassword(dto.token, dto.newPassword);
+  }
+
+  /**
+   * PATCH /api/v1/auth/change-password
+   * Người dùng đã đăng nhập tự đổi mật khẩu.
+   */
+  @Patch('change-password')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async changePassword(@Req() req: any, @Body() dto: ChangePasswordDto) {
+    if (dto.newPassword !== dto.confirmPassword) {
+      throw new BadRequestException('Mật khẩu xác nhận không khớp.');
+    }
+
+    return this.authService.changePassword(
+      Number(req.user.id),
+      dto.currentPassword,
+      dto.newPassword,
+    );
   }
 
   /**

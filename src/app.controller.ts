@@ -1,4 +1,18 @@
-import { Controller, Get, Render, Param, Req, Post, Body, Res, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Render,
+  Param,
+  Req,
+  Post,
+  Body,
+  Res,
+  Query,
+  UploadedFile,
+  UseInterceptors,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { AppService } from './app.service';
 import { StudentService } from './services/student.service';
 import { UserService } from './services/user.service';
@@ -20,6 +34,13 @@ import { Quiz } from './models/quizzes.entity';
 import { Enrollment } from './models/enrollment.entity';
 import { CourseStatus } from './common/enums/course-status.enum';
 import { UserRole } from './common/enums/role.enum';
+
+type UploadedFileType = {
+  originalname: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+};
 
 @Controller()
 export class AppController {
@@ -112,8 +133,26 @@ export class AppController {
 
   @Get('admin/users')
   @Render('admin/users')
-  adminUsers() {
-    return { title: 'Quản lý người dùng' };
+  async adminUsers(@Req() req: any) {
+    const payload = req.userPayload;
+    if (!payload || !payload.sub) {
+      return { title: 'Quản lý người dùng', user: null, users: [] };
+    }
+
+    try {
+      const [adminUser, users] = await Promise.all([
+        this.userService.findUserViaId(String(payload.sub)),
+        this.userService.getUsersForAdminView(),
+      ]);
+
+      return {
+        title: 'Quản lý người dùng',
+        user: adminUser,
+        users,
+      };
+    } catch {
+      return { title: 'Quản lý người dùng', user: null, users: [] };
+    }
   }
 
   @Get('admin/settings')
@@ -340,9 +379,43 @@ export class AppController {
 
   @Get('staff/courses/:id')
   @Render('staff/course-detail')
-  async staffCourseDetail(@Req() req: any, @Param('id') id: string, @Query('updated') updated?: string, @Query('error') error?: string) {
+  async staffCourseDetail(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Query('updated') updated?: string | string[],
+    @Query('error') error?: string | string[],
+    @Query('notice') notice?: string | string[],
+    @Query('errorCode') errorCode?: string | string[],
+  ) {
     const payload = req.userPayload;
     if (!payload || !payload.sub) return { title: 'Lỗi', courseId: id, course: null, user: null };
+
+    const isSupabaseStorageReady =
+      Boolean(process.env.SUPABASE_URL) &&
+      Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+
+    const noticeMap: Record<string, string> = {
+      lesson_created: 'Đã tạo bài giảng thành công.',
+      material_created: 'Đã thêm học liệu thành công.',
+      material_deleted: 'Đã xóa học liệu thành công.',
+    };
+
+    const errorMap: Record<string, string> = {
+      lesson_create_failed: 'Không thể tạo bài giảng. Hãy kiểm tra quyền chỉnh sửa và trạng thái khóa học.',
+      material_create_failed: 'Không thể thêm học liệu. Hãy kiểm tra file/URL và cấu hình storage.',
+      material_missing_source: 'Vui lòng chọn file upload hoặc nhập URL học liệu trước khi thêm.',
+      material_supabase_not_configured: 'Bạn đang upload file nhưng chưa cấu hình Supabase Storage (SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY).',
+      material_upload_failed: 'Upload file lên Supabase thất bại. Hãy kiểm tra bucket/quyền truy cập.',
+      material_delete_failed: 'Không thể xóa học liệu. Vui lòng thử lại.',
+    };
+
+    const pickLast = (value?: string | string[]) =>
+      Array.isArray(value) ? value[value.length - 1] : value;
+
+    const updatedValue = pickLast(updated);
+    const errorValue = pickLast(error);
+    const noticeValue = pickLast(notice);
+    const errorCodeValue = pickLast(errorCode);
     
     try {
       const lecturer = await this.lecturerService.getLecturerProfile(Number(payload.sub));
@@ -356,10 +429,15 @@ export class AppController {
         canManageAssignments: payload.role === UserRole.HEAD_OF_DEPARTMENT,
         canChangeStatus: payload.role === UserRole.HEAD_OF_DEPARTMENT,
         statusOptions,
-        updated: updated === '1',
-        error: error === '1' ? 'Không thể cập nhật khóa học. Vui lòng thử lại.' : null,
+        updated: updatedValue === '1',
+        notice: noticeValue ? (noticeMap[noticeValue] || null) : null,
+        error: errorValue === '1' ? 'Không thể cập nhật khóa học. Vui lòng thử lại.' : null,
+        flowError: errorCodeValue
+          ? (errorMap[errorCodeValue] || 'Thao tác không thành công. Vui lòng thử lại.')
+          : null,
+        isSupabaseStorageReady,
       };
-    } catch {
+    } catch (err: any) {
       return {
         title: 'Không tìm thấy khóa học',
         courseId: id,
@@ -369,7 +447,10 @@ export class AppController {
         canChangeStatus: false,
         statusOptions: [],
         updated: false,
-        error: null,
+        notice: null,
+        error: err?.message || 'Không thể tải chi tiết khóa học.',
+        flowError: null,
+        isSupabaseStorageReady,
       };
     }
   }
@@ -516,9 +597,9 @@ export class AppController {
         },
         Number(payload.sub),
       );
-      return res.redirect(`/staff/courses/${courseId}`);
+      return res.redirect(`/staff/courses/${courseId}?notice=lesson_created`);
     } catch {
-      return res.redirect(`/staff/courses/${courseId}`);
+      return res.redirect(`/staff/courses/${courseId}?errorCode=lesson_create_failed`);
     }
   }
 
@@ -541,24 +622,83 @@ export class AppController {
   }
 
   @Post('staff/lessons/:lessonId/materials')
-  async createStaffMaterial(@Req() req: any, @Param('lessonId') lessonId: string, @Body() body: any, @Res() res: any) {
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 50 * 1024 * 1024 },
+    }),
+  )
+  async createStaffMaterial(
+    @Req() req: any,
+    @Param('lessonId') lessonId: string,
+    @Body() body: any,
+    @UploadedFile() file: UploadedFileType,
+    @Res() res: any,
+  ) {
     const payload = req.userPayload;
     const backTo = req.get('referer') || '/staff/courses';
+    const withRedirectFlag = (
+      targetUrl: string,
+      key: 'notice' | 'errorCode',
+      value: string,
+    ) => {
+      const [basePath, rawQuery = ''] = String(targetUrl).split('?');
+      const params = new URLSearchParams(rawQuery);
+      params.delete('notice');
+      params.delete('errorCode');
+      params.set(key, value);
+      const query = params.toString();
+      return query ? `${basePath}?${query}` : basePath;
+    };
+
     if (!payload || !payload.sub) return res.redirect('/login/staff');
 
     try {
-      await this.materialService.create(
-        Number(lessonId),
-        {
-          fileName: body.fileName,
-          fileUrl: body.fileUrl,
-          fileType: body.fileType || 'document',
-        },
-        Number(payload.sub),
-      );
-      return res.redirect(backTo);
-    } catch {
-      return res.redirect(backTo);
+      if (file) {
+        await this.materialService.uploadAndCreate(
+          Number(lessonId),
+          file,
+          {
+            fileName: body.fileName,
+            fileType: body.fileType,
+          },
+          Number(payload.sub),
+        );
+      } else {
+        if (!body.fileUrl) {
+          throw new Error('Thiếu file upload hoặc URL học liệu.');
+        }
+
+        await this.materialService.create(
+          Number(lessonId),
+          {
+            fileName: body.fileName,
+            fileUrl: body.fileUrl,
+            fileType: body.fileType || 'document',
+          },
+          Number(payload.sub),
+        );
+      }
+      return res.redirect(withRedirectFlag(backTo, 'notice', 'material_created'));
+    } catch (err: any) {
+      const message = String(err?.message || '');
+
+      if (message.includes('Thiếu file upload hoặc URL học liệu')) {
+        return res.redirect(withRedirectFlag(backTo, 'errorCode', 'material_missing_source'));
+      }
+
+      if (
+        message.includes('SUPABASE_URL') ||
+        message.includes('SUPABASE_SERVICE_ROLE_KEY')
+      ) {
+        return res.redirect(withRedirectFlag(backTo, 'errorCode', 'material_supabase_not_configured'));
+      }
+
+      if (message.includes('Upload file lên Supabase thất bại')) {
+        return res.redirect(withRedirectFlag(backTo, 'errorCode', 'material_upload_failed'));
+      }
+
+      return res.redirect(withRedirectFlag(backTo, 'errorCode', 'material_create_failed'));
     }
   }
 
@@ -571,13 +711,27 @@ export class AppController {
   ) {
     const payload = req.userPayload;
     const backTo = req.get('referer') || '/staff/courses';
+    const withRedirectFlag = (
+      targetUrl: string,
+      key: 'notice' | 'errorCode',
+      value: string,
+    ) => {
+      const [basePath, rawQuery = ''] = String(targetUrl).split('?');
+      const params = new URLSearchParams(rawQuery);
+      params.delete('notice');
+      params.delete('errorCode');
+      params.set(key, value);
+      const query = params.toString();
+      return query ? `${basePath}?${query}` : basePath;
+    };
+
     if (!payload || !payload.sub) return res.redirect('/login/staff');
 
     try {
       await this.materialService.delete(Number(materialId), Number(payload.sub));
-      return res.redirect(backTo);
+      return res.redirect(withRedirectFlag(backTo, 'notice', 'material_deleted'));
     } catch {
-      return res.redirect(backTo);
+      return res.redirect(withRedirectFlag(backTo, 'errorCode', 'material_delete_failed'));
     }
   }
 

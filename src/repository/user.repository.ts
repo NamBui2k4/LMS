@@ -144,6 +144,14 @@ export class UserRepository {
     return this.ormRepository.findOne({ where: { id: userId } as any });
   }
 
+  async updatePasswordHashById(
+    userId: string,
+    passwordHash: string,
+  ): Promise<User | null> {
+    await this.ormRepository.update(userId, { passwordHash });
+    return this.ormRepository.findOne({ where: { id: userId } as any });
+  }
+
   async getSystemStats(): Promise<{
     totalUsers: number;
     totalStudents: number;
@@ -163,5 +171,20 @@ export class UserRepository {
       totalLecturers,
       totalDepartments,
     };
+  }
+
+  async findAllForAdminView(): Promise<
+    Pick<User, 'id' | 'email' | 'role' | 'isActive' | 'createdAt'>[]
+  > {
+    return this.ormRepository.find({
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        isActive: true,
+        createdAt: true,
+      },
+      order: { createdAt: 'DESC' },
+    });
   }
 }

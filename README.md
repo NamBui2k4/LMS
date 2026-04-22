@@ -31,6 +31,50 @@
 $ npm install
 ```
 
+## Supabase Material Upload Setup
+
+The material module now supports file upload to Supabase Storage.
+
+1. Create your environment file from [.env.example](.env.example).
+2. Set these variables:
+   - `SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `SUPABASE_STORAGE_BUCKET` (default: `materials`)
+3. In Supabase Storage, create the bucket and make it public if you want direct public URLs.
+
+If you run with Docker Compose, make sure `.env` exists in project root and contains these keys,
+then rebuild containers:
+
+```bash
+docker-compose up -d --build
+```
+
+New API endpoint:
+
+- `POST /api/v1/lessons/:lessonId/materials/upload`
+- Content-Type: `multipart/form-data`
+- Fields:
+  - `file` (required)
+  - `fileName` (optional)
+  - `fileType` (optional: `image`, `video`, `audio`, `document`)
+  - `orderIndex` (optional)
+
+## Password Flows
+
+The auth module now supports forgot/reset/change password:
+
+- `POST /api/v1/auth/forgot-password`
+  - Body: `{ "email": "user@example.com" }`
+  - Returns a generic success message.
+  - In non-production, response includes `resetToken` and `resetLink` for testing.
+
+- `POST /api/v1/auth/reset-password`
+  - Body: `{ "token": "...", "newPassword": "...", "confirmPassword": "..." }`
+
+- `PATCH /api/v1/auth/change-password`
+  - Requires Bearer token.
+  - Body: `{ "currentPassword": "...", "newPassword": "...", "confirmPassword": "..." }`
+
 ## Compile and run the project
 
 ```bash
