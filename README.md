@@ -75,6 +75,18 @@ The auth module now supports forgot/reset/change password:
   - Requires Bearer token.
   - Body: `{ "currentPassword": "...", "newPassword": "...", "confirmPassword": "..." }`
 
+## Student Profile Response Migration
+
+The student profile response currently supports both naming schemes during migration:
+
+- Preferred keys: `studentCode`, `faculty`, `major`, `address`
+- Legacy keys: `mssv`, `khoa`, `nganh`, `diaChi`
+
+Use the environment variable below to control legacy keys in API responses:
+
+- `STUDENT_PROFILE_INCLUDE_LEGACY_KEYS=true` (default): return both preferred and legacy keys
+- `STUDENT_PROFILE_INCLUDE_LEGACY_KEYS=false`: return only preferred keys
+
 ## Compile and run the project
 
 ```bash

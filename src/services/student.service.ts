@@ -14,10 +14,15 @@ import { Submission } from '../models/submission.entity';
 
 @Injectable()
 export class StudentService {
+  private readonly includeLegacyProfileKeys: boolean;
+
   constructor(
     private readonly studentRepo: StudentRepository,
     private readonly userRepo: UserRepository,
-  ) {}
+  ) {
+    const raw = (process.env.STUDENT_PROFILE_INCLUDE_LEGACY_KEYS ?? 'true').toLowerCase();
+    this.includeLegacyProfileKeys = raw === 'true' || raw === '1' || raw === 'yes';
+  }
 
   async findAll(page: number = 1, limit: number = 10) {
     return this.studentRepo.findAllPaginated(page, limit);
@@ -26,6 +31,14 @@ export class StudentService {
   async getProfileByUserId(userId: number): Promise<Record<string, any>> {
     const profile = await this.studentRepo.findProfileByUserId(userId);
     if (!profile) throw new NotFoundException('Không tìm thấy học viên.');
+
+    if (!this.includeLegacyProfileKeys) {
+      delete profile.mssv;
+      delete profile.khoa;
+      delete profile.nganh;
+      delete profile.diaChi;
+    }
+
     return profile;
   }
 
@@ -48,10 +61,10 @@ export class StudentService {
       email: updateDto.email,
       phone: updateDto.phone,
       avatarUrl: updateDto.avatarUrl,
-      mssv: updateDto.mssv ?? updateDto.studentCode,
-      khoa: updateDto.khoa ?? updateDto.faculty,
-      nganh: updateDto.nganh ?? updateDto.major,
-      diaChi: updateDto.diaChi ?? updateDto.address,
+      mssv: updateDto.studentCode ?? updateDto.mssv,
+      khoa: updateDto.faculty ?? updateDto.khoa,
+      nganh: updateDto.major ?? updateDto.nganh,
+      diaChi: updateDto.address ?? updateDto.diaChi,
     });
     if (!updated) throw new NotFoundException('Không tìm thấy học viên.');
     return updated;

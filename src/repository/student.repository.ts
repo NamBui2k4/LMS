@@ -44,7 +44,12 @@ export class StudentRepository {
         userId: true,
         email: true,
         fullname: true,
+        phone: true,
         avatarUrl: true,
+        studentCode: true,
+        faculty: true,
+        major: true,
+        address: true,
         status: true,
         googleId: true,
       },
@@ -71,28 +76,28 @@ export class StudentRepository {
     const col = (name: string, fallback = 'NULL') =>
       set.has(name) ? `s.${name}` : fallback;
 
-    const mssvExpr = set.has('mssv')
-      ? 's.mssv'
-      : set.has('student_code')
-        ? 's.student_code'
+    const mssvExpr = set.has('student_code')
+      ? 's.student_code'
+      : set.has('mssv')
+        ? 's.mssv'
         : `split_part(s.email, '@', 1)`;
 
-    const khoaExpr = set.has('khoa')
-      ? 's.khoa'
-      : set.has('faculty')
-        ? 's.faculty'
+    const khoaExpr = set.has('faculty')
+      ? 's.faculty'
+      : set.has('khoa')
+        ? 's.khoa'
         : 'NULL';
 
-    const nganhExpr = set.has('nganh')
-      ? 's.nganh'
-      : set.has('major')
-        ? 's.major'
+    const nganhExpr = set.has('major')
+      ? 's.major'
+      : set.has('nganh')
+        ? 's.nganh'
         : 'NULL';
 
-    const diaChiExpr = set.has('dia_chi')
-      ? 's.dia_chi'
-      : set.has('address')
-        ? 's.address'
+    const diaChiExpr = set.has('address')
+      ? 's.address'
+      : set.has('dia_chi')
+        ? 's.dia_chi'
         : 'NULL';
 
     const statusExpr = set.has('status')
@@ -109,6 +114,10 @@ export class StudentRepository {
          s.fullname                       AS "fullname",
          ${col('phone')}                  AS "phone",
          ${col('avatar_url')}             AS "avatarUrl",
+         ${mssvExpr}                      AS "studentCode",
+         ${khoaExpr}                      AS "faculty",
+         ${nganhExpr}                     AS "major",
+         ${diaChiExpr}                    AS "address",
          ${mssvExpr}                      AS "mssv",
          ${khoaExpr}                      AS "khoa",
          ${nganhExpr}                     AS "nganh",
@@ -160,23 +169,23 @@ export class StudentRepository {
     if (data.avatarUrl !== undefined && set.has('avatar_url')) push('avatar_url', data.avatarUrl);
 
     if (data.mssv !== undefined) {
-      if (set.has('mssv')) push('mssv', data.mssv);
-      else if (set.has('student_code')) push('student_code', data.mssv);
+      if (set.has('student_code')) push('student_code', data.mssv);
+      else if (set.has('mssv')) push('mssv', data.mssv);
     }
 
     if (data.khoa !== undefined) {
-      if (set.has('khoa')) push('khoa', data.khoa);
-      else if (set.has('faculty')) push('faculty', data.khoa);
+      if (set.has('faculty')) push('faculty', data.khoa);
+      else if (set.has('khoa')) push('khoa', data.khoa);
     }
 
     if (data.nganh !== undefined) {
-      if (set.has('nganh')) push('nganh', data.nganh);
-      else if (set.has('major')) push('major', data.nganh);
+      if (set.has('major')) push('major', data.nganh);
+      else if (set.has('nganh')) push('nganh', data.nganh);
     }
 
     if (data.diaChi !== undefined) {
-      if (set.has('dia_chi')) push('dia_chi', data.diaChi);
-      else if (set.has('address')) push('address', data.diaChi);
+      if (set.has('address')) push('address', data.diaChi);
+      else if (set.has('dia_chi')) push('dia_chi', data.diaChi);
     }
 
     if (set.has('updated_at')) {
@@ -355,10 +364,14 @@ export class StudentRepository {
         email: data.email,
         status: AccountStatus.ACTIVE,
         phone: data.phone ?? undefined,
+        studentCode: data.mssv ?? undefined,
+        faculty: data.khoa ?? undefined,
+        major: data.nganh ?? undefined,
+        address: data.diaChi ?? undefined,
       });
       const savedStudent = await manager.save(Student, student);
 
-      // Đồng bộ thêm các cột hồ sơ mở rộng nếu schema có hỗ trợ
+      // Fallback cho schema cũ: chỉ ghi các cột legacy nếu không có cột chuẩn mới.
       if (data.mssv || data.khoa || data.nganh || data.diaChi) {
         const columns: Array<{ column_name: string }> = await manager.query(
           `SELECT column_name
@@ -376,23 +389,19 @@ export class StudentRepository {
         };
 
         if (data.mssv !== undefined && data.mssv !== null) {
-          if (set.has('mssv')) push('mssv', data.mssv);
-          else if (set.has('student_code')) push('student_code', data.mssv);
+          if (!set.has('student_code') && set.has('mssv')) push('mssv', data.mssv);
         }
 
         if (data.khoa !== undefined && data.khoa !== null) {
-          if (set.has('khoa')) push('khoa', data.khoa);
-          else if (set.has('faculty')) push('faculty', data.khoa);
+          if (!set.has('faculty') && set.has('khoa')) push('khoa', data.khoa);
         }
 
         if (data.nganh !== undefined && data.nganh !== null) {
-          if (set.has('nganh')) push('nganh', data.nganh);
-          else if (set.has('major')) push('major', data.nganh);
+          if (!set.has('major') && set.has('nganh')) push('nganh', data.nganh);
         }
 
         if (data.diaChi !== undefined && data.diaChi !== null) {
-          if (set.has('dia_chi')) push('dia_chi', data.diaChi);
-          else if (set.has('address')) push('address', data.diaChi);
+          if (!set.has('address') && set.has('dia_chi')) push('dia_chi', data.diaChi);
         }
 
         if (set.has('updated_at')) {

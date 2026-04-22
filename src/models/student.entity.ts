@@ -63,6 +63,22 @@ export class Student {
   @Column({ length: 255, nullable: true, unique: true, name: 'google_id' })
   googleId?: string;
 
+  // DB: student_code VARCHAR(20) UNIQUE
+  @Column({ length: 20, nullable: true, unique: true, name: 'student_code' })
+  studentCode?: string;
+
+  // DB: faculty VARCHAR(150)
+  @Column({ length: 150, nullable: true, name: 'faculty' })
+  faculty?: string;
+
+  // DB: major VARCHAR(150)
+  @Column({ length: 150, nullable: true, name: 'major' })
+  major?: string;
+
+  // DB: address TEXT
+  @Column({ type: 'text', nullable: true, name: 'address' })
+  address?: string;
+
   // DB: status account_status NOT NULL DEFAULT 'active'
   @Column({
     type: 'enum',

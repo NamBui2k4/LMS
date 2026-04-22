@@ -38,6 +38,7 @@ export class RegisterDto {
   @IsString()
   phone?: string;
 
+  // Legacy aliases (backward-compatible)
   @IsOptional()
   @IsString()
   mssv?: string;
@@ -54,6 +55,7 @@ export class RegisterDto {
   @IsString()
   diaChi?: string;
 
+  // Preferred naming (modern schema)
   @IsOptional()
   @IsString()
   studentCode?: string;

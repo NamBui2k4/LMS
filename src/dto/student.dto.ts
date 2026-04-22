@@ -35,7 +35,7 @@ export class UpdateStudentDto {
   @IsString()
   avatarUrl?: string;
 
-  // Schema A: mssv, khoa, nganh, dia_chi
+  // Legacy aliases (backward-compatible)
   @IsOptional()
   @IsString()
   mssv?: string;
@@ -52,7 +52,7 @@ export class UpdateStudentDto {
   @IsString()
   diaChi?: string;
 
-  // Schema B: student_code, faculty, major, address
+  // Preferred naming (modern schema)
   @IsOptional()
   @IsString()
   studentCode?: string;

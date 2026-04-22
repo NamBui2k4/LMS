@@ -77,10 +77,10 @@ export class AuthService {
       email: dto.email,
       passwordHash,
       phone: dto.phone,
-      mssv: dto.mssv ?? dto.studentCode,
-      khoa: dto.khoa ?? dto.faculty,
-      nganh: dto.nganh ?? dto.major,
-      diaChi: dto.diaChi ?? dto.address,
+      mssv: dto.studentCode ?? dto.mssv,
+      khoa: dto.faculty ?? dto.khoa,
+      nganh: dto.major ?? dto.nganh,
+      diaChi: dto.address ?? dto.diaChi,
     });
 
     // Tạo token
