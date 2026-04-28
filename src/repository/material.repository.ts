@@ -11,7 +11,7 @@ export class MaterialRepository {
   ) {}
 
   // lessonId: number — khớp với Lesson.id (BIGSERIAL)
-  async findByLesson(lessonId: number): Promise<Material[]> {
+  async findByLesson(lessonId: string): Promise<Material[]> { // error here
     return this.materialRepo.find({
       where: { lesson: { id: lessonId } },
       order: { orderIndex: 'ASC' },
