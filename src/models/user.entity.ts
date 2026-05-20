@@ -7,11 +7,9 @@ import {
   OneToOne,
 } from 'typeorm';
 import { UserRole } from '../common/enums/role.enum';
-import { Student } from './student.entity';
 import { Lecturer } from './lecturers.entity';
 import { Admin } from './admins.entity';
-
-/**
+import { Student } from './student.entity';/**
  * Bảng identity chung — xác thực & phân quyền (RBAC).
  * Không lưu profile chi tiết. Profile nằm ở bảng con tương ứng.
  *
@@ -77,3 +75,5 @@ export class User {
   @OneToOne(() => Admin, (admin) => admin.user)
   admin?: Admin;
 }
+
+

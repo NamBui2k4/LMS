@@ -350,6 +350,7 @@ export class AppController {
       return {
         title: 'Danh sách khóa học',
         courses: [],
+        categories: [],
         user: null,
         updated: false,
         error: null,
@@ -358,10 +359,12 @@ export class AppController {
     try {
       const lecturer = await this.lecturerService.getLecturerProfile(Number(payload.sub));
       const courses = await this.courseService.findAll(Number(payload.sub), payload.role);
+      const categories = await this.categoryService.findAll();
       
       return {
         title: 'Danh sách khóa học',
         courses,
+        categories,
         user: lecturer,
         updated: updated === '1',
         error: error === '1' ? 'Không thể cập nhật dữ liệu khóa học. Vui lòng thử lại.' : null,
@@ -370,10 +373,31 @@ export class AppController {
       return {
         title: 'Danh sách khóa học',
         courses: [],
+        categories: [],
         user: null,
         updated: false,
         error: null,
       };
+    }
+  }
+
+  @Post('staff/courses')
+  async createStaffCourse(@Req() req: any, @Body() body: any, @Res() res: any) {
+    const payload = req.userPayload;
+    if (!payload || !payload.sub) return res.redirect('/login/staff');
+
+    try {
+      const lecturer = await this.lecturerService.getLecturerProfile(Number(payload.sub));
+      await this.courseService.create({
+        title: body.title,
+        description: body.description,
+        categoryId: Number(body.categoryId),
+        createdBy: lecturer,
+      });
+      return res.redirect('/staff/courses?updated=1');
+    } catch (e) {
+      console.error('Error creating course:', e);
+      return res.redirect('/staff/courses?error=1');
     }
   }
 

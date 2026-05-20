@@ -1,13 +1,23 @@
 version: "3.9"
 
 services:
+  autoheal:
+      image: willfarrell/autoheal
+      container_name: autoheal
+      volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+      environment:
+        - AUTOHEAL_CONTAINER_LABEL=all # Theo dõi tất cả container
+        - AUTOHEAL_INTERVAL=5          # Kiểm tra trạng thái mỗi 5 giây
+        - AUTOHEAL_START_PERIOD=60     # Đợi 60s đầu cho hệ thống ổn định rồi mới bắt đầu canh
+      restart: always
   backend:
     build: .
     container_name: lms_backend
     env_file:
       - .env
     ports:
-      - "3001:3001"
+      - "3004:3004"
     environment:
       FORCE_COLOR: "1"
       NODE_ENV: development
@@ -29,8 +39,17 @@ services:
     depends_on:
       monolithic-posrgre_lms-1:
         condition: service_healthy
-    restart: unless-stopped   # ← thêm
-
+    healthcheck:
+      # Cách 1: Gọi vào API lấy dữ liệu thực (ví dụ lấy danh sách courses)
+      # Lưu ý: Endpoint này không được có Guard (hoặc bạn phải bỏ qua check token cho nó)
+      # test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3004/api/v1/courses"]
+      
+      # Cách 2: Giữ nguyên health nhưng siết chặt thời gian phản hồi
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3004/api/v1/health"]
+      interval: 8s    # Kiểm tra liên tục mỗi 5 giây
+      timeout: 4s     # Nếu quá 3s không hồi đáp là coi như 1 lần fail
+      retries: 3    # 5s * 48 lần = 240s (Đúng 4 phút mới báo Unhealthy)
+      start_period: 120s
   monolithic-posrgre_lms-1:
     image: postgres:15-alpine
     container_name: monolithic-posrgre_lms-1
@@ -43,14 +62,16 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./01-init.sh:/docker-entrypoint-initdb.d/01-init.sh
-      - ./seed.sql:/docker-entrypoint-initdb.d/02-seed.sql
+      # - ./schema_lms_db.sql:/docker-entrypoint-initdb.d/02-schema.sql
+      - ./seed.sql:/docker-entrypoint-initdb.d/03-seed.sql
     networks:
       - lms-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d LMS-monolithic"]
       interval: 5s
-      timeout: 5s
-      retries: 5
+      timeout: 3s
+      retries: 2
+      start_period: 20s
     restart: unless-stopped   # ← thêm
 
 networks:

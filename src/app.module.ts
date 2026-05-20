@@ -27,6 +27,7 @@ import { AppController } from './app.controller';
 
 // ── Services ────────────────────────────────────────────────
 import { AppService } from './app.service';
+import { HealthController } from './health_check.controller';
 
 
 @Module({
@@ -74,7 +75,7 @@ import { AppService } from './app.service';
     AssignedLecturersModule,
   ],
 
-  controllers: [AppController],
+  controllers: [AppController, HealthController],
   providers: [AppService],
 })
 export class AppModule {}  // PageAuthMiddleware đã được đăng ký trong main.ts

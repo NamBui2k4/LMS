@@ -93,40 +93,39 @@
 
 <!-- Modal create course -->
 <div id="modal-create-course" class="modal-overlay hidden">
-  <div class="modal">
+  <form class="modal" method="POST" action="/staff/courses">
     <div class="modal-header">
       <span class="modal-title">Tạo khóa học mới</span>
-      <button class="modal-close" data-modal-close="modal-create-course">&times;</button>
+      <button type="button" class="modal-close" data-modal-close="modal-create-course">&times;</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
         <label class="form-label">Tên khóa học</label>
-        <input type="text" class="form-input" id="new-course-name" placeholder="Nhập tên khóa học...">
+        <input type="text" class="form-input" name="title" required placeholder="Nhập tên khóa học...">
       </div>
       <div class="form-group">
         <label class="form-label">Danh mục</label>
-        <select class="form-input form-select" id="new-course-cat">
-          <option>Công nghệ thông tin</option>
-          <option>Ngoại ngữ</option>
-          <option>Kinh tế - Quản trị</option>
+        <select class="form-input form-select" name="categoryId" required>
+          <% (categories || []).forEach(function(cat) { %>
+            <option value="<%= cat.id %>"><%= cat.name %></option>
+          <% }) %>
         </select>
       </div>
       <div class="form-group">
         <label class="form-label">Mô tả ngắn</label>
-        <textarea class="form-input form-textarea" rows="3" placeholder="Mô tả khóa học..."></textarea>
+        <textarea class="form-input form-textarea" name="description" rows="3" placeholder="Mô tả khóa học..."></textarea>
       </div>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-ghost" data-modal-close="modal-create-course">Hủy</button>
-      <button class="btn btn-green" onclick="createCourse()">Tạo khóa học</button>
+      <button type="button" class="btn btn-ghost" data-modal-close="modal-create-course">Hủy</button>
+      <button type="submit" class="btn btn-green">Tạo khóa học</button>
     </div>
-  </div>
+  </form>
 </div>
 
 <script src="/js/main.js"></script>
 <script>
 function voteForCourse(id) { showToast('Đã bỏ phiếu ủng hộ!'); }
-function createCourse() { showToast('Đã tạo khóa học mới!'); closeModal('modal-create-course'); }
 
 document.querySelectorAll('.js-course-card').forEach((card) => {
   const href = card.getAttribute('data-href');

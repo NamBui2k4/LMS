@@ -20,15 +20,15 @@ import { DepartmentHeadService } from '../services/department-heads.service';
 export class DepartmentHead {
   // DB: user_id BIGINT PRIMARY KEY REFERENCES lecturers(user_id)
   @PrimaryColumn({ type: 'bigint', name: 'user_id' })
-  userId: number; // ✅ FIX: từ instructorId → userId
+  userId!: number; // ✅ FIX: từ instructorId → userId
 
   @OneToOne(() => Lecturer, (lecturer) => lecturer.departmentHead, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
-  lecturer: Lecturer;
+  lecturer!: Lecturer;
 
   // DB: appointed_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
   @Column({ type: 'timestamptz', default: () => 'NOW()', name: 'appointed_at' })
-  appointedAt: Date;
+  appointedAt!: Date;
 
   // DB: term_end DATE (nullable) — NULL = nhiệm kỳ chưa xác định kết thúc
   @Column({ type: 'date', nullable: true, name: 'term_end' })

@@ -19,7 +19,7 @@ import { UserRole } from '../common/enums/role.enum';
 // ✅ FIX: studentId: string → number
 //         Service enroll(studentId: number) — phải khớp kiểu dữ liệu
 export class EnrollStudentDto {
-  studentId: number;
+  studentId!: number;
 }
 
 @Controller('api/v1/courses/:courseId/enrollments')

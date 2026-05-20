@@ -4,8 +4,8 @@ set -e
 echo "=== Bắt đầu khởi tạo Database LMS-monolithic ==="
 
 # Chạy tất cả lệnh SQL với tùy chọn quiet (-q)
-psql -q -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
-    SET client_min_messages = WARNING;
+psql -v ON_ERROR_STOP=1 --username "$POSTGRES_USER" --dbname "$POSTGRES_DB" <<-EOSQL
+    CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
     -- DROP tất cả
     DROP TABLE IF EXISTS submissions            CASCADE;

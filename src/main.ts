@@ -19,7 +19,7 @@ async function bootstrap() {
   app.useLogger(logger);        // ← Kích hoạt Pino logger
 
   const isProd = process.env.NODE_ENV === 'production';
-  const port = process.env.PORT || 3001;
+  const port = process.env.PORT || 3004;
 
   // Cấu hình Assets & Views
   const viewsPath = isProd
